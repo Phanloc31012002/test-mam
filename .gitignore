@@ -1,0 +1,9 @@
+.library-helpers/
+reference/
+node_modules/
+public/
+dist/
+evidence/
+.package-staging/
+.source-release/
+CONTINUATION.md

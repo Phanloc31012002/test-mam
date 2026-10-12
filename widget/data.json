@@ -1,0 +1,1205 @@
+{
+  "schemaVersion": 1,
+  "snapshotDate": "2026-10-12",
+  "snapshotLabel": "12/10/2026",
+  "site": "https://innhanhtphcm.com",
+  "mode": "website_faq_and_published_price_reference",
+  "contacts": [
+    {
+      "name": "Thường Vy",
+      "phone": "0898739868",
+      "zalo": "https://zalo.me/0898739868"
+    },
+    {
+      "name": "Trà My",
+      "phone": "0898113688",
+      "zalo": "https://zalo.me/0898113688"
+    },
+    {
+      "name": "Tuấn Vĩ",
+      "phone": "0934559479",
+      "zalo": "https://zalo.me/0934559479"
+    }
+  ],
+  "faq": {
+    "sourceUrl": "https://innhanhtphcm.com/",
+    "address": "174 – 174A Thái Phiên, Phường Bình Thới, TP. Hồ Chí Minh",
+    "hours": "Thứ 2 – Thứ 6: 08:00 – 12:00 / 13:00 – 17:00. Thứ 7: 08:00 – 16:00. Nghỉ Chủ nhật.",
+    "email": "inthanhan@innhanhtphcm.com",
+    "services": [
+      "Danh thiếp",
+      "Tem nhãn & decal",
+      "Catalogue & brochure",
+      "Tờ rơi",
+      "Túi giấy & hộp giấy",
+      "Bao thư",
+      "Bao lì xì",
+      "Menu",
+      "Phiếu thu",
+      "Thiệp cưới",
+      "Thiết kế & gia công"
+    ],
+    "delivery": "Có thể nhận tại xưởng hoặc trao đổi việc giao hàng với tư vấn viên. Phí giao và thời gian hoàn tất cần xác nhận theo đơn."
+  },
+  "products": [
+    {
+      "id": "namecard-c300",
+      "name": "Danh thiếp giấy C300",
+      "aliases": [
+        "danh thiep",
+        "name card",
+        "namecard",
+        "card visit",
+        "card"
+      ],
+      "variant": "Giấy C300",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re",
+      "displayPriceVnd": 70000,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": "Giấy C300",
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "kích thước",
+        "số hộp",
+        "số tấm mỗi hộp",
+        "in một hay hai mặt",
+        "gia công"
+      ],
+      "sourceEvidence": "Live product HTML: 1/5/10 hộp correspond to 90.000/80.000/70.000 ₫ per hộp; size and cards per box unspecified.",
+      "referenceNote": "Bảng nguồn ghi 1 hộp: 90.000 ₫/hộp; 5 hộp: 80.000 ₫/hộp; 10 hộp: 70.000 ₫/hộp. Chưa xác minh số tấm mỗi hộp, kích thước và gia công; không quy đổi ra giá mỗi tấm.",
+      "selectionTokens": [
+        "c300"
+      ],
+      "disallowedTokens": [
+        "nhua",
+        "kraft",
+        "my thuat"
+      ],
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live product HTML",
+      "selectionQuestion": "Bạn cần danh thiếp C300 hay chất liệu khác? Mầm có bảng giá theo hộp cho C300; loại khác cần tư vấn viên xác nhận.",
+      "priceFacts": [
+        {
+          "id": "namecard-c300-1",
+          "lookupQuery": "Xem dòng bảng giá danh thiếp C300 1 hộp",
+          "quantity": 1,
+          "quantityUnit": "hộp",
+          "unit": "hộp",
+          "priceVnd": 90000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "Giấy C300",
+            "Số lượng 1 hộp",
+            "Chưa xác minh số tấm mỗi hộp, kích thước và gia công; cần tư vấn viên xác nhận trước khi đặt"
+          ],
+          "specs": {
+            "material": "c300"
+          },
+          "sourceNote": "Giá theo hộp trong bảng nguồn; không quy đổi ra giá mỗi tấm, không tự tính tổng hoặc thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re"
+        },
+        {
+          "id": "namecard-c300-5",
+          "lookupQuery": "Xem dòng bảng giá danh thiếp C300 5 hộp",
+          "quantity": 5,
+          "quantityUnit": "hộp",
+          "unit": "hộp",
+          "priceVnd": 80000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "Giấy C300",
+            "Số lượng 5 hộp",
+            "Chưa xác minh số tấm mỗi hộp, kích thước và gia công; cần tư vấn viên xác nhận trước khi đặt"
+          ],
+          "specs": {
+            "material": "c300"
+          },
+          "sourceNote": "Giá theo hộp trong bảng nguồn; không quy đổi ra giá mỗi tấm, không tự tính tổng hoặc thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re"
+        },
+        {
+          "id": "namecard-c300-10",
+          "lookupQuery": "Xem dòng bảng giá danh thiếp C300 10 hộp",
+          "quantity": 10,
+          "quantityUnit": "hộp",
+          "unit": "hộp",
+          "priceVnd": 70000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "Giấy C300",
+            "Số lượng 10 hộp",
+            "Chưa xác minh số tấm mỗi hộp, kích thước và gia công; cần tư vấn viên xác nhận trước khi đặt"
+          ],
+          "specs": {
+            "material": "c300"
+          },
+          "sourceNote": "Giá theo hộp trong bảng nguồn; không quy đổi ra giá mỗi tấm, không tự tính tổng hoặc thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re"
+        }
+      ]
+    },
+    {
+      "id": "decal-paper",
+      "name": "Decal giấy",
+      "aliases": [
+        "decal giay",
+        "tem giay",
+        "nhan giay"
+      ],
+      "variant": "Giấy",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-decal-giay-re-dep",
+      "displayPriceVnd": 150000,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": "Decal giấy",
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "kích thước tem",
+        "số lượng",
+        "cán màng",
+        "bế hình"
+      ],
+      "sourceEvidence": "Homepage product card; 150.000 ₫.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card"
+    },
+    {
+      "id": "decal-plastic",
+      "name": "Decal nhựa bóng",
+      "aliases": [
+        "decal nhua",
+        "tem nhua",
+        "nhan nhua",
+        "decal nhua bong"
+      ],
+      "variant": "Nhựa bóng",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-decal-nhua",
+      "displayPriceVnd": 200000,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": "Decal nhựa bóng",
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "loại decal nhựa",
+        "kích thước",
+        "số lượng",
+        "bế hình"
+      ],
+      "sourceEvidence": "Homepage product card; 200.000 ₫.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card",
+      "selectionTokens": [
+        "bong"
+      ],
+      "selectionQuestion": "Bạn cần decal nhựa bóng hay nhựa trong, mờ hoặc loại khác? Mầm chỉ có giá hiển thị tham khảo cho nhựa bóng; loại khác cần tư vấn viên xác nhận.",
+      "disallowedTokens": [
+        "trong",
+        "mo",
+        "sua"
+      ]
+    },
+    {
+      "id": "flyer",
+      "name": "Tờ rơi – tờ gấp",
+      "aliases": [
+        "to roi",
+        "to gap",
+        "flyer"
+      ],
+      "variant": null,
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-to-roi-to-gap",
+      "displayPriceVnd": 700000,
+      "originalDisplayPriceVnd": 750000,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": null,
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "khổ giấy",
+        "định lượng",
+        "số lượng",
+        "số mặt",
+        "kiểu gấp"
+      ],
+      "sourceEvidence": "Homepage sale card; 750.000 ₫ struck through, 700.000 ₫ current.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card"
+    },
+    {
+      "id": "catalogue",
+      "name": "Catalogue số lượng ít",
+      "aliases": [
+        "catalogue",
+        "catalog",
+        "cataloge",
+        "catalouge",
+        "cattalouge",
+        "ctl",
+        "brochure"
+      ],
+      "variant": "Số lượng ít",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it",
+      "displayPriceVnd": 7500,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": null,
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "số trang",
+        "khổ giấy",
+        "số cuốn",
+        "giấy ruột và bìa",
+        "đóng cuốn"
+      ],
+      "sourceEvidence": "Homepage product card; 7.500 ₫.",
+      "priceFacts": [
+        {
+          "id": "catalogue-a4-12-200",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 12 trang 200 cuốn",
+          "quantity": 200,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 22000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 12 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 200 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 12,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-16-200",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 16 trang 200 cuốn",
+          "quantity": 200,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 28000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 16 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 200 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 16,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-20-200",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 20 trang 200 cuốn",
+          "quantity": 200,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 32000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 20 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 200 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 20,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-24-200",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 24 trang 200 cuốn",
+          "quantity": 200,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 37000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 24 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 200 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 24,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-28-200",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 28 trang 200 cuốn",
+          "quantity": 200,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 40000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 28 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 200 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 28,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-32-200",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 32 trang 200 cuốn",
+          "quantity": 200,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 45000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 32 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 200 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 32,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-36-200",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 36 trang 200 cuốn",
+          "quantity": 200,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 48000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 36 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 200 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 36,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-12-500",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 12 trang 500 cuốn",
+          "quantity": 500,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 12000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 12 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 500 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 12,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-16-500",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 16 trang 500 cuốn",
+          "quantity": 500,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 15000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 16 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 500 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 16,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-20-500",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 20 trang 500 cuốn",
+          "quantity": 500,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 17000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 20 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 500 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 20,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-24-500",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 24 trang 500 cuốn",
+          "quantity": 500,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 19500,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 24 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 500 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 24,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-28-500",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 28 trang 500 cuốn",
+          "quantity": 500,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 21000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 28 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 500 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 28,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-32-500",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 32 trang 500 cuốn",
+          "quantity": 500,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 24000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 32 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 500 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 32,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-36-500",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 36 trang 500 cuốn",
+          "quantity": 500,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 26000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 36 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 500 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 36,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-12-1000",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 12 trang 1000 cuốn",
+          "quantity": 1000,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 7500,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 12 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 1000 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 12,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-16-1000",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 16 trang 1000 cuốn",
+          "quantity": 1000,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 9000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 16 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 1000 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 16,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-20-1000",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 20 trang 1000 cuốn",
+          "quantity": 1000,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 10000,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 20 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 1000 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 20,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-24-1000",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 24 trang 1000 cuốn",
+          "quantity": 1000,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 11500,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 24 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 1000 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 24,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-28-1000",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 28 trang 1000 cuốn",
+          "quantity": 1000,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 12500,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 28 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 1000 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 28,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-32-1000",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 32 trang 1000 cuốn",
+          "quantity": 1000,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 14500,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 32 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 1000 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 32,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        },
+        {
+          "id": "catalogue-a4-36-1000",
+          "lookupQuery": "Xem dòng bảng giá catalogue A4 36 trang 1000 cuốn",
+          "quantity": 1000,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 15500,
+          "sourceTotalVnd": null,
+          "conditions": [
+            "A4, 36 trang (nguồn không xác định rõ đã gồm bìa hay chưa)",
+            "Bìa C250gsm, cán màng mặt ngoài; ruột C150gsm",
+            "In KTS 4 màu; đóng kim",
+            "Số lượng 1000 cuốn"
+          ],
+          "specs": {
+            "size": "a4",
+            "pages": 36,
+            "cover": "c250",
+            "inside": "c150",
+            "printing": "kts4",
+            "finishing": "staple"
+          },
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it"
+        }
+      ],
+      "referenceNote": "Dưới 200 cuốn: trang sản phẩm yêu cầu liên hệ tư vấn viên.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Product HTML table independently checked by delegated research"
+    },
+    {
+      "id": "kraft-bag",
+      "name": "Túi giấy Kraft",
+      "aliases": [
+        "tui giay",
+        "tui kraft",
+        "tui giay kraft"
+      ],
+      "variant": "Kraft",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/thanh-an-in-tui-giay-kraft",
+      "displayPriceVnd": 3500,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": "Kraft",
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "kích thước",
+        "số lượng",
+        "giấy",
+        "quai túi",
+        "số màu"
+      ],
+      "sourceEvidence": "Homepage product card; 3.500 ₫.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card",
+      "selectionTokens": [
+        "kraft"
+      ],
+      "selectionQuestion": "Bạn cần túi giấy Kraft hay chất liệu khác? Mầm chỉ có giá hiển thị tham khảo cho Kraft; loại khác cần tư vấn viên xác nhận."
+    },
+    {
+      "id": "paper-box",
+      "name": "Hộp giấy",
+      "aliases": [
+        "hop giay",
+        "hop san pham",
+        "bao bi"
+      ],
+      "variant": null,
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-hop-giay-tphcm",
+      "displayPriceVnd": 6500,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": null,
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "kích thước",
+        "loại hộp",
+        "giấy",
+        "số lượng",
+        "gia công"
+      ],
+      "sourceEvidence": "Homepage product card; 6.500 ₫.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card"
+    },
+    {
+      "id": "envelope-a5",
+      "name": "Bao thư A5",
+      "aliases": [
+        "bao thu",
+        "phong bi",
+        "bao thu a5"
+      ],
+      "variant": "A5",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-thu-a5-in-nhanh-gia-re",
+      "displayPriceVnd": 1350,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": null,
+        "size": "A5",
+        "finishing": null
+      },
+      "quotationStatus": "conflict_handoff_only",
+      "missingConditions": [
+        "số lượng",
+        "giấy",
+        "số màu",
+        "nắp và keo"
+      ],
+      "sourceEvidence": "Homepage product card; 1.350 ₫.",
+      "conflictReason": "Thẻ sản phẩm Bao thư A5 và bảng quy cách chưa thống nhất. Cần tư vấn viên xác nhận A5, giấy và số lượng; Mầm không báo mức giá của thẻ.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card"
+    },
+    {
+      "id": "red-envelope",
+      "name": "Bao lì xì",
+      "aliases": [
+        "li xi",
+        "bao li xi"
+      ],
+      "variant": null,
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+      "displayPriceVnd": 1100,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": null,
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "số lượng",
+        "kích thước",
+        "giấy",
+        "in và gia công"
+      ],
+      "sourceEvidence": "Homepage product card; 1.100 ₫.",
+      "priceFacts": [
+        {
+          "id": "red-large-500",
+          "lookupQuery": "Xem dòng bảng giá lì xì lớn Couche 150gsm 500 cái",
+          "quantity": 500,
+          "quantityUnit": "cái",
+          "unit": "cái",
+          "priceVnd": 1800,
+          "sourceTotalVnd": 900000,
+          "conditions": [
+            "Bao lì xì lớn 16 × 7,4 cm; nắp 2 cm",
+            "Giấy Couche 150gsm",
+            "In offset CMYK; bế, dán",
+            "Số lượng 500 cái",
+            "Cán màng / ép kim: cần xác nhận riêng"
+          ],
+          "requiredTokens": [
+            [
+              "16x7 4",
+              "16 x 7 4",
+              "16 7 4"
+            ],
+            [
+              "couche 150gsm",
+              "c150",
+              "c150gsm"
+            ],
+            [
+              "500 cai"
+            ]
+          ],
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+          "specs": {
+            "size": "large",
+            "material": "c150"
+          }
+        },
+        {
+          "id": "red-large-1000",
+          "lookupQuery": "Xem dòng bảng giá lì xì lớn Couche 150gsm 1000 cái",
+          "quantity": 1000,
+          "quantityUnit": "cái",
+          "unit": "cái",
+          "priceVnd": 1100,
+          "sourceTotalVnd": 1100000,
+          "conditions": [
+            "Bao lì xì lớn 16 × 7,4 cm; nắp 2 cm",
+            "Giấy Couche 150gsm",
+            "In offset CMYK; bế, dán",
+            "Số lượng 1000 cái",
+            "Cán màng / ép kim: cần xác nhận riêng"
+          ],
+          "requiredTokens": [
+            [
+              "16x7 4",
+              "16 x 7 4",
+              "16 7 4"
+            ],
+            [
+              "couche 150gsm",
+              "c150",
+              "c150gsm"
+            ],
+            [
+              "1000 cai"
+            ]
+          ],
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+          "specs": {
+            "size": "large",
+            "material": "c150"
+          }
+        }
+      ],
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Product HTML table independently checked by delegated research"
+    },
+    {
+      "id": "menu-paper",
+      "name": "Menu giấy",
+      "aliases": [
+        "menu",
+        "thuc don"
+      ],
+      "variant": "Giấy",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-menu-giay",
+      "displayPriceVnd": 40000,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": "Giấy",
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "khổ giấy",
+        "số trang",
+        "số lượng",
+        "cán màng",
+        "đóng cuốn"
+      ],
+      "sourceEvidence": "Homepage product card; 40.000 ₫.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card",
+      "selectionTokens": [
+        "giay"
+      ],
+      "selectionQuestion": "Bạn cần menu giấy hay chất liệu khác? Mầm chỉ có giá hiển thị tham khảo cho menu giấy; loại khác cần tư vấn viên xác nhận."
+    },
+    {
+      "id": "receipt",
+      "name": "Phiếu thu 2 liên",
+      "aliases": [
+        "phieu thu",
+        "phieu chi",
+        "hoa don",
+        "2 lien"
+      ],
+      "variant": "2 liên",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-phieu-thu-2-lien-tai-phuong-cho-lon-q5",
+      "displayPriceVnd": 23000,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": null,
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "conflict_handoff_only",
+      "missingConditions": [
+        "khổ phiếu",
+        "số quyển",
+        "số bộ mỗi quyển",
+        "số màu",
+        "đánh số"
+      ],
+      "sourceEvidence": "Homepage product card; 23.000 ₫.",
+      "conflictReason": "Giá trên thẻ sản phẩm chưa phù hợp quy cách phiếu thu 2 liên; chỉ dùng dòng bảng đã xác minh bên dưới khi khớp điều kiện.",
+      "priceFacts": [
+        {
+          "id": "receipt-a5-10",
+          "lookupQuery": "Xem dòng bảng giá phiếu thu carbonless 2 liên A5 10 cuốn",
+          "quantity": 10,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 39000,
+          "sourceTotalVnd": 390000,
+          "conditions": [
+            "Giấy carbonless 2 liên, khổ A5",
+            "In 1 màu (đen / đỏ / xanh dương), 1 mặt",
+            "Cấn răng cưa; đóng cuốn 100 tờ/cuốn (không suy ra số bộ)",
+            "Số lượng 10 cuốn",
+            "Số nhảy: cần xác nhận riêng"
+          ],
+          "requiredTokens": [
+            [
+              "carbonless"
+            ],
+            [
+              "2 lien"
+            ],
+            [
+              "a5"
+            ],
+            [
+              "10 cuon"
+            ]
+          ],
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-phieu-thu-2-lien-tai-phuong-cho-lon-q5",
+          "specs": {
+            "size": "a5",
+            "material": "carbonless",
+            "layers": 2
+          }
+        },
+        {
+          "id": "receipt-a5-100",
+          "lookupQuery": "Xem dòng bảng giá phiếu thu carbonless 2 liên A5 100 cuốn",
+          "quantity": 100,
+          "quantityUnit": "cuốn",
+          "unit": "cuốn",
+          "priceVnd": 28000,
+          "sourceTotalVnd": 2800000,
+          "conditions": [
+            "Giấy carbonless 2 liên, khổ A5",
+            "In 1 màu (đen / đỏ / xanh dương), 1 mặt",
+            "Cấn răng cưa; đóng cuốn 100 tờ/cuốn (không suy ra số bộ)",
+            "Số lượng 100 cuốn",
+            "Số nhảy: cần xác nhận riêng"
+          ],
+          "requiredTokens": [
+            [
+              "carbonless"
+            ],
+            [
+              "2 lien"
+            ],
+            [
+              "a5"
+            ],
+            [
+              "100 cuon"
+            ]
+          ],
+          "sourceNote": "Ghi chú tại nguồn: bảng giá chưa gồm 8% GTGT. Mầm không tự tính thuế.",
+          "sourceUrl": "https://innhanhtphcm.com/san-pham/in-phieu-thu-2-lien-tai-phuong-cho-lon-q5",
+          "specs": {
+            "size": "a5",
+            "material": "carbonless",
+            "layers": 2
+          }
+        }
+      ],
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Product HTML table independently checked by delegated research"
+    },
+    {
+      "id": "wedding",
+      "name": "Thiệp cưới",
+      "aliases": [
+        "thiep cuoi",
+        "thiep moi"
+      ],
+      "variant": null,
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-thiep-cuoi-gia-re-tai-thanh-an",
+      "displayPriceVnd": 5000,
+      "quantity": null,
+      "unit": null,
+      "specifications": {
+        "material": null,
+        "size": null,
+        "finishing": null
+      },
+      "quotationStatus": "reference_only_requires_confirmation",
+      "missingConditions": [
+        "mẫu thiệp",
+        "giấy",
+        "số lượng",
+        "bao thư",
+        "gia công"
+      ],
+      "sourceEvidence": "Homepage product card; 5.000 ₫.",
+      "verifiedAtUtc": "2026-10-12T03:29:00Z",
+      "sourceContext": "Live homepage product card"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "namecard-20-boxes",
+      "aliases": [
+        "20 hop",
+        "280k",
+        "280000",
+        "300k",
+        "300000"
+      ],
+      "name": "Danh thiếp 20 hộp",
+      "sourceUrl": "https://innhanhtphcm.com/",
+      "reason": "Tên sản phẩm nêu 20 hộp / 280.000 ₫ nhưng thẻ sản phẩm hiển thị 300.000 ₫. Chưa xác nhận giá áp dụng.",
+      "quotationStatus": "conflict_handoff_only",
+      "excludedFromPrices": true,
+      "productId": "namecard-c300"
+    }
+  ],
+  "policy": {
+    "noInferredUnit": true,
+    "noAutomaticTotals": true,
+    "noDiscountInference": true,
+    "noDeadlinePromises": true,
+    "noCustomerStorage": true,
+    "noExternalChatTransmission": true
+  },
+  "verifiedAtUtc": "2026-10-12T03:29:00Z",
+  "reviewBeforeProduction": true,
+  "priceReviewAfterDays": 30
+}
