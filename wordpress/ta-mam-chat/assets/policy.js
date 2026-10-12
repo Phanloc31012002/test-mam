@@ -3,6 +3,8 @@
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const contains = (text, phrase) => (' ' + text + ' ').includes(' ' + normalize(phrase) + ' ');
   const money = value => new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+  // Presentation only: provider ids, row selectors, source URLs and data stay unchanged.
+  const displayText = value => String(value ?? '').replace(/\bhttps?:\/\/(?:www\.)?invinhphat\.com(?:\/[^\s]*)?/giu, 'nguồn tham khảo').replace(/\binvinhphat\.com\b/giu, 'nguồn tham khảo').replace(/\bV[ĩi]nh[\s-]*Ph[áa]t\b/giu, 'Giá tham khảo');
   const safeLink = value => {
     try { const u = new URL(value); return u.protocol === 'https:' && ['innhanhtphcm.com', 'invinhphat.com', 'zalo.me'].includes(u.hostname) && !u.port && !u.username && !u.password ? u.href : null; } catch (_) { return null; }
   };
@@ -43,7 +45,7 @@
     for (const c of data.conflicts || []) if (!nonempty(c.id) || !productIds.has(c.productId) || !nonempty(c.name) || !stringList(c.aliases) || !websiteSource(c.sourceUrl) || c.quotationStatus !== 'conflict_handoff_only' || c.excludedFromPrices !== true) throw new Error('Giá chưa thống nhất thiếu phạm vi sản phẩm');
     return data;
   }
-  const response = (kind, text, extra = {}) => ({kind, text, ...extra});
+  const response = (kind, text, extra = {}) => ({kind, text:displayText(text), ...extra, ...(extra.sources ? {sources:extra.sources.map(source=>({...source,label:displayText(source.label)}))} : {}), ...(extra.suggestions ? {suggestionLabels:extra.suggestions.map(displayText)} : {})});
   const hasAny = (text, phrases) => phrases.some(p => contains(text, p));
   function matchingProducts(text, data) {
     const matches = data.products.filter(p => p.aliases.some(a => contains(text, a)));
@@ -60,7 +62,7 @@
     return matches.filter(p => p.aliases.filter(alias => contains(text, alias)).some(alias => !matches.some(other => other !== p && other.aliases.some(longer => contains(text, longer) && normalize(longer).length > normalize(alias).length && contains(normalize(longer), alias)))));
   }
   function estimateResponse(p, estimate, dated) {
-    return response('estimate', p.name + '\nƯớc tính tham khảo tại invinhphat.com: ' + money(estimate.priceVnd) + '/' + estimate.unit + '.\n• ' + estimate.conditions.join('\n• ') + '\n' + estimate.sourceNote + '\n' + dated, {productId:p.id, estimateId:estimate.id, sources:[{label:'Nguồn ước tính A5 Vĩnh Phát', url:estimate.sourceUrl}], handoff:true});
+    return response('estimate', p.name + '\nGiá tham khảo ước tính: ' + money(estimate.priceVnd) + '/' + estimate.unit + '.\n• ' + estimate.conditions.join('\n• ') + '\n' + estimate.sourceNote + '\n' + dated, {productId:p.id, estimateId:estimate.id, sources:[{label:'Nguồn ước tính A5', url:estimate.sourceUrl}], handoff:true});
   }
   // Reference cards only show for an identified product and simple price intent.
   // Quantity, dimensions, other materials, and unrecognized specifications need confirmation.
@@ -98,7 +100,8 @@
       const f = row.fact;
       const total = contains(text, 'tong cong bo') && f.priceKind !== 'source_total' ? (f.sourceTotalVnd !== null ? '\nTổng ghi sẵn tại nguồn: ' + money(f.sourceTotalVnd) + '.' : '\nNguồn chưa có tổng được xác minh cho dòng này. Mầm không tự tính tổng.') : '';
       const priceLine = f.priceKind === 'source_total' ? 'Tổng giá gói công bố: ' + money(f.priceVnd) + '.' : f.priceKind === 'reference_display' ? 'Giá trị hiển thị tại ô bảng nguồn: ' + money(f.priceVnd) + '.\n' + (f.rawSourceFlags?.paymentBasisRequiresConfirmation ? 'Nguồn chưa xác nhận rõ cơ sở thanh toán; không coi đây là giá mỗi sản phẩm hoặc tự tính tổng.' : 'Đây là giá trị tham khảo từ nguồn; điều kiện đơn thực tế còn cần xác nhận. Mầm không tự tính tổng hoặc quy đổi đơn vị.') : 'Giá tại dòng bảng đã chọn: ' + money(f.priceVnd) + '/' + f.unit + '.';
-      return response(f.priceKind === 'reference_display' ? 'reference' : 'price', row.product.name + '\nNguồn giá: ' + new URL(f.sourceUrl).hostname + '.\n' + priceLine + '\nĐiều kiện áp dụng:\n• ' + f.conditions.join('\n• ') + total + '\n' + f.sourceNote + '\n' + dated + ' Đây là thông tin nguồn công bố, cần xác nhận đơn thực tế với nhà in.', {productId:row.product.id, factId:f.id, priceKind:f.priceKind || 'per_unit', provider:f.provider, sources:[{label:'Xem bảng giá & quy cách gốc', url:f.sourceUrl}, ...(f.secondarySourceUrls || []).map(url => ({label:'Nguồn thứ hai của Vĩnh Phát', url}))], handoff:true});
+      const priceSource=f.provider==='thanh-an'?'Thanh Ấn (innhanhtphcm.com)':'Giá tham khảo';
+      return response(f.priceKind === 'reference_display' ? 'reference' : 'price', row.product.name + '\nNguồn giá: ' + priceSource + '.\n' + priceLine + '\nĐiều kiện áp dụng:\n• ' + f.conditions.join('\n• ') + total + '\n' + f.sourceNote + '\n' + dated + ' Đây là thông tin nguồn công bố, cần xác nhận đơn thực tế với nhà in.', {productId:row.product.id, factId:f.id, priceKind:f.priceKind || 'per_unit', provider:f.provider, sources:[{label:'Xem bảng giá & quy cách gốc', url:f.sourceUrl}, ...(f.secondarySourceUrls || []).map(url => ({label:'Nguồn tham khảo thứ hai', url}))], handoff:true});
     }
     const estimate = data.products.flatMap(p => (p.referenceEstimates || []).map(e => ({product:p, estimate:e}))).find(({estimate:e}) => text === normalize(e.lookupQuery));
     if (estimate) {
@@ -192,7 +195,7 @@
         return clarify(p, p.sessionQuestions?.[field] || 'Bạn chọn ' + field + ' nào theo bảng nguồn?', options.map(String));
       }
       if (field === 'size') return clarify(p, p.id === 'red-envelope' ? 'Bạn cần bao lì xì lớn 16 × 7,4 cm, nắp 2 cm hay kích thước khác?' : 'Bạn cần khổ nào? Bảng đã xác minh cho ' + (p.id === 'receipt' ? 'A5.' : 'A4.'), p.id === 'red-envelope' ? ['Lì xì lớn'] : [p.id === 'receipt' ? 'A5' : 'A4']);
-      if (field === 'pages') return clarify(p, 'Catalogue của bạn có bao nhiêu trang? Thanh Ấn ghi 12–36 trang và chưa làm rõ cách tính bìa; Vĩnh Phát ghi 12–32 trang gồm bìa, bội số của 4.', ['12 trang', '16 trang', '20 trang', '24 trang', '28 trang', '32 trang', '36 trang']);
+      if (field === 'pages') return clarify(p, 'Catalogue của bạn có bao nhiêu trang? Bảng Thanh Ấn ghi 12–36 trang và chưa làm rõ cách tính bìa; bảng tham khảo ghi 12–32 trang gồm bìa, bội số của 4.', ['12 trang', '16 trang', '20 trang', '24 trang', '28 trang', '32 trang', '36 trang']);
       if (field === 'layers') return clarify(p, 'Bạn cần phiếu thu mấy liên? Bảng đã xác minh là giấy carbonless 2 liên.', ['2 liên']);
       if (field === 'material') return clarify(p, p.id === 'catalogue' ? 'Bạn chọn toàn bộ C150 hay bìa C250 cán màng ngoài, ruột C150? Hai biến thể có bảng giá khác nhau; Mầm chưa chọn thay bạn.' : p.id === 'namecard-c300' ? p.selectionQuestion : 'Bạn cần giấy ' + (p.id === 'receipt' ? 'carbonless' : 'Couche 150gsm') + ' hay loại khác?', p.id === 'catalogue' ? ['C150 toàn bộ', 'Bìa C250 ruột C150'] : [p.id === 'receipt' ? 'Carbonless' : p.id === 'namecard-c300' ? 'C300' : 'Couche 150gsm']);
       return null;
@@ -288,7 +291,7 @@
       if (p.id === 'catalogue' && slots.size === 'a5') {
         const e = p.referenceEstimates?.find(e => e.quantity === slots.quantity && Object.entries(e.specs).every(([key,value]) => slots[key] === value));
         if (e && changed && (!slots.printing || slots.printing === 'offset4')) return estimateResponse(p, e, 'Dữ liệu website ngày ' + data.snapshotLabel + '.');
-        return response('handoff', 'Catalogue A5' + (slots.quantity !== undefined ? ', ' + slots.quantity + ' cuốn' : '') + ': nguồn Vĩnh Phát chưa có dòng giá A5 cố định cho lựa chọn này. Chỉ có ước tính tham khảo A5 12 trang gồm bìa, C150 toàn bộ, 1.000 cuốn và cần gửi file xác nhận. Mầm không áp dụng bảng A4 cho A5.', {productId:p.id, sources:[{label:'Nguồn tham khảo A5 Vĩnh Phát', url:p.referenceEstimates?.[0].sourceUrl || p.sourceUrl}], handoff:true});
+        return response('handoff', 'Catalogue A5' + (slots.quantity !== undefined ? ', ' + slots.quantity + ' cuốn' : '') + ': bảng tham khảo chưa có dòng giá A5 cố định cho lựa chọn này. Chỉ có ước tính tham khảo A5 12 trang gồm bìa, C150 toàn bộ, 1.000 cuốn và cần gửi file xác nhận. Mầm không áp dụng bảng A4 cho A5.', {productId:p.id, sources:[{label:'Nguồn tham khảo A5', url:p.referenceEstimates?.[0]?.sourceUrl || p.sourceUrl}], handoff:true});
       }
       if (p.id === 'catalogue' && slots.quantity !== undefined && slots.quantity < 200) return handoff(p, 'Dưới 200 cuốn catalogue: nguồn yêu cầu liên hệ tư vấn viên Thương Vy để báo giá. Mầm không nội suy giá từ các mốc 200, 500 hoặc 1.000 cuốn.');
       // Reject a supplied unsupported core specification immediately; keep the other slots.
@@ -307,5 +310,5 @@
     }
     return Object.freeze({answer:sessionAnswer, reset});
   }
-  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink});
+  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText});
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -4,5 +4,5 @@
   "buildCommand": "node tools/build.mjs",
   "installCommand": "",
   "outputDirectory": "public",
-  "git": { "deploymentEnabled": false }
+  "git": { "deploymentEnabled": true }
 }

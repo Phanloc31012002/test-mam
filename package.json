@@ -1,1 +1,14 @@
-{"name":"thanh-an-mam-chat-prototype","version":"1.0.0","private":true,"type":"module","scripts":{"start":"node tools/serve.mjs","build":"node tools/build.mjs","test":"node --test tests/policy.test.mjs"},"engines":{"node":">=20"}}
+{
+  "name": "thanh-an-mam-chat-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "build": "node tools/build.mjs",
+    "test": "node --test tests/policy.test.mjs tests/price-menu.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

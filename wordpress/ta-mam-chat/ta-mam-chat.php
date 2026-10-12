@@ -18,10 +18,11 @@ function ta_mam_chat_enqueue_assets() {
     $scripts = array(
         'ta-mam-policy' => array('policy.js', array()),
         'ta-mam-mascot' => array('mascot.js', array()),
-        'ta-mam-widget' => array('widget.js', array('ta-mam-policy', 'ta-mam-mascot')),
+        'ta-mam-price-menu' => array('price-menu.js', array('ta-mam-policy')),
+        'ta-mam-widget' => array('widget.js', array('ta-mam-policy', 'ta-mam-mascot', 'ta-mam-price-menu')),
         'ta-mam-bootstrap' => array('bootstrap.js', array('ta-mam-widget')),
     );
-    $required_files = array('policy.js', 'mascot.js', 'widget.js', 'bootstrap.js', 'widget.css', 'data.json');
+    $required_files = array('policy.js', 'mascot.js', 'price-menu.js', 'widget.js', 'bootstrap.js', 'widget.css', 'data.json', 'seedy-spritesheet-v10.webp');
     $bundle_modified = 0;
     foreach ($required_files as $file) {
         if (!is_file($asset_path . $file) || !is_readable($asset_path . $file)) { return; }

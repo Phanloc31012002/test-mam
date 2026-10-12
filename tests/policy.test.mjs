@@ -73,11 +73,11 @@ function selectedRow(r,id){
     assert.ok(r.text.includes(faq.money(f.priceVnd)+'/'+f.unit));
     assert.doesNotMatch(r.text,/Tổng ghi sẵn/);
   }
-  for(const condition of f.conditions)assert.ok(r.text.includes(condition),condition);
+  for(const condition of f.conditions)assert.ok(r.text.includes(faq.displayText(condition)),condition);
   assert.match(r.text,/12\/10\/2026/);
   assert.equal(r.sources[0].url,f.sourceUrl);
   assert.equal(r.handoff,true);
-  assert.ok(r.text.includes(f.sourceNote));
+  assert.ok(r.text.includes(faq.displayText(f.sourceNote)));
 }
 test('C300 has verified 1/5/10 box rates and catalogue has the complete 21-row matrix',()=>{
   assert.deepEqual(product('namecard-c300').priceFacts.map(f=>[f.quantity,f.priceVnd]),[[1,90000],[5,80000],[10,70000]]);
@@ -396,4 +396,32 @@ test('helper reference displays and unit rows stop at expiry just like published
   for(const id of ['vp-digital-briston300','vp-decal-9x5.5-1000','vp-folder-pocket7-500','vp-envelope-fort100-12x22-1000','vp-flyer-a4-c100-1000']){
     const r=faq.answer(fact(id).lookupQuery,data,expiry);assert.equal(r.kind,'stale');noQuote(r);
   }
+});
+
+test('supplemental price branding is hidden while every original row and source remain intact',()=>{
+  const before=JSON.stringify(data),rows=data.products.flatMap(p=>p.priceFacts||[]).filter(f=>f.provider==='vinh-phat');
+  assert.equal(rows.length,149);
+  for(const f of rows){
+    const r=ask(f.lookupQuery);selectedRow(r,f.id);
+    assert.equal(r.provider,'vinh-phat');assert.equal(r.factId,f.id);assert.equal(r.sources[0].url,f.sourceUrl);
+    assert.match(r.text,/Nguồn giá: Giá tham khảo\./);
+    assert.doesNotMatch(r.text,/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu);
+    assert.ok(r.sources.every(source=>!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(source.label)));
+  }
+  assert.equal(JSON.stringify(data),before);
+});
+test('generated row labels hide branding while raw lookup actions and source links are preserved',()=>{
+  const r=ask('catalogue'),queries=product('catalogue').priceFacts.map(f=>f.lookupQuery);
+  assert.deepEqual(r.suggestions,queries);assert.deepEqual(r.suggestionLabels,queries.map(faq.displayText));
+  assert.ok(r.suggestionLabels.every(label=>!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(label)));
+  const selected=ask(r.suggestions.find(query=>query===fact('catalogue-a4-all-c150-16-500').lookupQuery));
+  selectedRow(selected,'catalogue-a4-all-c150-16-500');assert.equal(selected.provider,'vinh-phat');
+  assert.equal(selected.sources[0].url,fact('catalogue-a4-all-c150-16-500').sourceUrl);
+  assert.equal(faq.displayText('<img src=x onerror=alert(1)>'),'<img src=x onerror=alert(1)>');
+});
+test('anonymous supplemental estimates and session prompts retain truthful conditions without supplier branding',()=>{
+  const estimate=a5Estimate(),r=ask(estimate.lookupQuery);
+  assert.equal(r.kind,'estimate');assert.equal(r.sources[0].url,estimate.sourceUrl);assert.match(r.text,/Giá tham khảo ước tính: 5.800 ₫\/cuốn/);
+  for(const text of [r.text,...r.sources.map(source=>source.label),newSession().answer('catalogue A5 200 cuốn').text,newSession().answer('catalogue A4 C250 500 cuốn').text])assert.doesNotMatch(text,/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu);
+  const ta=ask(fact('catalogue-a4-16-500').lookupQuery);assert.match(ta.text,/Nguồn giá: Thanh Ấn \(innhanhtphcm.com\)/);assert.equal(ta.provider,'thanh-an');
 });
