@@ -1,6 +1,6 @@
 # Mầm — chatbot Thanh Ấn, bản thử để rà soát
 
-Bản thử cục bộ: bé chậu cây pixel màu kem, hai lá non, má hồng, mắt nhìn theo con trỏ ở gần, chớp mắt và chuyển động nhẹ. Giao diện và trả lời bằng tiếng Việt. Đây là trợ lý FAQ/giá website theo dữ liệu đã xác minh, không phải AI tổng quát. Không có LLM, API key, analytics hoặc lưu chat bền vững.
+Bản thử cục bộ: Mầm là bé cây pixel màu kem, hai lá non, má hồng, có thân, tay và laptop. Đầu và thân nối liền; mắt chấm nhìn rất nhẹ, đầu chỉ nghiêng tối đa 2° ở cổ và không dịch lên xuống. Mascot có ba trạng thái `idle`, `greeting`, `working`; mắt nhìn theo con trỏ ở gần, có chớp mắt và chuyển động nhẹ. Nhãn “Đang tra cứu” chỉ biểu thị tra bảng trong trình duyệt, không tạo độ trễ gọi LLM. Giao diện và trả lời bằng tiếng Việt. Đây là trợ lý FAQ/giá website theo dữ liệu đã xác minh, không phải AI tổng quát. Không có LLM, API key, analytics hoặc lưu chat bền vững.
 
 Hướng nâng cấp AI tùy chọn nằm trong [`docs/llm-adapter.md`](docs/llm-adapter.md) và [`widget/intent-schema.json`](widget/intent-schema.json): model chạy phía server chỉ trích ý định/thông số, còn engine cố định quyết định mọi giá theo nguồn. Đây là thiết kế chưa kết nối; bản local không gọi model hoặc gửi nội dung khách hàng ra ngoài. Cần quyết định backend, model/chi phí và luồng dữ liệu khách hàng trước khi triển khai adapter.
 
@@ -53,32 +53,35 @@ Hoặc tự gọi `ThanhAnChat.mount({dataUrl:'/widget/data.json',stylesheetUrl:
 
 ## Dữ liệu và chính sách giá
 
-`widget/data.json` là snapshot nghiên cứu ngày 12/10/2026; `verifiedAtUtc` ghi 03:29 UTC. `sourceUrl`, `sourceContext` và `sourceEvidence` ghi nguồn cho từng sản phẩm; `priceFacts` giữ các dòng bảng đã kiểm tra và điều kiện đầy đủ. Nguồn là trang công khai chính thức `innhanhtphcm.com`, được ghi lại khi nghiên cứu, không được đọc lại trong mỗi lượt chat. FAQ dùng địa chỉ 174–174A Thái Phiên, Phường Bình Thới; giờ T2–T6 08:00–12:00 / 13:00–17:00, T7 08:00–16:00, CN nghỉ. Ba liên hệ Thường Vy, Trà My, Tuấn Vĩ giữ số điện thoại/Zalo trong snapshot đã xác minh.
+`widget/data.json` lưu snapshot nghiên cứu ngày 12/10/2026; xem `verifiedAtUtc` để biết mốc kiểm tra của từng nguồn/dòng. `sourceUrl`, `sourceContext`, `sourceEvidence` và `priceFacts` giữ nguồn, quy cách và loại giá đã công bố. FAQ và liên hệ lấy từ website Thanh Ấn [innhanhtphcm.com](https://innhanhtphcm.com/); bảng giá có thêm quy cách được kiểm tra từ [invinhphat.com](https://invinhphat.com/). Nguồn được ghi lại khi nghiên cứu, không được đọc lại trong mỗi lượt chat. FAQ dùng địa chỉ 174–174A Thái Phiên, Phường Bình Thới; giờ T2–T6 08:00–12:00 / 13:00–17:00, T7 08:00–16:00, CN nghỉ. Liên hệ và số điện thoại/Zalo nằm trong snapshot đã xác minh.
 
-- Có 28 dòng đã xác minh: 21 dòng catalogue A4 theo 200/500/1.000 cuốn và 12/16/20/24/28/32/36 trang; 3 mức danh thiếp C300 theo 1/5/10 hộp; 2 dòng lì xì lớn và 2 dòng phiếu thu carbonless. Mầm nhớ số lượng, khổ, trang và vật liệu trong phiên; khi các thông số khớp bảng, trả giá cụ thể kèm toàn bộ điều kiện, nguồn và ngày. Các quy cách khác cần làm rõ/tư vấn viên.
-- Những thẻ có giá thiếu quy cách chỉ là “Giá hiển thị trên website”, không tự suy ra đơn giá hoặc tổng. C300 ghi đúng các mức /hộp và nêu số tấm/kích thước chưa xác minh.
-- Bao thư A5/1.350 và phiếu thu2liên/23.000 bị quarantine vì khác quy cách của bảng. Danh thiếp20hộp280k/300k bị loại khỏi báo giá.
-- Không nội suy số lượng, giảm giá, tổng, phí giao, thời hạn, thuế hoặc ưu đãi. Chỉ hiển thị tổng đã ghi sẵn tại nguồn khi truy vấn dòng khớp hoàn toàn và yêu cầu thêm “tổng công bố”.
+- **Ưu tiên theo đúng dòng và nguồn:** nếu Thanh Ấn có đúng sản phẩm, quy cách và số lượng, dùng dòng Thanh Ấn khi giá khác nhau. Vĩnh Phát bổ sung sản phẩm hoặc biến thể Thanh Ấn chưa có. Không chọn giá rẻ nhất, không gộp bảng và không coi hai dòng tương đương khi thiếu thông tin. Mỗi giá luôn giữ nguồn, đơn vị, điều kiện và ghi chú riêng; trường hợp chưa xác định được biến thể cần hỏi lại.
+- **Catalogue A4 phải rõ giấy bìa/ruột:** bảng Thanh Ấn là bìa C250gsm, ruột C150gsm, 12/16/20/24/28/32/36 trang ở các mốc 200/500/1.000 cuốn. Thanh Ấn mô tả in KTS; Vĩnh Phát có bảng offset riêng cho bìa C250/ruột C150, và bảng dùng C150gsm cho cả bìa và ruột, 12/16/20/24/28/32 trang ở các mốc 200/500/1.000 cuốn. “A4, 16 trang, 500 cuốn” chưa phân biệt được hai quy cách; Mầm cần hỏi vật liệu trước khi trả đúng dòng. Không tự đổi bìa C250 thành C150 để áp giá khác.
+- **Catalogue A5 chỉ có giá tham khảo ước tính:** trường hợp nguồn nêu 1.000 cuốn, 12 trang, khoảng 5.800 ₫/cuốn không phải ma trận giá cố định cho mọi đơn A5. Không mặc định 200 cuốn, không lấy mốc 200 của bảng A4 làm điều kiện chung cho A5 và không suy ra giá A5 cho số lượng/trang khác. Cần tư vấn viên xác nhận đơn thực tế.
+- **Danh thiếp giữ đúng loại giá:** dòng Thanh Ấn C300, 5 hộp ghi 80.000 ₫/hộp với các điều kiện và phần chưa rõ của nguồn Thanh Ấn. Dòng Vĩnh Phát 100 tấm/hộp, 90 × 54 mm, in offset ghi tổng công bố 2 hộp = 90.000 ₫, 5 hộp = 120.000 ₫, 10 hộp = 160.000 ₫. Không tự thay giá Thanh Ấn bằng tổng Vĩnh Phát, không quy đổi tổng thành giá mỗi hộp/tấm và không coi các dòng tương đương nếu quy cách chưa được xác nhận.
+- **Ghi chú thuế đi theo nguồn:** nhiều bảng Vĩnh Phát ghi chưa bao gồm VAT 10%; các bảng khác không chốt tỷ lệ hoặc chưa rõ VAT, nên giữ ghi chú từng hàng. Các dòng Thanh Ấn giữ ghi chú của nguồn Thanh Ấn. Mầm không tự cộng thuế hoặc xác nhận số tiền thanh toán cuối cùng.
+- Giữ các dòng Thanh Ấn đã kiểm tra cho lì xì lớn và phiếu thu carbonless. Các thẻ có giá thiếu quy cách chỉ là “Giá hiển thị trên website”; không suy ra đơn giá hoặc tổng. Bao thư A5/1.350 và phiếu thu 2 liên/23.000 chưa khớp quy cách bảng nên không dùng để báo giá tự động; danh thiếp 20 hộp có xung đột 280.000/300.000 ₫ cũng bị loại khỏi báo giá.
+- Mầm nhớ sản phẩm, số lượng, khổ, trang và vật liệu trong phiên. Chỉ trả giá dòng bảng khi khớp đầy đủ các điều kiện cần thiết. Không nội suy số lượng, giảm giá, tổng, phí giao, thời hạn, thuế hoặc ưu đãi; tổng chỉ được hiển thị nếu chính nguồn đã ghi cho đúng dòng và phải được gắn nhãn tổng công bố.
 - Bản hiện tại dừng đưa giá khi vượt 30 ngày tính từ 00:00 UTC của `snapshotDate`, theo đồng hồ trình duyệt, rồi chuyển nguồn/tư vấn viên. Thông tin FAQ vẫn được trả lời từ snapshot; ngày dữ liệu luôn có ở đầu panel, một số câu trả lời kèm ngày/nguồn. Đây là giới hạn bảo thủ, không đảm bảo thông tin đúng trong 30 ngày; cần refresh ngay trước production.
-- Nội dung nhập được hiển thị bằng `textContent`; policy dùng quy tắc cố định, không diễn giải prompt để đổi dữ liệu. Widget không dùng localStorage/sessionStorage, không lưu chat bền vững, không có analytics hoặc LLM. Bản phục vụ qua HTTP(S) có yêu cầu đọc JSON/CSS và script; nội dung chat chỉ được xử lý trong bộ nhớ trình duyệt, không gửi kèm các yêu cầu này. Link nguồn, Zalo/Gọi chỉ mở sau khi người dùng bấm; widget không tự gọi API liên hệ hoặc gửi cuộc trò chuyện. Chính sách của website/hạ tầng và ứng dụng ngoài khi mở liên kết cần được quản trị viên kiểm tra riêng trên staging.
+- Nội dung nhập được hiển thị bằng `textContent`; policy dùng quy tắc cố định, không diễn giải prompt để đổi dữ liệu. Widget không dùng localStorage/sessionStorage, không lưu chat bền vững, không có analytics hoặc LLM. Bản phục vụ qua HTTP(S) đọc các tệp JSON/CSS/script cùng origin; nội dung chat chỉ được xử lý trong bộ nhớ trình duyệt, không gửi kèm các yêu cầu này. Link nguồn, Zalo/Gọi chỉ mở sau khi người dùng bấm; widget không tự gọi API liên hệ hoặc gửi cuộc trò chuyện. Chính sách của website/hạ tầng và ứng dụng ngoài khi mở liên kết cần được quản trị viên kiểm tra riêng trên staging.
 
 Để cập nhật, kiểm tra trang gốc, sửa snapshot/điều kiện và chạy tests/build lại. Không chỉ đổi ngày để kéo dài thời hạn khi chưa kiểm tra nội dung. `mount()` có thể đọc JSON từ URL HTTP(S) cùng origin và kiểm tra cấu trúc trước khi hiển thị. Một endpoint tự cập nhật trong tương lai cần thiết kế và kiểm tra riêng. Chưa có đồng bộ giá live hoặc endpoint WordPress như vậy.
 
 ## Kết quả và phạm vi kiểm thử
 
-Xem `CONTINUATION.md` và `evidence/` để biết kiểm tra cục bộ và ảnh chụp. Báo cáo kiểm tra cùng kết quả JSON trong `evidence/` là bằng chứng cho bản prototype trong trình duyệt local, không xác nhận tương thích hay triển khai trên website thật. Tham chiếu Library không tải được qua helper Windows; thiết kế pixel là nguyên bản theo đặc tả đã được cho phép. Không thay đổi WordPress, DNS, hosting hoặc bảo mật website.
+Policy 250/250 và browser 60/60 đạt ở bốn viewport 1534×847, 390×844, 320×568 và 844×390. Đã kiểm tra mắt/đầu, nối đầu–thân ở các góc cực trị, ba tư thế, reduced motion, focus và hủy lookup khi clear/destroy. Có 177 hàng có nguồn trong 21 sản phẩm/biến thể, gồm 18 hàng cần tư vấn xác nhận, và ước tính A5 riêng. Standalone đã build và kiểm tra cấu trúc; chưa chạy browser file:// vì policy. Bằng chứng cục bộ trong evidence/ không được đưa lên GitHub. Mobile là viewport Chrome mô phỏng; WordPress chưa được chạy trên staging. Thiết kế pixel nguyên bản theo đặc tả được phép.
 
 
 ## Hội thoại nhiều lượt, không dùng API
 
 Bản hiện tại nhận diện ý định và thông số bằng logic local, có aliases/typo giới hạn; không cần model, API key hoặc phí gọi API. Đây là trợ lý tra bảng có nhớ ngữ cảnh trong phiên, không phải mô hình sinh văn bản tổng quát. `ThanhAnFAQ.createSession(data)` trả `{answer(text), reset()}`; mỗi widget có một phiên riêng.
 
-Ví dụ đã kiểm tra trong Chrome và unit tests:
+Ví dụ để rà soát hành vi của bản cập nhật:
 
-- `giá card` → `C300` → `5 hộp` → **80.000 ₫/hộp**; số card/hộp, kích thước, mặt in và VAT chưa rõ được ghi chú, không quy đổi sang giá mỗi card.
-- `cattalouge a4 giá 16 trang` → chỉ hỏi số cuốn → `500` → **15.000 ₫/cuốn** theo quy cách catalogue A4 đã công bố.
-- Tiếp `1000 cuốn` → **9.000 ₫/cuốn**, giữ A4 và 16 trang. Chuyển sang card reset thông số catalogue.
-- A5, 18 trang hoặc 300 cuốn không có trong matrix; không nội suy. Gia công khác như ép kim lì xì không dùng giá dòng thường.
+- `giá card` → làm rõ vật liệu/quy cách và bảng áp dụng; dòng C300 5 hộp Thanh Ấn vẫn là **80.000 ₫/hộp**, còn dòng Vĩnh Phát 5 hộp × 100 tấm, 90 × 54 mm, in offset là **tổng công bố 120.000 ₫**. Phải giữ điều kiện và đơn vị của từng nguồn.
+- `catalogue A4 16 trang 500 cuốn` → hỏi bìa C250/ruột C150 hay bìa và ruột đều C150 → tra đúng bảng. Không chọn một quy cách từ giá thấp hơn.
+- Đổi số lượng trong cùng phiên giữ những thông số đã rõ; đổi sản phẩm xóa thông số không còn áp dụng. Nếu một điều kiện mới làm dòng trước không còn khớp, Mầm hỏi lại hoặc chuyển tư vấn viên.
+- `catalogue A5` → trình bày giới hạn giá ước tính đã công bố và xin quy cách/số lượng; không mặc định 200 cuốn. 18 trang hoặc 300 cuốn không có dòng cố định thì không nội suy. Gia công khác như ép kim lì xì không dùng giá dòng thường.
 
 Bấm “Làm mới” xóa cả tin nhắn và thông số hội thoại. Reload hoặc đóng trang không giữ phiên. Tài liệu adapter LLM chỉ là đề xuất chưa nối, không cần dùng cho bản hoàn chỉnh này.
 
