@@ -14,6 +14,58 @@
   const positiveInteger = value => Number.isSafeInteger(value) && value > 0;
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value + 'T00:00:00Z')) && new Date(value + 'T00:00:00Z').toISOString().slice(0, 10) === value;
   const validVerifiedTime = (value, date) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().replace('.000', '') === value && value.slice(0, 10) === date;
+  // Business-owner instruction, not a claim that the source websites publish ranges.
+  const OWNER_TIER_POLICY = Object.freeze({id:'owner-floor-tier-2026-10-13',approvedOn:'2026-10-13',enabled:true,
+    rule:'highest-published-quantity-not-above-request',aboveLargest:'keep-largest-unit-price',belowSmallest:'handoff',
+    provenance:Object.freeze({kind:'business-owner-policy',approvedOn:'2026-10-13'}),cardBoxCap:10});
+  const canonicalUnit = value => {const unit=normalize(value);return unit==='quyen'?'cuon':unit;};
+  const perUnit = f => (!f.priceKind || f.priceKind==='per_unit') && canonicalUnit(f.unit)===canonicalUnit(f.quantityUnit) && !f.rawSourceFlags?.nominalQuantityBasisOnly && !f.rawSourceFlags?.paymentBasisRequiresConfirmation && !f.rawSourceFlags?.minimumOrderUnknown && !f.rawSourceFlags?.referenceOnly;
+  const tierGroupKey = f => JSON.stringify({provider:f.provider,sourceUrl:f.sourceUrl,unit:f.priceKind==='source_total'?'published-package':canonicalUnit(f.unit),quantityUnit:canonicalUnit(f.quantityUnit),priceKind:f.priceKind||'per_unit',
+    specs:Object.fromEntries(Object.entries(f.specs||{}).sort(([a],[b])=>a.localeCompare(b)))});
+  function selectOwnerTier(product, facts, quantity) {
+    if(!positiveInteger(quantity))return {error:'Bạn cần bao nhiêu '+(facts[0]?.quantityUnit||'sản phẩm')+'?'};
+    const groups=new Map();
+    for(const f of facts){const key=tierGroupKey(f);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(f);}
+    const ordered=[...groups.values()].sort((a,b)=>(a[0].provider==='thanh-an'?0:1)-(b[0].provider==='thanh-an'?0:1));
+    if(!ordered.length)return {error:'Quy cách này chưa có mức giá phù hợp. Bạn nhắn Zalo để được báo giá nhé.'};
+    const group=ordered[0];
+    if(group.some(f=>!perUnit(f))) {
+      const exact=group.filter(f=>f.quantity===quantity);
+      if(new Set(exact.map(f=>f.priceVnd)).size>1)return {error:'Mức giá gói hoặc tham khảo này chưa nhất quán. Bạn nhắn Zalo để được xác nhận nhé.'};
+      return exact.length?{fact:exact[0]}:{error:'Số lượng này chưa có giá gói hoặc giá tham khảo đã xác minh. Bạn nhắn Zalo để được tư vấn nhé.'};
+    }
+    const sorted=group.slice().sort((a,b)=>a.quantity-b.quantity);
+    if(sorted.some((f,i)=>i>0&&f.priceVnd>sorted[i-1].priceVnd)||sorted.some((f,i)=>i>0&&f.quantity===sorted[i-1].quantity&&f.priceVnd!==sorted[i-1].priceVnd))return {error:'Các mức giá của quy cách này chưa nhất quán. Bạn nhắn Zalo để được xác nhận nhé.'};
+    let usable=sorted;
+    if(/namecard/.test(product.id)&&canonicalUnit(sorted[0].unit)==='hop'&&quantity>OWNER_TIER_POLICY.cardBoxCap) {
+      const ten=sorted.find(f=>f.quantity===OWNER_TIER_POLICY.cardBoxCap);
+      if(!ten)return {error:'Bảng danh thiếp này chưa có mức 10 hộp để áp dụng cho số lượng lớn hơn. Bạn nhắn Zalo để được báo giá nhé.'};
+      usable=sorted.filter(f=>f.quantity<=OWNER_TIER_POLICY.cardBoxCap);
+    }
+    const fact=usable.filter(f=>f.quantity<=quantity).at(-1);
+    return fact?{fact}:{error:'Số lượng này thấp hơn mức nhỏ nhất trong bảng. Bạn nhắn Zalo để được báo giá nhé.'};
+  }
+  function quoteDetails(product, fact, quantity) {
+    const packageTotal=fact.priceKind==='source_total';
+    if(!packageTotal&&!perUnit(fact)||packageTotal&&quantity!==fact.quantity)return {};
+    if(selectOwnerTier(product,(product.priceFacts||[]).filter(f=>tierGroupKey(f)===tierGroupKey(fact)),quantity).error)return {};
+    const total=packageTotal?fact.priceVnd:fact.priceVnd*quantity;
+    if(!Number.isSafeInteger(total))return {};
+    const conditions=fact.conditions.slice();
+    const essential=conditions.filter(c=>!/^\s*(?:số lượng|mốc số lượng|gói \d+)/i.test(c));
+    const taxNotes=fact.sourceNote.split(/(?<=\.)\s+/).filter(c=>/VAT|GTGT/i.test(c));
+    for(const note of taxNotes)if(!essential.some(c=>c.includes(note)))essential.push(note);
+    if(!essential.some(c=>/VAT|GTGT|thuế/i.test(c)))essential.push('VAT và đơn thực tế cần tư vấn viên xác nhận.');
+    const quote={totalVnd:total,unitPriceVnd:packageTotal?null:fact.priceVnd,quantity,quantityUnit:fact.quantityUnit,
+      totalKind:packageTotal?'published-package':'computed-owner-tier',sourceQuantity:fact.quantity,
+      tierPolicyId:packageTotal?null:OWNER_TIER_POLICY.id,provenance:packageTotal?{kind:'published-source-total'}:OWNER_TIER_POLICY.provenance,
+      essentialConditions:essential.map(displayText),conditions,provider:fact.provider,sourceUrl:fact.sourceUrl};
+    const heading=displayText(product.name)+' · '+quantity.toLocaleString('vi-VN')+' '+fact.quantityUnit;
+    const price='Tổng tham khảo: '+money(total)+(packageTotal?' (tổng gói công bố).':' · '+money(fact.priceVnd)+'/'+fact.unit+'.');
+    const sourceLabel=fact.provider==='thanh-an'?'Nguồn giá: Thanh Ấn.':'Nguồn giá: Giá tham khảo.';
+    const rule=packageTotal?'': '\nÁp dụng mức nguồn '+fact.quantity.toLocaleString('vi-VN')+' '+fact.quantityUnit+' theo quy tắc chủ cơ sở ngày '+OWNER_TIER_POLICY.approvedOn+'; không cộng giảm giá hoặc thuế.';
+    return {quote,compactText:displayText(heading+'\n'+price+'\n'+sourceLabel+'\n'+essential.join('; ')+rule)};
+  }
   function validateData(data) {
     if (!data || data.schemaVersion !== 1 || !validDate(data.snapshotDate) || !validVerifiedTime(data.verifiedAtUtc, data.snapshotDate) || !nonempty(data.snapshotLabel) || !positiveInteger(data.priceReviewAfterDays) || data.priceReviewAfterDays > 30 || !Array.isArray(data.products) || !data.products.length || !Array.isArray(data.contacts) || !data.contacts.length || !data.faq) throw new Error('Dữ liệu FAQ hoặc ngày kiểm tra không hợp lệ');
     const productIds = new Set(), factIds = new Set(), queries = new Set(), phones = new Set();
@@ -45,7 +97,7 @@
     for (const c of data.conflicts || []) if (!nonempty(c.id) || !productIds.has(c.productId) || !nonempty(c.name) || !stringList(c.aliases) || !websiteSource(c.sourceUrl) || c.quotationStatus !== 'conflict_handoff_only' || c.excludedFromPrices !== true) throw new Error('Giá chưa thống nhất thiếu phạm vi sản phẩm');
     return data;
   }
-  const response = (kind, text, extra = {}) => ({kind, text:displayText(text), ...extra, ...(extra.sources ? {sources:extra.sources.map(source=>({...source,label:displayText(source.label)}))} : {}), ...(extra.suggestions ? {suggestionLabels:extra.suggestions.map(displayText)} : {})});
+  const response = (kind, text, extra = {}) => ({kind, text:displayText(text), ...(kind==='handoff'?{compactText:displayText(text.split(/(?<=[.!])\s+/)[0]+' Bạn nhắn Zalo để được tư vấn nhé.')}:{}), ...extra, ...(extra.sources ? {sources:extra.sources.map(source=>({...source,label:displayText(source.label)}))} : {}), ...(extra.suggestions ? {suggestionLabels:extra.suggestions.map(displayText)} : {})});
   const hasAny = (text, phrases) => phrases.some(p => contains(text, p));
   function matchingProducts(text, data) {
     const matches = data.products.filter(p => p.aliases.some(a => contains(text, a)));
@@ -101,7 +153,7 @@
       const total = contains(text, 'tong cong bo') && f.priceKind !== 'source_total' ? (f.sourceTotalVnd !== null ? '\nTổng ghi sẵn tại nguồn: ' + money(f.sourceTotalVnd) + '.' : '\nNguồn chưa có tổng được xác minh cho dòng này. Mầm không tự tính tổng.') : '';
       const priceLine = f.priceKind === 'source_total' ? 'Tổng giá gói công bố: ' + money(f.priceVnd) + '.' : f.priceKind === 'reference_display' ? 'Giá trị hiển thị tại ô bảng nguồn: ' + money(f.priceVnd) + '.\n' + (f.rawSourceFlags?.paymentBasisRequiresConfirmation ? 'Nguồn chưa xác nhận rõ cơ sở thanh toán; không coi đây là giá mỗi sản phẩm hoặc tự tính tổng.' : 'Đây là giá trị tham khảo từ nguồn; điều kiện đơn thực tế còn cần xác nhận. Mầm không tự tính tổng hoặc quy đổi đơn vị.') : 'Giá tại dòng bảng đã chọn: ' + money(f.priceVnd) + '/' + f.unit + '.';
       const priceSource=f.provider==='thanh-an'?'Thanh Ấn (innhanhtphcm.com)':'Giá tham khảo';
-      return response(f.priceKind === 'reference_display' ? 'reference' : 'price', row.product.name + '\nNguồn giá: ' + priceSource + '.\n' + priceLine + '\nĐiều kiện áp dụng:\n• ' + f.conditions.join('\n• ') + total + '\n' + f.sourceNote + '\n' + dated + ' Đây là thông tin nguồn công bố, cần xác nhận đơn thực tế với nhà in.', {productId:row.product.id, factId:f.id, priceKind:f.priceKind || 'per_unit', provider:f.provider, sources:[{label:'Xem bảng giá & quy cách gốc', url:f.sourceUrl}, ...(f.secondarySourceUrls || []).map(url => ({label:'Nguồn tham khảo thứ hai', url}))], handoff:true});
+      return response(f.priceKind === 'reference_display' ? 'reference' : 'price', row.product.name + '\nNguồn giá: ' + priceSource + '.\n' + priceLine + '\nĐiều kiện áp dụng:\n• ' + f.conditions.join('\n• ') + total + '\n' + f.sourceNote + '\n' + dated + ' Đây là thông tin nguồn công bố, cần xác nhận đơn thực tế với nhà in.', {productId:row.product.id, factId:f.id, priceKind:f.priceKind || 'per_unit', provider:f.provider, sources:[{label:'Xem bảng giá & quy cách gốc', url:f.sourceUrl}, ...(f.secondarySourceUrls || []).map(url => ({label:'Nguồn tham khảo thứ hai', url}))], handoff:true,...quoteDetails(row.product,f,f.quantity)});
     }
     const estimate = data.products.flatMap(p => (p.referenceEstimates || []).map(e => ({product:p, estimate:e}))).find(({estimate:e}) => text === normalize(e.lookupQuery));
     if (estimate) {
@@ -140,7 +192,7 @@
     let state = null;
     const time = () => typeof clock === 'function' ? clock() : clock;
     const required = {
-      'namecard-c300':['material', 'quantity'],
+      'namecard-c300':['quantity', 'material'],
       catalogue:['quantity', 'size', 'pages', 'material'],
       'namecard-vp':['quantity'],
       'red-envelope':['quantity', 'size', 'material'],
@@ -149,13 +201,13 @@
     const quantityUnit = {'namecard-c300':'hop', 'namecard-vp':'hop', catalogue:'cuon', 'red-envelope':'cai', receipt:'cuon'};
     const quantityLabels = {'namecard-c300':'hộp', 'namecard-vp':'hộp', catalogue:'cuốn', 'red-envelope':'cái', receipt:'cuốn'};
     for (const p of data.products) if (p.sessionFields) {
-      required[p.id] = p.sessionFields;
+      required[p.id] = ['quantity', ...p.sessionFields.filter(key=>key!=='quantity')];
       quantityUnit[p.id] = p.quantityKey || normalize(p.priceFacts?.[0]?.quantityUnit);
       quantityLabels[p.id] = p.priceFacts?.[0]?.quantityUnit || 'sản phẩm';
     }
     const reset = () => { state = null; };
-    const clarify = (p, text, suggestions = []) => response('clarify', text, {productId:p.id, sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], suggestions});
-    const handoff = (p, text) => response('handoff', text, {productId:p.id, sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], handoff:true});
+    const clarify = (p, text, suggestions = []) => response('clarify', text, {productId:p.id,compactText:displayText((text.match(/^[^?]*\?/)||[text])[0]),pendingField:state?.pending, sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], suggestions});
+    const handoff = (p, text) => response('handoff', text, {productId:p.id,compactText:'Quy cách hoặc số lượng này cần báo giá riêng. Bạn nhắn Zalo để được tư vấn nhé.', sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], handoff:true});
     function unsupported(p, text, raw) {
       if (p.disallowedTokens?.some(t => contains(text, t))) return true;
       if (p.uncertainFinishingTokens?.some(t => contains(text, t))) return true;
@@ -189,7 +241,7 @@
       const slots = state.slots;
       const field = required[p.id].find(key => slots[key] === undefined);
       state.pending = field;
-      if (field === 'quantity') return clarify(p, 'Bạn cần in bao nhiêu ' + quantityLabels[p.id] + '? Bảng đã xác minh có các mốc ' + [...new Set(p.priceFacts.map(f => f.quantity))].join(', ') + ' ' + quantityLabels[p.id] + '.', [...new Set(p.priceFacts.map(f => f.quantity + ' ' + f.quantityUnit))]);
+      if (field === 'quantity') return clarify(p, 'Bạn cần in bao nhiêu ' + quantityLabels[p.id] + '?', [...new Set(p.priceFacts.filter(f=>!f.rawSourceFlags?.nominalQuantityBasisOnly).map(f => f.quantity + ' ' + f.quantityUnit))]);
       if (p.sessionFields && field) {
         const options = [...new Set(p.priceFacts.map(f => f.specs?.[field]).filter(value => value !== undefined))];
         return clarify(p, p.sessionQuestions?.[field] || 'Bạn chọn ' + field + ' nào theo bảng nguồn?', options.map(String));
@@ -205,7 +257,10 @@
       // Compact Vietnamese replies and thousands separators remain deterministic.
       const text = normalize(raw.replace(/×/g, 'x').replace(/(\d)[.,](?=\d{3}(?:\D|$))/g, '$1').replace(/([a-zA-ZÀ-ỹ]{2,})(\d)/g, '$1 $2')).replace(/\b(\d{2,3})\s*gsm\b/g, '$1');
       const base = answer(raw, data, time());
-      if (['empty', 'limit', 'policy', 'contacts', 'faq', 'stale', 'conflict'].includes(base.kind)) return base;
+      const wantsTotal=hasAny(text,['tong tien','thanh tien','tinh tong','nhan gia','tinh tien','bao nhieu tien cho','tong cong bo']);
+      const commercialRequest=hasAny(text,['vat','thue','gtgt','giam gia','chiet khau','gia si','re hon','bot gia','mien phi','free','uu dai','khuyen mai','voucher','coupon','giao hang','ship','van chuyen','lay ngay','hom nay','ngay mai','bao lau','kip','deadline','2 gio','30 phut']);
+      const ownerCardQuantity=base.kind==='conflict'&&matchingProducts(normalize(raw),data).some(p=>p.id==='namecard-c300')&&/\b(?:1[1-9]|[2-9]\d|\d{3,})\s*hop\b/.test(text)&&!/(?:280|300)(?:k|\s*(?:nghin|ngan|vnd|dong))|[₫đ]\s*$/.test(text);
+      if (['empty', 'limit', 'policy', 'contacts', 'faq', 'stale'].includes(base.kind)||base.kind==='conflict'&&!ownerCardQuantity) return base;
       if (base.factId) {
         const p = data.products.find(p => p.id === base.productId);
         const f = p.priceFacts.find(f => f.id === base.factId);
@@ -218,21 +273,27 @@
       if (products.length === 1 && (!state || state.productId !== products[0].id)) state = {productId:products[0].id, slots:{}};
       if (!state) return base;
       const p = data.products.find(p => p.id === state.productId);
-      if (!required[p.id] || !p.priceFacts?.length) return products.length ? base : answer(p.name + ' ' + raw, data, time());
+      if (!required[p.id] || !p.priceFacts?.length) {
+        const units={'decal-paper':'tem','decal-plastic':'tem',flyer:'tờ','kraft-bag':'túi','paper-box':'hộp','envelope-a5':'cái','menu-paper':'cuốn',wedding:'thiệp'};
+        const q=text.match(/\b(\d+)\s*(?:hop|cuon|quyen|cai|to|tam|tem|tag|bo|tui|thiep)\b/)||(/^\d+$/.test(text)&&state.pending==='quantity'?[null,text]:null);
+        if(q)state.slots.quantity=Number(q[1]);
+        if(state.slots.quantity===undefined){state.pending='quantity';return clarify(p,'Bạn cần in bao nhiêu '+(units[p.id]||'sản phẩm')+'?');}
+        return handoff(p,'Snapshot chưa có đủ giá và quy cách cho đơn này. Bạn nhắn Zalo để được báo giá nhé.');
+      }
       const probe = answer(p.name, data, time());
       if (probe.kind === 'stale') return probe;
       if (unsupported(p, text, raw)) {
         state.blocked = true; state.factId = null;
         return handoff(p, 'Quy cách hoặc gia công bạn yêu cầu khác dòng bảng đã xác minh. Mầm không áp dụng giá tiêu chuẩn cho biến thể này. Bạn gửi tư vấn viên yêu cầu cụ thể để nhận báo giá.');
       }
-      if (base.kind === 'handoff') {
+      if (base.kind === 'handoff'&&(!wantsTotal||commercialRequest)) {
         if (text === 'tong cong bo' && state.factId && !state.blocked) {
           const f = p.priceFacts.find(f => f.id === state.factId);
           return answer(f.lookupQuery + ' tổng công bố', data, time());
         }
         return base;
       }
-      if (/[+−–—=÷*]|(?:^|\s)-\s*\d|\d\s*\/\s*\d/.test(raw) || (raw.includes('×') && !p.sessionFields && p.id !== 'namecard-vp' && !/16\s*×\s*7[.,]4/.test(raw))) { state.factId = null; return clarify(p, 'Mầm chưa xác nhận số lượng có dấu hoặc phép tính trong tin này. Bạn nhập một số lượng nguyên dương theo đơn vị ' + quantityLabels[p.id] + ' nhé.'); }
+      if (/[+−–—=÷*]|(?:^|\s)-\s*\d|\d\s*\/\s*\d/.test(raw) || /\b\d+[.,]\d{1,2}\s*(?:hộp|hop|cuốn|cuon|quyển|quyen|cái|cai|tờ|to|tấm|tam|tem|tag|bộ|bo)\b/iu.test(raw) || (raw.includes('×') && !p.sessionFields && p.id !== 'namecard-vp' && !/16\s*×\s*7[.,]4/.test(raw))) { state.factId = null;delete state.slots.quantity;state.pending='quantity';return clarify(p, 'Bạn nhập một số lượng nguyên dương theo đơn vị ' + quantityLabels[p.id] + ' nhé.'); }
       if (hasAny(text, ['thoi tiet', 'bitcoin', 'gia vang', 'viet code', 'lap trinh', 'lam tho', 'chinh tri', 'y te'])) return base;
       const standardConfirmed = hasAny(text, ['quy cach cong bo', 'quy cach chuan']);
       if (standardConfirmed) { state.blocked = false; }
@@ -289,26 +350,31 @@
       }
       if (changed) state.factId = null;
       if (p.id === 'catalogue' && slots.size === 'a5') {
+        if(slots.quantity===undefined)return nextQuestion(p);
         const e = p.referenceEstimates?.find(e => e.quantity === slots.quantity && Object.entries(e.specs).every(([key,value]) => slots[key] === value));
         if (e && changed && (!slots.printing || slots.printing === 'offset4')) return estimateResponse(p, e, 'Dữ liệu website ngày ' + data.snapshotLabel + '.');
         return response('handoff', 'Catalogue A5' + (slots.quantity !== undefined ? ', ' + slots.quantity + ' cuốn' : '') + ': bảng tham khảo chưa có dòng giá A5 cố định cho lựa chọn này. Chỉ có ước tính tham khảo A5 12 trang gồm bìa, C150 toàn bộ, 1.000 cuốn và cần gửi file xác nhận. Mầm không áp dụng bảng A4 cho A5.', {productId:p.id, sources:[{label:'Nguồn tham khảo A5', url:p.referenceEstimates?.[0]?.sourceUrl || p.sourceUrl}], handoff:true});
       }
       if (p.id === 'catalogue' && slots.quantity !== undefined && slots.quantity < 200) return handoff(p, 'Dưới 200 cuốn catalogue: nguồn yêu cầu liên hệ tư vấn viên Thương Vy để báo giá. Mầm không nội suy giá từ các mốc 200, 500 hoặc 1.000 cuốn.');
       // Reject a supplied unsupported core specification immediately; keep the other slots.
-      for (const key of required[p.id]) {
+      for (const key of required[p.id].filter(key=>key!=='quantity')) {
         if (slots[key] !== undefined && !p.priceFacts.some(f => (key === 'quantity' ? f.quantity : f.specs?.[key]) === slots[key])) return handoff(p, 'Bảng đã xác minh chưa có đúng ' + (key === 'quantity' ? 'số lượng' : key === 'pages' ? 'số trang' : key === 'size' ? 'kích thước' : 'quy cách') + ' bạn yêu cầu. Mầm không suy ra giá cho biến thể khác; bạn liên hệ tư vấn viên để báo giá.');
       }
       const question = nextQuestion(p);
       if (question) return question;
-      if (!changed) return clarify(p, 'Mầm đã giữ sản phẩm và quy cách bạn chọn. Bạn có thể đổi số lượng, khổ giấy, số trang hoặc chọn “tổng công bố” cho dòng nguồn vừa xem.');
-      const candidates = p.priceFacts.filter(f => required[p.id].every(key => (key === 'quantity' ? f.quantity : f.specs?.[key]) === slots[key]) && (!slots.printing || f.specs?.printing === slots.printing) && (slots.pagesIncludeCover === undefined || f.specs?.pagesIncludeCover === slots.pagesIncludeCover) && (!state.provider || f.provider === state.provider));
-      const priority = {'thanh-an':0, 'vinh-phat':1};
-      const f = candidates.sort((a,b) => priority[a.provider] - priority[b.provider])[0];
-      if (!f) return handoff(p, 'Chưa có dòng bảng giá đã xác minh khớp toàn bộ lựa chọn của bạn. Bạn gửi tư vấn viên quy cách và số lượng để báo giá.');
+      if (!changed&&!wantsTotal) return clarify(p, 'Mầm đã giữ sản phẩm và quy cách bạn chọn. Bạn có thể đổi số lượng, khổ giấy, số trang hoặc chọn “tổng công bố” cho dòng nguồn vừa xem.');
+      const candidates = p.priceFacts.filter(f => required[p.id].filter(key=>key!=='quantity').every(key => f.specs?.[key] === slots[key]) && (!slots.printing || f.specs?.printing === slots.printing) && (slots.pagesIncludeCover === undefined || f.specs?.pagesIncludeCover === slots.pagesIncludeCover) && (!state.provider || f.provider === state.provider));
+      const selection=selectOwnerTier(p,candidates,slots.quantity);
+      if(selection.error)return handoff(p,selection.error);
+      const f=selection.fact;
       state.factId = f.id;
-      return answer(f.lookupQuery, data, time());
+      const result=answer(f.lookupQuery+(text==='tong cong bo'&&slots.quantity===f.quantity?' tổng công bố':''), data, time());
+      if(!['price','reference'].includes(result.kind))return result;
+      const details=quoteDetails(p,f,slots.quantity);
+      if(perUnit(f)&&!details.quote)return handoff(p,'Tổng theo số lượng này chưa thể tính an toàn. Bạn nhắn Zalo để được xác nhận nhé.');
+      return {...result,...details};
     }
     return Object.freeze({answer:sessionAnswer, reset});
   }
-  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText});
+  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText,OWNER_TIER_POLICY});
 })(typeof window !== 'undefined' ? window : globalThis);

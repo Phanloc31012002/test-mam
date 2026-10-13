@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node tools/serve.mjs",
     "build": "node tools/build.mjs",
-    "test": "node --test tests/policy.test.mjs tests/price-menu.test.mjs"
+    "test": "node --test tests/policy.test.mjs tests/price-menu.test.mjs tests/quote-flow.test.mjs tests/gemini-server.test.mjs tests/gemini-client.test.mjs"
   },
   "engines": {
     "node": ">=20"

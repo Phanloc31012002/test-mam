@@ -8,3 +8,5 @@ evidence/
 .package-staging/
 .source-release/
 CONTINUATION.md
+.env
+.env.*

@@ -139,13 +139,14 @@ test('namecard conflict numbers do not quarantine unrelated products',()=>{
 test('current price requests do not present snapshot prices as current',()=>{
   const r=ask('giá hiện tại tờ rơi');assert.equal(r.kind,'handoff');noQuote(r);
 });
-test('C300 total unavailable is never multiplied from the box rate',()=>{
+test('C300 source lookup distinguishes absent published total from the authorized owner calculation',()=>{
   const r=ask(fact('namecard-c300-5').lookupQuery+' tổng công bố');
   assert.match(r.text,/Mầm không tự tính tổng/);assert.doesNotMatch(r.text,/400.000/);
+  assert.equal(r.quote.totalVnd,400000);assert.equal(r.quote.totalKind,'computed-owner-tier');assert.equal(fact('namecard-c300-5').sourceTotalVnd,null);
 });
-test('session asks card material and box quantity then selects the 5-box rate',()=>{
+test('session asks box quantity first and retains supplied material before selecting the 5-box rate',()=>{
   const s=newSession();
-  const material=s.answer('giá card');assert.equal(material.kind,'clarify');assert.match(material.text,/C300/i);noQuote(material);
+  const material=s.answer('giá card');assert.equal(material.kind,'clarify');assert.match(material.text,/bao nhiêu hộp/i);assert.equal(material.pendingField,'quantity');noQuote(material);
   const quantity=s.answer('C300');assert.equal(quantity.kind,'clarify');assert.match(quantity.text,/hộp/i);noQuote(quantity);
   const r=s.answer('5 hộp');selectedRow(r,'namecard-c300-5');assert.equal(r.productId,'namecard-c300');assert.doesNotMatch(r.text,/400.000|₫\/(tấm|cái)/);
 });
@@ -167,16 +168,16 @@ test('switching to cards clears catalogue slots and returning asks its slots aga
   noQuote(s.answer('catalogue'));noQuote(s.answer('1000 cuốn'));noQuote(s.answer('A4'));noQuote(s.answer('C250'));
   selectedRow(s.answer('16 trang'),'catalogue-a4-16-1000');
 });
-test('unsupported catalogue quantity, pages and size hand off without choosing a nearest tier',()=>{
-  for(const q of ['catalogue A4 C250 16 trang 300 cuốn','catalogue A4 C250 18 trang 500 cuốn','catalogue A5 C250 16 trang 500 cuốn']){
+test('catalogue quantity below the minimum and unsupported pages or size hand off',()=>{
+  for(const q of ['catalogue A4 C250 16 trang 150 cuốn','catalogue A4 C250 18 trang 500 cuốn','catalogue A5 C250 16 trang 500 cuốn']){
     const r=newSession().answer(q);assert.equal(r.kind,'handoff');assert.equal(r.handoff,true);noQuote(r);
   }
 });
 test('catalogue below 200 copies is routed to Vy without a price',()=>{
   const r=newSession().answer('catalogue A4 C250 16 trang 100 cuốn');assert.equal(r.kind,'handoff');assert.equal(r.handoff,true);assert.match(r.text,/Vy/i);noQuote(r);
 });
-test('unsupported quantity or pages replaces a previously quoted catalogue slot',()=>{
-  for(const changed of ['300 cuốn','18 trang']){
+test('below-minimum quantity or unsupported pages replaces a previously quoted catalogue slot',()=>{
+  for(const changed of ['150 cuốn','18 trang']){
     const s=newSession();selectedRow(s.answer('catalogue A4 C250 16 trang 500 cuốn'),'catalogue-a4-16-500');
     const r=s.answer(changed);assert.equal(r.kind,'handoff');noQuote(r);noQuote(s.answer('giá?'));
   }
@@ -328,7 +329,7 @@ test('all eight helper families retain their 110 verified amounts, specs and raw
 test('digital Briston card reference preserves unknown minimum quantity and blocks unsupported paper',()=>{
   const s=newSession();
   noQuote(s.answer('danh thiếp in nhanh Vĩnh Phát'));noQuote(s.answer('Briston 300gsm'));
-  const r=s.answer('cán màng');selectedRow(r,'vp-digital-briston300');
+  noQuote(s.answer('cán màng'));const r=s.answer('1 hộp');selectedRow(r,'vp-digital-briston300');
   assert.equal(r.kind,'reference');assert.ok(r.text.includes('90.000 ₫'));assert.match(r.text,/tối thiểu chưa được xác minh/i);
   assert.equal(fact('vp-digital-briston300').rawSourceFlags.sourceOrderQuantity,null);
   assert.equal(fact('vp-digital-briston300').rawSourceFlags.minimumOrderUnknown,true);

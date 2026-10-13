@@ -1,91 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Mầm optional intent extraction contract",
-  "description": "Future server-side model output only. Not loaded by the local widget. Unknown or unconfirmed slots must be null; this output is not a quotation.",
+  "title": "Mầm Gemini classification contract",
+  "description": "Current server-only model output: two allowlisted fields, no prose, slots, prices or URLs. Runtime also checks the product/category relationship. This documentation file is not fetched by the widget.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schemaVersion",
-    "intent",
-    "productId",
-    "quantity",
-    "quantityUnit",
-    "size",
-    "pages",
-    "material",
-    "finishing"
-  ],
+  "required": ["intent", "categoryId"],
   "properties": {
-    "schemaVersion": {
-      "type": "integer",
-      "const": 1
-    },
-    "intent": {
-      "type": "string",
-      "enum": [
-        "price_lookup",
-        "published_total_lookup",
-        "discount_request",
-        "deadline_request",
-        "services",
-        "address",
-        "hours",
-        "email",
-        "delivery",
-        "contact",
-        "greeting",
-        "reset",
-        "clarify",
-        "out_of_scope",
-        "unknown"
-      ]
-    },
-    "productId": {
-      "type": ["string", "null"],
-      "enum": [
-        "namecard-c300",
-        "decal-paper",
-        "decal-plastic",
-        "flyer",
-        "catalogue",
-        "kraft-bag",
-        "paper-box",
-        "envelope-a5",
-        "red-envelope",
-        "menu-paper",
-        "receipt",
-        "wedding",
-        null
-      ]
-    },
-    "quantity": {
-      "type": ["integer", "null"],
-      "minimum": 1,
-      "maximum": 10000000
-    },
-    "quantityUnit": {
-      "type": ["string", "null"],
-      "enum": ["cuốn", "hộp", "cái", "tờ", "bộ", null]
-    },
-    "size": {
-      "type": ["string", "null"],
-      "minLength": 1,
-      "maxLength": 80
-    },
-    "pages": {
-      "type": ["integer", "null"],
-      "minimum": 1,
-      "maximum": 1000
-    },
-    "material": {
-      "type": ["string", "null"],
-      "minLength": 1,
-      "maxLength": 100
-    },
-    "finishing": {
-      "type": ["string", "null"],
-      "minLength": 1,
-      "maxLength": 160
-    }
-  }
+    "intent": {"type":"string", "enum":["product","services","hours","address","contact","greeting","out_of_scope","unknown"]},
+    "categoryId": {"type":["string","null"], "enum":["namecard","catalogue","decal","flyer","bag","box","envelope","red-envelope","receipt","folder","tag","menu","wedding",null]}
+  },
+  "allOf": [{
+    "if": {"properties":{"intent":{"const":"product"}}},
+    "then": {"properties":{"categoryId":{"type":"string"}}},
+    "else": {"properties":{"categoryId":{"type":"null"}}}
+  }]
 }

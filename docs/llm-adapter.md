@@ -1,58 +1,99 @@
-# Adapter LLM tùy chọn cho Mầm
+# Gemini Free: bộ phân loại ý định tùy chọn
 
-Đây là thiết kế cho một bước nâng cấp sau này, chưa được triển khai hoặc kết nối. Bản local hiện tại xử lý hội thoại bằng quy tắc trong trình duyệt. Không có backend LLM, API key, lời gọi model hoặc việc gửi nội dung khách hàng ra ngoài. `widget/intent-schema.json` là hợp đồng tham khảo, không được widget hay plugin tự nạp.
+Mã hiện tại: `api/mam-assist.js`, `server/gemini-assistant.mjs`, `widget/gemini-client.js`. Mặc định tắt, chỉ demo HTTP(S) mount `/api/mam-assist`. Standalone và WordPress không mount endpoint. Chưa đọc/nhập khóa thật, chưa xác minh quota project/model và chưa gọi Gemini thật; tests server/client dùng fetch giả lập. [Hướng dẫn cấu hình](gemini-free-setup.md).
 
-## Vai trò giới hạn của model
-
-Model chỉ nhận diện ý định và trích xuất thông tin khách đã nêu: sản phẩm, số lượng/đơn vị, khổ, số trang, giấy và gia công. Model trả JSON theo schema, không trả câu trả lời tự do. Thông tin thiếu hoặc chưa được khách xác nhận phải là `null`; không tự điền quy cách mặc định. Câu trả lời ngắn như “1.000 cuốn” chỉ được gắn vào sản phẩm/ngữ cảnh đã được xác nhận trong phiên.
-
-Model không được trả giá, đơn giá, tổng tiền, phần trăm giảm, hạn giao, thuế, nguồn URL hoặc liên hệ. Schema không có những trường đó và dùng `additionalProperties: false`. Yêu cầu giảm giá/hạn giao được phân loại để engine chuyển tư vấn viên. Nội dung ngoài phạm vi hoặc không hiểu được dùng `out_of_scope`, `unknown` hoặc `clarify`; câu trả lời do mẫu cố định tạo ra.
+## Luồng dữ liệu
 
 ```mermaid
-flowchart LR
-  B[Khách gửi câu hỏi] --> S[Backend cùng origin]
-  S --> M[Model trích ý định và thông số]
-  M --> V[Kiểm tra schema và ngữ nghĩa]
-  V --> P[Engine giá cố định + snapshot đã kiểm tra]
-  P --> T[Mẫu trả lời, điều kiện, nguồn và ngày]
-  T --> B
+flowchart TD
+  Q[Khách gửi câu hỏi] --> L[Logic và phiên local]
+  L -->|Đã hiểu| A[FAQ / hỏi quy cách / báo giá local]
+  L -->|Chưa hiểu| C{Đã bật và khách đồng ý?}
+  C -->|Không| F[Mẫu local / Zalo]
+  C -->|Có| S[Server cùng origin kiểm tra đầu vào]
+  S --> M[Gemini phân loại một câu]
+  M --> V[Kiểm tra JSON và allowlist]
+  V -->|Sản phẩm| P[Khách xác nhận sản phẩm]
+  P --> L
+  V -->|Ý định khác| A
+  V -->|Lỗi / không rõ| F
 ```
 
-Luồng này chỉ là đề xuất. Trong bản local, câu hỏi đi thẳng tới engine trong trình duyệt và không qua backend/model.
+Local xử lý trước. Chỉ `kind:'unknown'` từ phiên local mới có thể gọi Gemini. Checkbox không tích sẵn, chỉ bật sau GET status khả dụng. Khách đọc thông báo, xác nhận 18+/Việt Nam và đồng ý. Làm mới bỏ đồng ý; đóng/revoke/destroy hủy request và bỏ kết quả đến muộn.
 
-## Engine vẫn là nơi duy nhất quyết định giá
+Browser gửi một câu mới nhất tối đa 500 ký tự đã qua bộ lọc, không lịch sử/snapshot giá/file/dữ liệu đặt hàng. Server gửi câu đó cùng system instruction cố định. Bộ lọc chặn nhiều mẫu email/điện thoại/địa chỉ/khóa/injection, không nhận diện được mọi thông tin riêng; thông báo không gửi dữ liệu nhạy cảm vẫn cần thiết.
 
-Backend tương lai cần dùng cùng dữ liệu và chính sách đã kiểm thử của `widget/policy.js`, không thay bằng việc hỏi model để báo giá. Không được ánh xạ tùy tiện JSON thành câu lệnh `lookupQuery` nhằm vượt các bước hỏi làm rõ.
+## Hợp đồng phân loại
 
-- Kiểm tra JSON trên server: đúng schema/version, không có trường lạ, `productId` thuộc snapshot đang dùng. Các trường chuỗi chỉ là dữ liệu chưa tin cậy; không hiển thị nguyên văn hoặc thực thi chúng.
-- Kiểm tra ngữ nghĩa với câu hỏi và ngữ cảnh đã xác nhận: số lượng/đơn vị phải rõ, các thông số không được mâu thuẫn, gia công lạ cần hỏi lại. JSON đúng schema chưa đủ điều kiện đưa giá.
-- Chỉ engine chọn một dòng công bố khi thông số khớp điều kiện. Thiếu thông số, nhiều dòng phù hợp, số lượng ngoài bảng, nguồn mâu thuẫn hoặc snapshot quá hạn thì hỏi lại/chuyển tư vấn viên. Không nội suy hay tự nhân đơn giá.
-- Chỉ hiện tổng đã có tại nguồn nếu khách yêu cầu tổng công bố và chọn đúng dòng. Giá, điều kiện, ngày và URL đều lấy từ snapshot đã kiểm tra, không lấy từ output model.
-- Timeout, output sai schema hoặc lỗi model quay về câu hỏi làm rõ/engine local. Không dùng một câu trả lời model chưa kiểm tra làm fallback.
-
-Ví dụ hợp đồng cho câu “catalogue A4 12 trang 1.000 cuốn”:
+Model chỉ trả:
 
 ```json
-{
-  "schemaVersion": 1,
-  "intent": "price_lookup",
-  "productId": "catalogue",
-  "quantity": 1000,
-  "quantityUnit": "cuốn",
-  "size": "A4",
-  "pages": 12,
-  "material": null,
-  "finishing": null
-}
+{"intent":"product","categoryId":"catalogue"}
 ```
 
-Ví dụ này chỉ trích thông tin; engine vẫn quyết định cần hỏi gì và có thể hiển thị dòng nào. Danh sách `productId` phải được cập nhật cùng snapshot khi thêm hoặc đổi sản phẩm.
+Intent: `product`, `services`, `hours`, `address`, `contact`, `greeting`, `out_of_scope`, `unknown`. Category chỉ được có giá trị khi product, thuộc 13 nhóm: `namecard`, `catalogue`, `decal`, `flyer`, `bag`, `box`, `envelope`, `red-envelope`, `receipt`, `folder`, `tag`, `menu`, `wedding`. Ý định khác bắt buộc category null.
 
-## Các quyết định cần có trước khi kết nối
+[intent-schema.json](../widget/intent-schema.json) mô tả hợp đồng đầy đủ; server tạo schema nhỏ tại runtime và kiểm tra quan hệ intent/category riêng. Widget không fetch schema file. Không có trường prose, số lượng, khổ, giấy, giá, tổng, giảm giá, deadline, URL hay liên hệ. Server/browser từ chối khóa lạ, category ngoài danh sách và tổ hợp sai; không hiện raw model text/lỗi upstream.
 
-1. **Backend và vận hành:** chọn nơi chạy, đường dẫn cùng origin, giới hạn request/timeout và người bảo trì. Secret nằm ở server, không đưa vào HTML, JS, JSON công khai hay WordPress assets. Kiểm thử trên staging trước khi bật.
-2. **Model và chi phí:** chọn nhà cung cấp/model sau khi thử tiếng Việt, lỗi chính tả và câu trả lời ngắn; xác định ngân sách, giới hạn dùng và xử lý khi hết ngân sách. Gói hiện tại chưa chọn nhà cung cấp, mua dịch vụ hoặc cấu hình tài khoản.
-3. **Dữ liệu khách hàng:** quyết định rõ thông tin nào được phép gửi từ browser tới server rồi tới nhà cung cấp. Ưu tiên chỉ câu mới nhất và thông số đã xác nhận, tránh gửi toàn bộ lịch sử; xử lý thông tin cá nhân trước khi gọi model. Xác định lưu giữ/log, quyền truy cập, khu vực xử lý và thông báo cho khách phù hợp. Việc kết nối sẽ thay đổi luồng dữ liệu hiện tại, vì vậy cần được quyết định rõ trước khi bật.
-4. **Nghiệm thu:** kiểm tra schema sai, prompt yêu cầu đổi quy tắc, thông số bị đoán, snapshot quá hạn, bảng giá mâu thuẫn, model/backend lỗi và quay về chế độ local. Những trường hợp này phải giữ nguyên quyền quyết định của engine giá.
+Sản phẩm gợi ý chỉ hiện nút xác nhận từ nhãn local. Khách xác nhận mới đưa câu hỏi sản phẩm cố định vào local hỏi số lượng/quy cách. Model không tự điền thông số hoặc mở bảng đầy đủ. Ý định FAQ dùng câu hỏi/mẫu local.
 
-Tài liệu này không cài backend, không bật endpoint, không sửa bảo mật website và không tạo lời gọi mạng. Chưa có quyền mua dịch vụ, thiết lập tài khoản hoặc gửi nội dung khách hàng tới model trong bước này.
+## Endpoint
+
+GET `/api/mam-assist` không lộ model/project/key:
+
+```json
+{"version":1,"enabled":false,"privacyVersion":"google-free-v1"}
+```
+
+POST chỉ nhận đúng bốn trường JSON UTF-8:
+
+```json
+{"version":1,"message":"Mình cần một ấn phẩm giới thiệu sản phẩm","consent":"google-free-v1","adult":true}
+```
+
+Response hợp lệ:
+
+```json
+{"version":1,"kind":"suggestion","intent":"product","categoryId":"catalogue"}
+```
+
+Fallback:
+
+```json
+{"version":1,"kind":"fallback"}
+```
+
+Origin mặc định `https://test-mam.vercel.app`. POST cần Origin khớp chính xác; endpoint không query. Chỉ tin IP/country header Vercel edge trên Vercel. Ngoài VN, sai Origin/payload, rate limit hoặc thiếu config trả status phù hợp; client về local. Response no-store, không CORS wildcard/cookie auth.
+
+## Google request và giới hạn
+
+POST `https://generativelanguage.googleapis.com/v1beta/interactions`, khóa header `x-goog-api-key`, không URL. Default `gemini-3.8-flash`, alternative `gemini-3.5-flash-lite`. Schema JSON, `store:false`, output tối đa 512 tokens, thinking low, không thinking summary. Không history/previous interaction ID/tools/search/background/retry/tự chuyển model. REST đọc `steps → model_output → content:text` rồi validate. [Interactions](https://ai.google.dev/api/interactions-api), [structured output](https://ai.google.dev/gemini-api/docs/structured-output).
+
+| Giới hạn | Hiện tại |
+| --- | --- |
+| Input | 500 ký tự, request 4.096 byte, đọc tối đa 2 giây |
+| Google | Timeout 6 giây, body 16.384 byte, text JSON 2.048 byte |
+| Function | maxDuration 10 trong vercel.json |
+| Client | GET 5 giây, POST 7 giây, khoảng cách gọi 10 giây |
+| Mỗi instance server | 6/IP/phút, 30 tổng/phút, 2 đồng thời |
+| Limiter | Tối đa 1.000 IP hash, cửa sổ hiệu lực 60 giây |
+
+Limiter best effort theo instance ấm, không chia quota giữa instance/region; restart mất bộ đếm. Không phải hard cap toàn deployment hay quota Google. IP HMAC dùng salt riêng; app không log/lưu raw IP. Hash hết hiệu lực logic sau 60 giây, dọn vật lý lần acquire tiếp theo, không cam kết timer xóa đúng giây. Không database/cookie/lưu chat của app; Vercel/Google xử lý request theo chính sách hạ tầng riêng.
+
+## Engine quyết định giá
+
+Gemini không có snapshot/không quyết định giá. Engine giữ 177 dòng gốc, đúng nhóm quy cách/đơn vị/nguồn, ưu tiên Thanh Ấn khi khớp. Hỏi ngắn giữ thông số local; chỉ yêu cầu **Xem bảng giá** mới mở toàn bảng.
+
+Chính sách chủ cơ sở `owner-floor-tier-2026-10-13`: giá mỗi đơn vị rõ ràng chọn mốc công bố lớn nhất không vượt số lượng yêu cầu; trên mốc cuối giữ cùng đơn giá. Dưới mốc đầu, nhóm xung đột/không đơn điệu hoặc quy cách thiếu thì hỏi/Zalo. Danh thiếp theo hộp, trần bậc 10; trên 10 cần mốc 10 cùng nhóm. Tổng = số lượng yêu cầu × đơn giá mốc, ghi tham khảo và provenance business-owner-policy, không nhận thành tổng nguồn công bố.
+
+Giá gói/source_total chỉ đúng số lượng, giữ nguyên tổng; không chia đơn giá/chuyển thành bậc. Cơ sở số lượng/đơn vị không rõ không tính tổng. Không tự thêm giảm giá/VAT/phí/thời hạn. C300 Thanh Ấn 12 hộp dùng mốc 10 hộp 70.000 ₫/hộp → 840.000 ₫ tham khảo, vẫn ghi số tấm/kích thước/gia công chưa xác minh. Không sửa snapshot để tạo khoảng số lượng.
+
+## Đồng ý và dữ liệu Free
+
+Google Free có thể dùng input/output để cải thiện sản phẩm và người rà soát có thể đọc chúng. Không gửi dữ liệu cá nhân/nhạy cảm/bí mật. API yêu cầu 18+; API Clients tại EEA/Thụy Sĩ/Anh phải dùng Paid Services, nên bản Free này chỉ gate Việt Nam. [Điều khoản](https://ai.google.dev/gemini-api/terms).
+
+`store:false` tắt lưu Interaction để truy xuất/state, không hủy điều khoản dữ liệu Free. Chủ sở hữu tự nhập key vào UI Vercel bảo mật sau khi chấp thuận cấu hình cụ thể; không gửi key qua chat. Cờ Free/quota ghi nhận kiểm tra thủ công, không tự chứng minh billing/quota. [Lưu trữ](https://ai.google.dev/gemini-api/docs/interactions-overview), [quota](https://ai.google.dev/gemini-api/docs/rate-limits).
+
+## Nghiệm thu
+
+Mock server 192/192, client 42/42 đã đạt; kiểm tra gate/schema/lỗi/cancellation/giới hạn/fallback, không chứng minh key/model/quota thật. Cần nghiệm thu riêng deployment Ready: người dùng Việt Nam đồng ý, gửi câu không nhạy cảm chưa được local hiểu, xác nhận category rồi thử báo giá local. Lỗi/thiếu config/hết quota vẫn local. Không nhập key vào console/test harness. WordPress chưa cài/thử staging.

@@ -229,8 +229,10 @@ async function tests(){
   check('Supplemental reply hides branding while its original source link and amount remain',last().includes('Giá tham khảo')&&!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(log.lastElementChild.textContent)&&log.lastElementChild.querySelector('.ta-source').href===a.data.products.find(product=>product.id==='catalogue').priceFacts.find(fact=>fact.id==='catalogue-a4-all-c150-16-500').sourceUrl);
   s.querySelector('.ta-footnote button').click();await a.send('500');check('Clear also forgets product and pending slots',!last().includes('₫/cuốn')&&!last().includes('₫/hộp'));
   s.querySelector('.ta-footnote button').click();await a.send('Xem giá');
+  const quoteChoices=log.lastElementChild.querySelector('.ta-quote-products');
+  await a.send('Xem bảng giá');
   const menu=log.lastElementChild.querySelector('.ta-price-menu');
-  check('Generic price request opens product categories without an arbitrary quote',menu&&menu.dataset.screen==='categories'&&menu.querySelector('[data-category-id="catalogue"]')&&menu.querySelectorAll('.ta-price-category').length>=10&&menu.querySelectorAll('.ta-price-table').length===0);
+  check('Generic price asks for a product and explicit full-table request opens source categories',quoteChoices&&quoteChoices.querySelectorAll('.ta-chip').length===13&&quoteChoices.querySelectorAll('.ta-price-menu,.ta-price-table').length===0&&menu&&menu.dataset.screen==='categories'&&menu.querySelector('[data-category-id="catalogue"]')&&menu.querySelectorAll('.ta-price-category').length>=10&&menu.querySelectorAll('.ta-price-table').length===0);
   menu.querySelector('[data-category-id="catalogue"]').click();
   check('Category selection exposes separate source and material variants',menu.dataset.screen==='variants'&&menu.querySelector('[data-variant-id="table-catalogue-a4-12-200"]')&&menu.querySelector('[data-variant-id="table-catalogue-a4-all-c150-12-200"]')&&menu.querySelector('[data-variant-id="table-catalogue-a4-cover-c250-offset-12-200"]'));
   menu.querySelector('[data-variant-id="table-catalogue-a4-12-200"]').click();
