@@ -13,6 +13,23 @@
     let data=config.data;
     if(!data){const r=await fetch(assetUrl(config.dataUrl),{credentials:'omit',cache:'no-cache',referrerPolicy:'no-referrer'});if(!r.ok)throw new Error('Không tải được dữ liệu FAQ');data=await r.json();}
     root.ThanhAnFAQ.validateData(data);
+    // Optional, versioned owner-reviewed language rules. A bad or missing rule
+    // file never weakens the local price policy or blocks the existing widget.
+    let languageMemory=null;
+    if(root.ThanhAnApprovedLanguage){
+      try{
+        let rules=config.approvedLanguageData;
+        if(!rules&&config.approvedLanguageUrl){
+          const url=assetUrl(config.approvedLanguageUrl),controller=new AbortController();let timer;
+          try{
+            const load=Promise.resolve().then(()=>(config.approvedLanguageFetch||fetch)(url,{credentials:'omit',cache:'no-cache',referrerPolicy:'no-referrer',signal:controller.signal})).then(r=>r.ok?r.json():null).catch(()=>null);
+            const deadline=new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(null);},1500);});
+            rules=await Promise.race([load,deadline]);
+          }finally{clearTimeout(timer);controller.abort();}
+        }
+        if(rules)languageMemory=root.ThanhAnApprovedLanguage.create(rules);
+      }catch(_){languageMemory=null;}
+    }
     // Preserve source truth against changes from visitor messages.
     data=JSON.parse(JSON.stringify(data));
     function freeze(value){Object.freeze(value);Object.values(value).forEach(v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v))freeze(v);});}freeze(data);
@@ -173,7 +190,13 @@
           if(root.ThanhAnFAQ.normalize(text)==='xem toan bang gia'||(root.ThanhAnPriceMenu.isMenuRequest(text)&&root.ThanhAnFAQ.normalize(text).includes('bang gia')))renderPriceMenu();
           else if(root.ThanhAnPriceMenu.isMenuRequest(text))renderQuoteChoices();
           else{
-            const local=conversation.answer(text);let usedAI=false;
+            let local=conversation.answer(text);let usedAI=false;
+            if(local.kind==='unknown'&&languageMemory){
+              const mapped=languageMemory.lookup(text);
+              if(mapped?.intent==='product')local=conversation.answer(text,{approvedCategoryId:mapped.categoryId});
+              else if(mapped?.intent==='out_of_scope')local={...local,kind:'out_of_scope'};
+              else if(mapped){const queries={services:'Dịch vụ',hours:'Giờ làm việc',address:'Địa chỉ',contact:'Liên hệ Zalo',greeting:'Hello'};if(queries[mapped.intent])local=conversation.answer(queries[mapped.intent]);}
+            }
             if(local.kind==='unknown'&&aiClient?.getState().consent){
               statusLabel.textContent='Mầm đang tìm giúp bạn…';
               const suggestion=await aiClient.suggest(text);

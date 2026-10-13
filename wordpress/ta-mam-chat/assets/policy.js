@@ -138,15 +138,15 @@
   const hasAny = (text, phrases) => phrases.some(p => contains(text, p));
   function matchingProducts(text, data) {
     // Local category choices use clean customer labels; source identities stay in data.
-    const byIds=ids=>ids.map(id=>data.products.find(p=>p.id===id)).filter(Boolean);
-    if(hasAny(text,['tag chu nhat','tag vuong','tag hinh chu nhat','tag chu nhat hoac vuong']))return byIds(['tag-vp']);
+    const matches = data.products.filter(p => p.aliases.some(a => contains(text, a)));
+    const byIds=(ids,categoryIds=ids)=>[...ids.map(id=>data.products.find(p=>p.id===id)).filter(Boolean),...matches.filter(p=>!categoryIds.includes(p.id))];
+    if(hasAny(text,['tag chu nhat','tag vuong','tag hinh chu nhat','tag chu nhat hoac vuong']))return byIds(['tag-vp'],['tag-vp','earring-tag-vp']);
     if(hasAny(text,['tag treo','the bai','nhan treo'])&&!hasAny(text,['vinh phat','bong tai','khuyen tai','earring']))return byIds(['tag-vp','earring-tag-vp']);
     if(hasAny(text,['folder','kep file'])&&!contains(text,'vinh phat'))return byIds(['folder-vp']);
-    if(hasAny(text,['tui giay dung'])&&!contains(text,'kraft'))return byIds(['paper-bag-vp']);
+    if(hasAny(text,['tui giay dung'])&&!contains(text,'kraft'))return byIds(['paper-bag-vp'],['kraft-bag','paper-bag-vp']);
     if(contains(text,'tui giay')&&!hasAny(text,['kraft','vinh phat','c300','c 300']))return byIds(['kraft-bag','paper-bag-vp']);
-    if(hasAny(text,['bao thu cac kho khac','bao thu tham khao','phong bi cac kho khac']))return byIds(['envelope-vp']);
+    if(hasAny(text,['bao thu cac kho khac','bao thu tham khao','phong bi cac kho khac']))return byIds(['envelope-vp'],['envelope-a5','envelope-vp']);
     if(hasAny(text,['bao thu','phong bi'])&&!contains(text,'vinh phat')&&!/\ba[3456]\b/.test(text))return byIds(['envelope-a5','envelope-vp']);
-    const matches = data.products.filter(p => p.aliases.some(a => contains(text, a)));
     const vp = data.products.find(p => p.id === 'namecard-vp');
     const digital = data.products.find(p => p.id === 'namecard-digital-vp');
     if (digital && hasAny(text, ['digital', 'ky thuat so', 'kts']) && matches.some(p => ['namecard-c300','namecard-vp','namecard-digital-vp'].includes(p.id))) return [digital];
@@ -258,6 +258,7 @@
       quantityLabels[p.id] = p.priceFacts?.[0]?.quantityUnit || 'sản phẩm';
     }
     const reset = () => { state = null; };
+    const approvedCategoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư','red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
     const clarify = (p, text, suggestions = []) => response('clarify', text, {productId:p.id,compactText:displayText((text.match(/^[^?]*\?/)||[text])[0]),pendingField:state?.pending, sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], suggestions});
     const handoff = (p, text) => response('handoff', text, {productId:p.id,compactText:'Quy cách hoặc số lượng này cần báo giá riêng. Bạn nhắn Zalo để được tư vấn nhé.', sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], handoff:true});
     function unsupported(p, text, raw) {
@@ -326,7 +327,7 @@
       if (field === 'material') return clarify(p, p.id === 'namecard-c300' ? p.selectionQuestion : 'Bạn cần giấy ' + (p.id === 'receipt' ? 'carbonless' : 'Couche 150gsm') + ' hay loại khác?', [p.id === 'receipt' ? 'Carbonless' : p.id === 'namecard-c300' ? 'C300' : 'Couche 150gsm']);
       return null;
     }
-    function sessionAnswer(input) {
+    function sessionAnswer(input, options) {
       const raw = String(input || '').trim();
       // Compact Vietnamese replies and thousands separators remain deterministic.
       const text = normalize(raw.replace(/×/g, 'x').replace(/(\d)[.,](?=\d{3}(?:\D|$))/g, '$1').replace(/([a-zA-ZÀ-ỹ]{2,})(\d)/g, '$1 $2')).replace(/\b(\d{2,3})\s*gsm\b/g, '$1');
@@ -342,8 +343,15 @@
         return base;
       }
       if (base.kind === 'estimate') return base;
-      const products = matchingProducts(normalize(raw), data);
-      if (products.length > 1) return base;
+      let products = matchingProducts(normalize(raw), data);
+      // Reviewed language memory may identify a category only; every supplied spec still uses local guards.
+      const categoryHint=options&&typeof options==='object'&&!Array.isArray(options)&&Object.keys(options).length===1&&Object.hasOwn(options,'approvedCategoryId')&&typeof options.approvedCategoryId==='string'&&Object.hasOwn(approvedCategoryQueries,options.approvedCategoryId)?options.approvedCategoryId:null;
+      if(!state&&!products.length&&base.kind==='unknown'&&categoryHint&&!hasAny(text,['thoi tiet','bitcoin','gia vang','viet code','lap trinh','lam tho','chinh tri','y te'])) {
+        const categoryQuery=approvedCategoryQueries[categoryHint];
+        products=matchingProducts(normalize(categoryQuery),data);
+        if(products.length!==1)return answer(categoryQuery,data,time());
+      }
+      if (products.length > 1) {state=null;return base;}
       if (products.length === 1 && (!state || state.productId !== products[0].id)) state = {productId:products[0].id, slots:{}};
       if (!state) return base;
       const p = data.products.find(p => p.id === state.productId);
@@ -387,25 +395,34 @@
         if (contains(text, 'khong can mang') && /^cover-c(?:250|300)$/.test(slots.material)) { state.blocked = true; return handoff(p, 'Quy cách bìa này có cán màng mặt ngoài; yêu cầu không cán màng cần báo giá riêng.'); }
       }
       const quantities = [...text.matchAll(/\b(\d+)\s*(cuon|quyen|hop|cai|con|to|tam|tem|tag|bo|chiec)\b/g)];
-      const correctQuantities = quantities.filter(m => m[2] === quantityUnit[p.id] || m[2] === normalize(quantityLabels[p.id]) || (quantityUnit[p.id] === 'cuon' && m[2] === 'quyen') || (['tag-vp','earring-tag-vp'].includes(p.id)&&['cai','con'].includes(m[2])&&['cai','con'].includes(quantityUnit[p.id])));
+      for(const m of text.matchAll(/\b(\d+)\s*(?:hay|hoac|den|toi|va)\s*(\d+)\s*(cuon|quyen|hop|cai|con|to|tam|tem|tag|bo|chiec)\b/g))quantities.push([m[0],m[1],m[3]],[m[0],m[2],m[3]]);
+      const correctUnit=m=>m[2] === quantityUnit[p.id] || m[2] === normalize(quantityLabels[p.id]) || (quantityUnit[p.id] === 'cuon' && m[2] === 'quyen') || (['tag-vp','earring-tag-vp'].includes(p.id)&&['cai','con'].includes(m[2])&&['cai','con'].includes(quantityUnit[p.id]));
+      const composition=m=>Number.isInteger(m.index)&&(['receipt','receipt-vp'].includes(p.id)&&['to','tam'].includes(m[2])&&/^\s*(?:(?:moi|tren)\s+)?(?:1\s+)?(?:cuon|quyen)\b/.test(text.slice(m.index+m[0].length))||/^namecard/.test(p.id)&&m[2]==='tam'&&/^\s*(?:(?:moi|tren)\s+)?(?:1\s+)?hop\b/.test(text.slice(m.index+m[0].length)));
+      const correctQuantities = quantities.filter(correctUnit);
+      if(correctQuantities.length&&quantities.some(m=>!correctUnit(m)&&!composition(m))) {
+        delete slots.quantity;state.factId=null;state.pending='quantity';
+        return clarify(p,'Bạn cần in bao nhiêu '+quantityLabels[p.id]+'?');
+      }
       if (new Set(correctQuantities.map(m => m[1])).size > 1) {
-        delete slots.quantity; state.factId = null;
-        return clarify(p, 'Mầm thấy nhiều số lượng trong cùng tin. Bạn xác nhận một số lượng ' + quantityLabels[p.id] + ' nhé.');
+        delete slots.quantity; state.factId = null;state.pending='quantity';
+        return clarify(p, 'Bạn cần in bao nhiêu '+quantityLabels[p.id]+'?');
       }
       if (correctQuantities.length) { slots.quantity = Number(correctQuantities[0][1]); changed = true; }
       else if (quantities.length && !(p.id === 'receipt' && quantities.every(m => ['to', 'tam'].includes(m[2])))) {
-        delete slots.quantity; state.factId = null;
-        return clarify(p, 'Bảng nguồn của ' + p.name + ' dùng đơn vị ' + quantityLabels[p.id] + '. Bạn xác nhận số lượng theo đơn vị này nhé.');
+        delete slots.quantity; state.factId = null;state.pending='quantity';
+        return clarify(p, 'Bảng nguồn của ' + p.name + ' dùng đơn vị ' + quantityLabels[p.id] + '. Bạn cần in bao nhiêu '+quantityLabels[p.id]+'?');
       }
       if (/^\d+$/.test(text) && ['quantity', 'pages', 'layers'].includes(state.pending)) { slots[state.pending] = Number(text); changed = true; }
       const sizes = [...text.matchAll(/\b(a[3456])\b/g)].map(m => m[1]);
-      if (new Set(sizes).size > 1) { delete slots.size; state.factId = null; return clarify(p, 'Bạn chọn một khổ giấy cần in nhé.'); }
+      if (new Set(sizes).size > 1) { delete slots.size; state.factId = null;state.pending='size';return clarify(p, 'Bạn chọn một khổ giấy cần in nhé?'); }
       if (sizes.length) { slots.size = sizes[0]; changed = true; }
       const pages = [...text.matchAll(/\b(\d+)\s*trang\b/g)].map(m => Number(m[1]));
-      if (new Set(pages).size > 1) { delete slots.pages; state.factId = null; return clarify(p, 'Bạn xác nhận một số trang của catalogue nhé.'); }
+      for(const m of text.matchAll(/\b(\d+)\s*(?:hay|hoac|den|toi|va)\s*(\d+)\s*trang\b/g))pages.push(Number(m[1]),Number(m[2]));
+      if (new Set(pages).size > 1) { delete slots.pages; state.factId = null;state.pending='pages';return clarify(p, 'Catalogue của bạn có bao nhiêu trang?'); }
       if (pages.length) { slots.pages = pages[0]; changed = true; }
       const layers = [...text.matchAll(/\b(\d+)\s*lien\b/g)].map(m => Number(m[1]));
-      if (new Set(layers).size > 1) { delete slots.layers; state.factId = null; return clarify(p, 'Bạn xác nhận một số liên của phiếu nhé.'); }
+      for(const m of text.matchAll(/\b(\d+)\s*(?:hay|hoac|den|toi|va)\s*(\d+)\s*lien\b/g))layers.push(Number(m[1]),Number(m[2]));
+      if (new Set(layers).size > 1) { delete slots.layers; state.factId = null;state.pending='layers';return clarify(p, 'Bạn cần phiếu thu mấy liên?'); }
       if (layers.length) { slots.layers = layers[0]; changed = true; }
       if (p.id === 'namecard-c300' && /\bc\s*300(?:\s*gsm)?\b/.test(text)) { slots.material = 'c300'; changed = true; }
       if (p.id === 'receipt' && contains(text, 'carbonless')) { slots.material = 'carbonless'; changed = true; }
@@ -419,7 +436,7 @@
           const scored = values.map(value => ({value, score:Math.max(0, ...[String(value), ...(p.slotAliases?.[key]?.[value] || [])].filter(alias => contains(text, alias)).map(alias => normalize(alias).length))}));
           const best = Math.max(0, ...scored.map(item => item.score));
           const found = scored.filter(item => item.score > 0 && item.score === best).map(item => item.value);
-          if (found.length > 1) { delete slots[key]; state.factId = null; return clarify(p, 'Bạn chọn một ' + key + ' để khớp một dòng bảng nguồn nhé.', found.map(String)); }
+          if (found.length > 1) { delete slots[key]; state.factId = null;state.pending=key;return clarify(p, 'Bạn chọn một ' + key + ' để khớp một dòng bảng nguồn nhé?', found.map(String)); }
           if (found.length === 1) { slots[key] = found[0]; changed = true; }
         }
       }

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "id": "candidate-catalogue-wardrobe",
+      "phrase": "quyển giới thiệu bộ sưu tập quần áo",
+      "intent": "product",
+      "categoryId": "catalogue",
+      "status": "pending",
+      "author": "assistant",
+      "review": null
+    },
+    {
+      "id": "candidate-services-list",
+      "phrase": "bên mình in những loại nào",
+      "intent": "services",
+      "categoryId": null,
+      "status": "pending",
+      "author": "assistant",
+      "review": null
+    },
+    {
+      "id": "candidate-contact-adviser",
+      "phrase": "cho mình gặp tư vấn viên",
+      "intent": "contact",
+      "categoryId": null,
+      "status": "pending",
+      "author": "assistant",
+      "review": null
+    }
+  ]
+}

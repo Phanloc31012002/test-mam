@@ -20,7 +20,8 @@ async function tests(){
  const lastBubble=()=>widget.shadow.querySelector('.ta-log').lastElementChild?.querySelector('.ta-message-bubble')?.textContent||'';
  const compactPrice=(text,quantity,unit,total,specs=[])=>{const lines=text.split('\n'),amount=quantity.toLocaleString('vi-VN')+' '+unit+': '+total.toLocaleString('vi-VN')+' ₫';return lines.length===2&&specs.every(spec=>lines[0].includes(spec))&&(lines[1]===amount||lines[1]===amount+' (chưa VAT)')&&!/Tổng tham khảo|Nguồn giá|mức nguồn|quy tắc chủ|đơn thực tế|cần tư vấn viên/i.test(text);};
  try{
-  const [data,styles]=await Promise.all([fetch('../widget/data.json',{credentials:'omit'}).then(r=>r.json()),fetch('../widget/widget.css',{credentials:'omit'}).then(r=>r.text())]);
+  const [data,styles,languageData]=await Promise.all([fetch('../widget/data.json',{credentials:'omit'}).then(r=>r.json()),fetch('../widget/widget.css',{credentials:'omit'}).then(r=>r.text()),fetch('../widget/approved-language.json',{credentials:'omit'}).then(r=>r.json())]);
+  const languageSnapshot=JSON.stringify(languageData);
   check('Mock classification input reaches only the local unknown branch',ThanhAnFAQ.answer(unknown,data).kind==='unknown');
   const allFacts=data.products.flatMap(p=>p.priceFacts||[]);
   check('The reviewed dataset contains 193 facts and 62 distinct owner-confirmed records',allFacts.length===193&&data.products.length===22&&allFacts.filter(f=>f.ownerPriceRevision?.kind==='business-owner-price-update').length===62&&allFacts.filter(f=>f.originalSourceRecord).length===46);
@@ -34,7 +35,8 @@ async function tests(){
     if(options.offline)throw new Error('Mock offline');
     return fakeResponse(options.reply||suggestion,options.status||200);
    };
-   widget=await ThanhAnChat.mount({data,styles,reducedMotion:true,aiEndpoint:'/api/mam-assist',aiFetch});widget.open();
+   const languageConfig=options.approvedLanguageUrl?{approvedLanguageUrl:options.approvedLanguageUrl,approvedLanguageFetch:options.approvedLanguageFetch}:{approvedLanguageData:options.approvedLanguageData??languageData};
+   widget=await ThanhAnChat.mount({data,styles,reducedMotion:true,aiEndpoint:'/api/mam-assist',aiFetch,...languageConfig});widget.open();
    const shadow=widget.shadow,consent=shadow.querySelector('.ta-ai-consent');
    await until(()=>metadataRead);for(let n=0;n<8;n++)await Promise.resolve();
    const optIn=()=>{consent.checked=true;consent.dispatchEvent(new Event('change',{bubbles:true}));};
@@ -155,6 +157,64 @@ async function tests(){
   check('Clear cancels in-flight work and a late reply cannot repopulate the chat',f.posts()[0].signal.aborted&&!f.consent.checked&&f.shadow.querySelector('.ta-log').textContent===cleared&&f.shadow.querySelectorAll('.ta-message').length===1);
   f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const oldHost=widget.host;widget.destroy();widget=null;f.resolve();await pending;
   check('Destroy aborts pending work and leaves no orphan host',f.posts()[0].signal.aborted&&!oldHost.isConnected&&!document.getElementById('ta-mam-chat-host'));
+
+  // Regressions for the real local quote session; provider responses remain fake.
+  const owner300=allFacts.find(fact=>fact.id==='catalogue-a4-cover-c300-offset-16-300'),owner500=allFacts.find(fact=>fact.id==='catalogue-a4-cover-c250-offset-16-500');
+  f=await mount();f.optIn();await widget.send('catalogue A4 300 cuốn');
+  check('A local catalogue A4 300 request keeps quantity and size and asks only pages',lastBubble()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
+  await widget.send('16 trang');
+  check('A sixteen-page reply continues the existing catalogue and asks only paper',lastBubble().endsWith('?')&&['C250','C150','C300'].every(paper=>lastBubble().includes(paper))&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
+  await widget.send('Bìa C300 ruột C150');
+  check('Choosing C300 quotes the saved A4 300 sixteen-page request without a provider call',compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  await widget.send('350 cuốn');
+  check('Changing quantity to 350 preserves all catalogue specifications and uses the 300 floor tier',compactPrice(lastBubble(),350,'cuốn',owner300.priceVnd*350,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  await widget.send('500 cuốn');
+  check('Changing quantity to 500 selects its published owner tier without forgetting the catalogue',compactPrice(lastBubble(),500,'cuốn',owner500.priceVnd*500,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  await widget.send('300 cuốn hoặc 500 cuốn');
+  check('Conflicting quantities ask confirmation without silently choosing a price or calling the provider',!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&lastBubble().includes('?')&&f.posts().length===0,lastBubble());
+  await widget.send('400 cuốn');
+  check('Resolving the quantity conflict keeps the other catalogue specifications',compactPrice(lastBubble(),400,'cuốn',owner300.priceVnd*400,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  await widget.send('400 cuốn hay 500 tờ');
+  const mixedUnitAsked=!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&lastBubble().includes('?')&&lastBubble().includes('cuốn')&&f.posts().length===0;
+  await widget.send('400 cuốn');
+  check('Mixed quantity units require confirmation and resolving them keeps the catalogue recipe',mixedUnitAsked&&compactPrice(lastBubble(),400,'cuốn',owner300.priceVnd*400,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  await widget.send('A4 hay A5');
+  check('Conflicting sizes ask one size question and never substitute another sheet size',!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&lastBubble().includes('một khổ')&&f.posts().length===0,lastBubble());
+  await widget.send('A4');
+  check('Resolving the size conflict restores the quote without losing quantity, paper or pages',compactPrice(lastBubble(),400,'cuốn',owner300.priceVnd*400,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  f=await mount({status:429});f.optIn();await widget.send(unknown);
+  for(const step of ['catalogue A4 300 cuốn','16 trang','Bìa C300 ruột C150'])await widget.send(step);
+  check('After quota fallback a recognized catalogue conversation remains local and retains context',f.posts().length===1&&compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang']),lastBubble());
+
+  // Explicit synthetic approvals exist only inside this mock test run. The actual
+  // downloaded JSON is never changed or saved, and has no owner-approved seeds.
+  const seed=languageData.entries.find(entry=>entry.intent==='product'&&entry.categoryId==='catalogue');
+  check('The actual approved-language JSON keeps assistant examples pending rather than claiming owner approval',languageData.schemaVersion===1&&!!seed&&seed.status==='pending'&&languageData.entries.every(entry=>entry.status!=='approved')&&ThanhAnApprovedLanguage.create(languageData).lookup(seed.phrase)===null);
+  function syntheticFixture(entry){const synthetic=JSON.parse(JSON.stringify(entry));synthetic.status='approved';synthetic.review={decision:'approved',byRole:'owner',at:'2026-10-13T00:00:00.000Z',mappingKey:ThanhAnApprovedLanguage.mappingKey(synthetic)};return {schemaVersion:1,entries:[synthetic]};}
+  const approvedFixture=syntheticFixture(seed),approvedMemory=ThanhAnApprovedLanguage.create(approvedFixture);
+  const approvedHint=approvedMemory.lookup(seed.phrase);
+  check('The isolated synthetic approved fixture returns only a category hint without changing the actual pending data',ThanhAnFAQ.answer(seed.phrase,data).kind==='unknown'&&approvedHint?.intent==='product'&&approvedHint.categoryId==='catalogue'&&Object.keys(approvedHint).sort().join(',')==='categoryId,intent'&&JSON.stringify(languageData)===languageSnapshot);
+  f=await mount({approvedLanguageData:approvedFixture});f.optIn();await widget.send(seed.phrase);
+  check('An exact synthetically approved catalogue phrase skips the provider and starts local quantity-first lookup',lastBubble()==='Bạn cần in bao nhiêu cuốn?'&&f.posts().length===0);
+  await widget.send('A4 300 cuốn');
+  check('The approved category route keeps a combined quantity and size reply for the next question',lastBubble()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0);
+  await widget.send('16 trang');await widget.send('Bìa C300 ruột C150');
+  check('The approved phrase route preserves the original message context through the final source-based quote',compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  const hoursFixture=syntheticFixture({id:'synthetic-hours',phrase:'lịch tiếp khách ở tiệm',intent:'hours',categoryId:null,status:'pending',author:'assistant',review:null});
+  f=await mount({approvedLanguageData:hoursFixture});f.optIn();await widget.send(hoursFixture.entries[0].phrase);
+  check('A synthetic approved non-product phrase routes to the actual local FAQ without a provider call',lastBubble().includes(data.faq.hours)&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
+  const outOfScopeFixture=syntheticFixture({id:'synthetic-out-of-scope',phrase:'kể chuyện về bầu trời',intent:'out_of_scope',categoryId:null,status:'pending',author:'assistant',review:null});
+  f=await mount({approvedLanguageData:outOfScopeFixture});f.optIn();await widget.send(outOfScopeFixture.entries[0].phrase);
+  check('A synthetic approved out-of-scope phrase stays on a bounded local answer instead of spending provider quota',f.posts().length===0&&lastBubble().length>0&&lastBubble().length<=500&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
+  const invalidFixture=JSON.parse(JSON.stringify(approvedFixture));invalidFixture.entries[0].priceVnd=1;
+  f=await mount({approvedLanguageData:invalidFixture,status:429});f.optIn();await widget.send(seed.phrase);
+  check('An invalid language fixture cannot inject a price or activate an unreviewed local product route',f.posts().length===1&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&!lastBubble().includes('Bạn cần in bao nhiêu cuốn?')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
+  let stalledSignal=null,stalledCalls=0;const stallStarted=performance.now();
+  f=await mount({approvedLanguageUrl:'/widget/approved-language.json',approvedLanguageFetch:(_url,init)=>{stalledCalls++;stalledSignal=init.signal;return new Promise(()=>{});}});
+  const stallMountMs=performance.now()-stallStarted;f.optIn();
+  for(const step of ['catalogue A4 300 cuốn','16 trang','Bìa C300 ruột C150'])await widget.send(step);
+  check('A stalled optional rules fetch cannot block mount or the local catalogue even when it ignores abort',stalledCalls===1&&stalledSignal?.aborted===true&&stallMountMs<3000&&f.posts().length===0&&compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang']),JSON.stringify({mountMs:stallMountMs,fetchCalls:stalledCalls,aborted:stalledSignal?.aborted}));
+
   // Leave the actual widget open for visual review; this is still a mock provider.
   f=await mount();f.shadow.querySelector('.ta-ai-options').open=true;
   check('Final review uses the original native mascot assets',widget.avatarMascot.getFrame().assetUrl.includes('seedy-spritesheet-v10.webp')&&widget.avatarMascot.element.width===192&&widget.avatarMascot.element.height===208);

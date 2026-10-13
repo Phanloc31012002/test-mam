@@ -1,8 +1,12 @@
 # Mầm — trợ lý thông tin in ấn của Thanh Ấn
 
-Bản thử gồm widget, demo độc lập và plugin WordPress mặc định tắt. Baseline web ngày 12/10/2026 có **177 dòng giá**. Chủ cơ sở đã xác nhận cả bốn ma trận giá viết tay; runtime có **193 dòng/22 sản phẩm-biến thể**: 177 baseline + 10 catalogue (7 dòng số lượng 300, 3 dòng catalogue 36 trang nguồn tham khảo) + 6 bông tai. Có 62 dòng mang bản sửa chủ cơ sở: 46 dòng sửa và 16 dòng mới. Giá/metadata đã hoàn tất; source cuối đạt 652/652 Node, 55/55 mock ở cả hai viewport và 107/107 native/widget. Xác nhận deployment cuối còn chờ. Chính sách bậc số lượng chủ cơ sở duyệt ngày **13/10/2026** giữ provenance riêng với bằng chứng web lịch sử.
+Bản thử gồm widget, demo độc lập và plugin WordPress mặc định tắt. Baseline web ngày 12/10/2026 có **177 dòng giá**. Chủ cơ sở đã xác nhận cả bốn ma trận giá viết tay; runtime có **193 dòng/22 sản phẩm-biến thể**: 177 baseline + 10 catalogue (7 dòng số lượng 300, 3 dòng catalogue 36 trang nguồn tham khảo) + 6 bông tai. Có 62 dòng mang bản sửa chủ cơ sở: 46 dòng sửa và 16 dòng mới. Source hiện tại đạt **693/693 Node**, **75/75 mock ở cả hai viewport**, **107/107 native/widget**. Bản Production trước `873` đã xác minh; deployment bổ sung bộ nhớ cụm từ mới còn chờ. Chính sách bậc số lượng chủ cơ sở duyệt ngày **13/10/2026** giữ provenance riêng với bằng chứng web lịch sử.
 
 Gemini Free đã được cấu hình và gọi thật thành công trên [demo Production](https://test-mam.vercel.app/) ngày 13/10/2026, với model **gemini-3.5-flash-lite**. Chủ sở hữu đã chấp thuận và tự lưu khóa có sẵn dưới dạng Secret, scope Production; người hỗ trợ chỉ xác nhận tên/loại/phạm vi biến, không đọc giá trị khóa. Model chỉ phân loại câu chưa được local hiểu, không tạo câu trả lời, thông số hoặc giá. Cơ chế vẫn tắt Gemini nếu thiếu cấu hình; khách phải tự đồng ý trước mỗi phiên. Xem [luồng Gemini](docs/llm-adapter.md) và [cấu hình/giới hạn Free](docs/gemini-free-setup.md).
+
+## Bộ nhớ cụm từ được duyệt
+
+[Bộ nhớ cách diễn đạt](docs/approved-language-memory.md) hiện có **3 pending, 0 approved**. Chủ cơ sở phải xem và duyệt từng ánh xạ bằng CLI trước khi dùng; không tự học hoặc thu thập chat khách. Mục đã duyệt chỉ giúp nhận diện ý định/nhóm sản phẩm, không lưu hay tạo giá/tổng/quy cách. Luồng local giữ ngữ cảnh catalogue đã có; hook category mới không ghi đè sản phẩm/thông số đã nhận diện, và các trường hợp xung đột cần được làm rõ. Sau câu “16 trang”, khách vẫn cần chọn giấy phù hợp; không mặc định giấy. Kiểm thử tích hợp local đã đạt, chỉ deployment tính năng mới còn chờ xác nhận.
 
 ## Chạy bản thử
 
@@ -15,7 +19,7 @@ npm test
 node --test tests/gemini-server.test.mjs tests/gemini-client.test.mjs
 ```
 
-`npm start` mở server static tại `http://127.0.0.1:4173/`, không chạy Vercel Function. `npm test` chạy policy, menu, quote-flow, server và client; test Gemini trong bộ Node dùng mock, không cần khóa. Lệnh riêng chỉ chạy phần Gemini. Build tạo `public/`, cập nhật assets plugin và `demo-standalone.html`.
+`npm start` mở server static tại `http://127.0.0.1:4173/`, không chạy Vercel Function. `npm test` chạy policy, menu, quote-flow, server/client, owner-revision, continuity và approved-language; test Gemini trong bộ Node dùng mock, không cần khóa. Lệnh riêng chỉ chạy phần Gemini. Build tạo `public/`, cập nhật assets plugin và `demo-standalone.html`.
 
 Standalone chứa sẵn JSON, CSS, JS và sprite, không mount endpoint Gemini. Bản HTTP(S) tải sprite từ asset cùng origin, không tải nhân vật từ ChatGPT mỗi phiên. Link nguồn, Zalo hoặc Gọi chỉ mở khi khách chủ động bấm. Trang demo là nền để xem widget ở góc trang; tích hợp Thanh Ấn dùng riêng widget/plugin, không đưa cả bố cục demo vào website.
 
@@ -100,7 +104,7 @@ Chưa có PHP runtime/WordPress sandbox; chưa PHP lint, enqueue thực tế, t�
 
 Baseline bất biến có 177 dòng web/21 sản phẩm-biến thể, một ước tính A5 riêng, kích thước 353.748 byte. SHA-256 baseline: `408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99`. Runtime hiện có 193 dòng/22 sản phẩm-biến thể: **148 per_unit, 27 source_total, 18 reference_display**. Hash baseline không phải hash runtime đã sửa. Giữ provenance bản sửa chủ cơ sở tách khỏi bằng chứng giá web lịch sử. Mười hai dòng tag chữ nhật vốn đã là per_unit trong baseline; sáu tổng tag giữ lại khớp đúng số lượng × đơn giá, không coi toàn bộ tag là gói mới chuyển đổi.
 
-SHA-256 dữ liệu runtime cuối: `2521ee2d7d238574837567eec14073b25f3cf9081faa3a98c1a62e11dae62615`. SHA-256 policy sau sửa thông báo thiếu cán màng: `023d999828a83ca226655cfe6bed8d70d1dea8af63d04a84d0a045014c4962de`. Sprite native vẫn nguyên vẹn với hash ghi ở phần chuyển động.
+SHA-256 dữ liệu runtime cuối: `2521ee2d7d238574837567eec14073b25f3cf9081faa3a98c1a62e11dae62615`. SHA-256 policy có continuity/category hook hiện tại: `918cf5f102ecd53d3e546a70deaef0ce01abd904c57902898fd3b782fd9dc630`. Sprite native vẫn nguyên vẹn với hash ghi ở phần chuyển động.
 
 Quy cách bông tai đã được xác minh thêm bằng [nguồn tham khảo bông tai](https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/): giấy Couche 300gsm, in offset hai mặt. Nguồn cho chọn cán màng mờ hoặc không cán, nhưng chưa xác định phương án nào đã gồm trong giá. Vì vậy phần cán màng vẫn cần xác nhận; `ownerRecipeIncomplete:true` giữ luồng chuyển tư vấn, không tự báo tổng cho quy cách còn thiếu. Link này là `secondarySourceUrls`; URL nguồn chính trong record giá chủ cơ sở vẫn null, baseline lịch sử được giữ. Bổ sung quy cách này không đổi 193 mức giá/VAT và không tạo đồng bộ live.
 
@@ -110,11 +114,11 @@ Snapshot không được đọc lại mỗi lượt. Engine dừng giá sau 30 n
 
 QA 12/10/2026 là **baseline trước Gemini/bậc mới**: 253 policy, 19 menu, browser 101 ở mỗi viewport 1534×847, 390×844, 320×568, 844×390. 73 ô runtime khớp RGBA gốc. Không dùng số baseline để khẳng định flow giá/Gemini mới đã qua browser.
 
-Source cuối sau sửa metadata và nội dung đạt **652/652 Node**: 269 policy, 29 menu, 43 quote-flow, 192 server, 42 client và 77 owner-revision. Browser chạy lại đúng source cuối đạt **55/55 Gemini mock** ở cả 1280×720 và 320×568, cùng **107/107 native/widget** ở 1280×720, không có lỗi. Artwork không đổi. Mock không gọi Google; deployment cuối vẫn cần xác nhận riêng.
+Source đã đóng băng gồm bộ nhớ cụm từ/continuity đạt **693/693 Node**. Browser chạy lại đúng source đạt **75/75 Gemini mock** ở cả 1280×720 và 320×568, cùng **107/107 native/widget** ở 1280×720, không có lỗi. Artwork và mức giá không đổi; mock không gọi Google. Report tương ứng: `evidence/oct13-language-memory-tests.txt`, `evidence/language-browser-desktop.json`, `evidence/language-browser-mobile-320.json`, `evidence/language-browser-native-desktop.json`. Deployment của tính năng mới vẫn cần xác nhận riêng.
 
 Kiểm tra đọc/bố cục thủ công đạt tại 390×844, 640×360 với CSS tương đương phóng 200%, 844×390 và chế độ fallback 390×360: ô nhập/nút đóng thấy được, chữ 16px, không tràn ngang. Trình duyệt không cung cấp thao tác zoom thực tế trong công cụ; đây là kiểm tra tương đương bằng CSS, không phải zoom browser 200%. Mobile là viewport mô phỏng Chrome; WordPress staging chưa kiểm tra.
 
-Kiểm tra Gemini thật riêng ngày 13/10/2026: Production commit `6907`, deployment Vercel `5RbbRAEtkL3ALgZgk2d1KdNA3Ust` đã Ready sau redeploy, có **hai lần phân loại thật/UI xác nhận thành công**. Một câu thử tổng hợp là “quyển giới thiệu bộ sưu tập quần áo”: local unknown, Gemini trả catalogue và UI hiện nút xác nhận đúng. Không dùng thông tin cá nhân/lịch sử khách, không đọc khóa, không billing. Đây là kết quả trên commit `6907`; deployment cuối của dữ liệu/giao diện mới chưa được xác nhận, và test mock không được nhận thành lời gọi live.
+Kiểm tra Gemini thật riêng ngày 13/10/2026: Production commit `6907`, deployment Vercel `5RbbRAEtkL3ALgZgk2d1KdNA3Ust` đã Ready sau redeploy, có **hai lần phân loại thật/UI xác nhận thành công**. Một câu thử tổng hợp là “quyển giới thiệu bộ sưu tập quần áo”: local unknown, Gemini trả catalogue và UI hiện nút xác nhận đúng. Không dùng thông tin cá nhân/lịch sử khách, không đọc khóa, không billing. Đây là kết quả lịch sử trên `6907`; bản Production sau đó `873` đã được xác minh riêng. Deployment bộ nhớ cụm từ/continuity mới còn chờ, và test mock không được nhận thành lời gọi live.
 
 ## GitHub và Vercel
 

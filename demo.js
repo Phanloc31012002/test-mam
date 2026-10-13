@@ -2,7 +2,7 @@
   'use strict';
   const reduced=new URLSearchParams(location.search).get('motion')==='reduce';
   try{
-    const ready=await window.ThanhAnChat.mount({dataUrl:'widget/data.json',stylesheetUrl:'widget/widget.css',aiEndpoint:'/api/mam-assist',reducedMotion:reduced});
+    const ready=await window.ThanhAnChat.mount({dataUrl:'widget/data.json',stylesheetUrl:'widget/widget.css',approvedLanguageUrl:'widget/approved-language.json',aiEndpoint:'/api/mam-assist',reducedMotion:reduced});
     document.querySelectorAll('[data-open-chat]').forEach(button=>button.addEventListener('click',()=>ready.open()));
     document.querySelectorAll('[data-query]').forEach(button=>button.addEventListener('click',()=>{ready.open();ready.send(button.dataset.query);}));
     if(new URLSearchParams(location.search).has('open'))ready.open();
