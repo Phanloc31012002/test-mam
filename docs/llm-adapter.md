@@ -1,6 +1,6 @@
 # Gemini Free: bộ phân loại ý định tùy chọn
 
-Mã hiện tại: `api/mam-assist.js`, `server/gemini-assistant.mjs`, `widget/gemini-client.js`. Mặc định tắt, chỉ demo HTTP(S) mount `/api/mam-assist`. Standalone và WordPress không mount endpoint. Chưa đọc/nhập khóa thật, chưa xác minh quota project/model và chưa gọi Gemini thật; tests server/client dùng fetch giả lập. [Hướng dẫn cấu hình](gemini-free-setup.md).
+Mã hiện tại: `api/mam-assist.js`, `server/gemini-assistant.mjs`, `widget/gemini-client.js`. Cơ chế tắt khi thiếu cấu hình; demo Production hiện đã bật backend `gemini-3.5-flash-lite`, khách vẫn phải tự đồng ý. Standalone và WordPress không mount endpoint. Chủ sở hữu đã chấp thuận/tự lưu khóa có sẵn dưới dạng Secret Production; người hỗ trợ không đọc khóa. AI Studio Default Gemini Project Free/quota đã kiểm tra, và hai lần phân loại thật/UI xác nhận đã thành công ngày 13/10/2026 trên commit `6907`. Deployment cuối của bản sửa dữ liệu/giao diện mới còn chờ. Test tự động vẫn dùng fetch giả lập. [Cấu hình và quota quan sát](gemini-free-setup.md).
 
 ## Luồng dữ liệu
 
@@ -19,7 +19,7 @@ flowchart TD
   V -->|Lỗi / không rõ| F
 ```
 
-Local xử lý trước. Chỉ `kind:'unknown'` từ phiên local mới có thể gọi Gemini. Checkbox không tích sẵn, chỉ bật sau GET status khả dụng. Khách đọc thông báo, xác nhận 18+/Việt Nam và đồng ý. Làm mới bỏ đồng ý; đóng/revoke/destroy hủy request và bỏ kết quả đến muộn.
+Local xử lý trước. Chỉ `kind:'unknown'` từ phiên local mới có thể gọi Gemini. Giao diện chính ẩn nhãn model/backend; phần thu gọn **Thông tin & quyền riêng tư** giữ disclosure xử lý qua Google và checkbox đồng ý. Checkbox không tích sẵn, chỉ bật sau GET status khả dụng. Khách đọc thông báo, xác nhận 18+/Việt Nam và đồng ý. Làm mới bỏ đồng ý; đóng/revoke/destroy hủy request và bỏ kết quả đến muộn.
 
 Browser gửi một câu mới nhất tối đa 500 ký tự đã qua bộ lọc, không lịch sử/snapshot giá/file/dữ liệu đặt hàng. Server gửi câu đó cùng system instruction cố định. Bộ lọc chặn nhiều mẫu email/điện thoại/địa chỉ/khóa/injection, không nhận diện được mọi thông tin riêng; thông báo không gửi dữ liệu nhạy cảm vẫn cần thiết.
 
@@ -67,7 +67,7 @@ Origin mặc định `https://test-mam.vercel.app`. POST cần Origin khớp ch�
 
 ## Google request và giới hạn
 
-POST `https://generativelanguage.googleapis.com/v1beta/interactions`, khóa header `x-goog-api-key`, không URL. Default `gemini-3.8-flash`, alternative `gemini-3.5-flash-lite`. Schema JSON, `store:false`, output tối đa 512 tokens, thinking low, không thinking summary. Không history/previous interaction ID/tools/search/background/retry/tự chuyển model. REST đọc `steps → model_output → content:text` rồi validate. [Interactions](https://ai.google.dev/api/interactions-api), [structured output](https://ai.google.dev/gemini-api/docs/structured-output).
+POST `https://generativelanguage.googleapis.com/v1beta/interactions`, khóa header `x-goog-api-key`, không URL. Production chọn `gemini-3.5-flash-lite`; default trong mã là `gemini-3.8-flash` nếu không đặt model. Schema JSON, `store:false`, output tối đa 512 tokens, thinking low, không thinking summary. Không history/previous interaction ID/tools/search/background/retry/tự chuyển model. REST đọc `steps → model_output → content:text` rồi validate. [Interactions](https://ai.google.dev/api/interactions-api), [structured output](https://ai.google.dev/gemini-api/docs/structured-output).
 
 | Giới hạn | Hiện tại |
 | --- | --- |
@@ -82,18 +82,30 @@ Limiter best effort theo instance ấm, không chia quota giữa instance/region
 
 ## Engine quyết định giá
 
-Gemini không có snapshot/không quyết định giá. Engine giữ 177 dòng gốc, đúng nhóm quy cách/đơn vị/nguồn, ưu tiên Thanh Ấn khi khớp. Hỏi ngắn giữ thông số local; chỉ yêu cầu **Xem bảng giá** mới mở toàn bảng.
+Gemini không có snapshot/không quyết định giá. Baseline web bất biến có 177 dòng. Bốn ma trận viết tay đã được chủ cơ sở xác nhận và runtime đã sửa thành **193 dòng**: thêm 10 catalogue (7 mốc số lượng 300, 3 dòng 36 trang nguồn tham khảo) và 6 bông tai. Có 62 dòng mang owner revision (46 sửa, 16 mới); phân loại giá hiện tại là 148 per_unit, 27 source_total, 18 reference_display. Engine vẫn giữ đúng nhóm quy cách/đơn vị/nguồn, ưu tiên Thanh Ấn khi khớp. Hỏi ngắn giữ thông số local; chỉ yêu cầu **Xem bảng giá** mới mở toàn bảng.
 
-Chính sách chủ cơ sở `owner-floor-tier-2026-10-13`: giá mỗi đơn vị rõ ràng chọn mốc công bố lớn nhất không vượt số lượng yêu cầu; trên mốc cuối giữ cùng đơn giá. Dưới mốc đầu, nhóm xung đột/không đơn điệu hoặc quy cách thiếu thì hỏi/Zalo. Danh thiếp theo hộp, trần bậc 10; trên 10 cần mốc 10 cùng nhóm. Tổng = số lượng yêu cầu × đơn giá mốc, ghi tham khảo và provenance business-owner-policy, không nhận thành tổng nguồn công bố.
+Runtime có 22 sản phẩm-biến thể; giá/metadata đã hoàn tất. SHA-256 dữ liệu cuối: `2521ee2d7d238574837567eec14073b25f3cf9081faa3a98c1a62e11dae62615`. SHA-256 policy hiện tại: `023d999828a83ca226655cfe6bed8d70d1dea8af63d04a84d0a045014c4962de`. Baseline lịch sử và artwork native không đổi.
 
-Giá gói/source_total chỉ đúng số lượng, giữ nguyên tổng; không chia đơn giá/chuyển thành bậc. Cơ sở số lượng/đơn vị không rõ không tính tổng. Không tự thêm giảm giá/VAT/phí/thời hạn. C300 Thanh Ấn 12 hộp dùng mốc 10 hộp 70.000 ₫/hộp → 840.000 ₫ tham khảo, vẫn ghi số tấm/kích thước/gia công chưa xác minh. Không sửa snapshot để tạo khoảng số lượng.
+Website được cập nhật bằng công việc riêng. Dataset giữ bằng chứng baseline lịch sử và provenance chủ cơ sở, không khẳng định từng giá sửa đã được công bố chính xác trên web. Đối chiếu xác nhận 21 URL sản phẩm/177 URL dòng giá gốc không đổi; tác vụ Mầm không sửa URL/slug/canonical/redirect website.
+
+[Nguồn tham khảo bông tai](https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/) đã xác minh Couche 300gsm và offset hai mặt. Nguồn cho chọn cán màng mờ hoặc không cán, nhưng chưa nói phương án nào gồm trong giá. Cán màng vẫn cần xác nhận; `ownerRecipeIncomplete:true` tiếp tục handoff, không tự tính tổng cho quy cách chưa đầy đủ. Sáu dòng chỉ bổ sung specs/metadata và secondarySourceUrls: record giá chủ cơ sở vẫn có URL nguồn chính null, baseline lịch sử giữ nguyên, không đổi giá/VAT hoặc tạo live sync.
+
+Chính sách chủ cơ sở `owner-floor-tier-2026-10-13`: giá mỗi đơn vị rõ ràng chọn mốc công bố lớn nhất không vượt số lượng yêu cầu; trên mốc cuối giữ cùng đơn giá. Dưới mốc đầu, nhóm xung đột/không đơn điệu hoặc quy cách thiếu thì hỏi/Zalo. Danh thiếp theo hộp, trần bậc 10; trên 10 cần mốc 10 cùng nhóm. Tổng = số lượng yêu cầu × đơn giá mốc; provenance business-owner-policy và căn cứ nguồn giữ trong chi tiết/dữ liệu, không nhận thành tổng nguồn công bố.
+
+Giá gói/source_total chỉ đúng số lượng, giữ nguyên tổng; không chia đơn giá/chuyển thành bậc. Cơ sở số lượng/đơn vị không rõ không tính tổng. Không tự thêm giảm giá/VAT/phí/thời hạn. Ví dụ baseline C300 Thanh Ấn 12 hộp dùng mốc 10 hộp 70.000 ₫/hộp → 840.000 ₫, không tự điền số tấm/kích thước/gia công chưa xác minh. Không sửa snapshot để tạo khoảng số lượng.
+
+Câu báo giá chỉ có hai dòng chính: quy cách đã xác minh, rồi số lượng và tổng tiền. Không hiển thị đơn giá, đoạn nguồn/ngày chính sách hoặc cảnh báo thiếu dài trong câu trả lời chính. Điều kiện, provenance và ý nghĩa giá giữ ở chi tiết tùy chọn/mã/tài liệu. Ghi chú “chưa VAT” nhỏ chỉ hiện khi nguồn nêu rõ. Chữ 16px và các bố cục nhỏ đã được kiểm tra thủ công; kiểm tra phóng 200% dùng CSS tương đương, không thao tác zoom browser thật.
 
 ## Đồng ý và dữ liệu Free
 
 Google Free có thể dùng input/output để cải thiện sản phẩm và người rà soát có thể đọc chúng. Không gửi dữ liệu cá nhân/nhạy cảm/bí mật. API yêu cầu 18+; API Clients tại EEA/Thụy Sĩ/Anh phải dùng Paid Services, nên bản Free này chỉ gate Việt Nam. [Điều khoản](https://ai.google.dev/gemini-api/terms).
 
-`store:false` tắt lưu Interaction để truy xuất/state, không hủy điều khoản dữ liệu Free. Chủ sở hữu tự nhập key vào UI Vercel bảo mật sau khi chấp thuận cấu hình cụ thể; không gửi key qua chat. Cờ Free/quota ghi nhận kiểm tra thủ công, không tự chứng minh billing/quota. [Lưu trữ](https://ai.google.dev/gemini-api/docs/interactions-overview), [quota](https://ai.google.dev/gemini-api/docs/rate-limits).
+`store:false` tắt lưu Interaction để truy xuất/state, không hủy điều khoản dữ liệu Free. Chủ sở hữu đã tự nhập key trong UI Vercel bảo mật sau chấp thuận; không gửi key qua chat. Cờ Free/quota ghi nhận kiểm tra thủ công đã thực hiện, không tự theo dõi thay đổi billing/quota. [Lưu trữ](https://ai.google.dev/gemini-api/docs/interactions-overview), [quota](https://ai.google.dev/gemini-api/docs/rate-limits).
 
 ## Nghiệm thu
 
-Mock server 192/192, client 42/42 đã đạt; kiểm tra gate/schema/lỗi/cancellation/giới hạn/fallback, không chứng minh key/model/quota thật. Cần nghiệm thu riêng deployment Ready: người dùng Việt Nam đồng ý, gửi câu không nhạy cảm chưa được local hiểu, xác nhận category rồi thử báo giá local. Lỗi/thiếu config/hết quota vẫn local. Không nhập key vào console/test harness. WordPress chưa cài/thử staging.
+Source cuối sau sửa metadata/thông báo cán màng đạt **652/652 Node** (269 policy + 29 menu + 43 quote-flow + 192 server + 42 client + 77 owner-revision). Browser chạy lại đúng source cuối đạt **55/55 Gemini mock** ở cả 1280×720 và 320×568, cùng **107/107 native/widget** ở 1280×720, không có lỗi. Artwork và giá không đổi. Mock kiểm tra gate/schema/lỗi/cancellation/giới hạn/fallback, không gọi Google; deployment cuối còn chờ xác nhận riêng.
+
+Readability thủ công đạt tại 390×844, 640×360 CSS tương đương 200%, 844×390 và fallback 390×360: input/đóng hiển thị, chữ 16px, không tràn ngang. Không claim zoom browser thực tế vì công cụ không expose thao tác đó. Chưa xác nhận deployment cuối của source mới.
+
+Kiểm tra thật ngày 13/10/2026 trên Production commit `6907`, deployment `5RbbRAEtkL3ALgZgk2d1KdNA3Ust` Ready: hai lần phân loại thật/UI xác nhận thành công. Câu tổng hợp “quyển giới thiệu bộ sưu tập quần áo” là một ví dụ local unknown → catalogue → nút xác nhận. Tách riêng kết quả này khỏi mock và khỏi deployment mới chưa xác nhận. Không thông tin cá nhân/lịch sử khách, không đọc khóa/billing. WordPress chưa cài/thử staging.

@@ -1,0 +1,1590 @@
+{
+  "schemaVersion": 2,
+  "revisionId": "owner-price-revision-2026-10-13",
+  "kind": "business-owner-price-update",
+  "approvedOn": "2026-10-13",
+  "appliesToProviders": [
+    "thanh-an",
+    "vinh-phat"
+  ],
+  "baselineSha256": "408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99",
+  "historicalWebsiteSnapshotDate": "2026-10-12",
+  "historicalWebsiteVerifiedAtUtc": "2026-10-12T04:50:00Z",
+  "websitePublicationVerified": false,
+  "baselinePriceFactCount": 177,
+  "currentPriceFactCount": 193,
+  "amendedExistingFactCount": 46,
+  "addedFactCount": 16,
+  "approvedAllCells": true,
+  "confirmationEvidence": "Human owner: đúng toàn bộ rồi, 2026-10-13T02:44:52Z",
+  "amendedFactIds": [
+    "vp-bag-20x14x6-300",
+    "vp-bag-25x18x8-300",
+    "vp-bag-31x21x10-300",
+    "vp-bag-37x27x10-300",
+    "vp-bag-20x14x6-500",
+    "vp-bag-25x18x8-500",
+    "vp-bag-31x21x10-500",
+    "vp-bag-37x27x10-500",
+    "vp-bag-20x14x6-1000",
+    "vp-bag-25x18x8-1000",
+    "vp-bag-31x21x10-1000",
+    "vp-bag-37x27x10-1000",
+    "vp-bag-20x14x6-2000",
+    "vp-bag-25x18x8-2000",
+    "vp-bag-31x21x10-2000",
+    "vp-bag-37x27x10-2000",
+    "vp-tag-50x30-1500",
+    "vp-tag-50x30-3000",
+    "vp-tag-50x30-6000",
+    "vp-tag-45x45-1000",
+    "vp-tag-45x45-2000",
+    "vp-tag-45x45-4000",
+    "vp-tag-90x27-1000",
+    "vp-tag-90x27-2000",
+    "vp-tag-90x27-4000",
+    "vp-tag-90x54-500",
+    "vp-tag-90x54-1000",
+    "vp-tag-90x54-2000",
+    "catalogue-a4-cover-c250-offset-12-200",
+    "catalogue-a4-cover-c250-offset-16-200",
+    "catalogue-a4-cover-c250-offset-20-200",
+    "catalogue-a4-cover-c250-offset-24-200",
+    "catalogue-a4-cover-c250-offset-28-200",
+    "catalogue-a4-cover-c250-offset-32-200",
+    "catalogue-a4-cover-c250-offset-12-500",
+    "catalogue-a4-cover-c250-offset-16-500",
+    "catalogue-a4-cover-c250-offset-20-500",
+    "catalogue-a4-cover-c250-offset-24-500",
+    "catalogue-a4-cover-c250-offset-28-500",
+    "catalogue-a4-cover-c250-offset-32-500",
+    "catalogue-a4-cover-c250-offset-12-1000",
+    "catalogue-a4-cover-c250-offset-16-1000",
+    "catalogue-a4-cover-c250-offset-20-1000",
+    "catalogue-a4-cover-c250-offset-24-1000",
+    "catalogue-a4-cover-c250-offset-28-1000",
+    "catalogue-a4-cover-c250-offset-32-1000"
+  ],
+  "addedFactIds": [
+    "catalogue-a4-cover-c300-offset-36-200",
+    "catalogue-a4-cover-c300-offset-12-300",
+    "catalogue-a4-cover-c300-offset-16-300",
+    "catalogue-a4-cover-c300-offset-20-300",
+    "catalogue-a4-cover-c300-offset-24-300",
+    "catalogue-a4-cover-c300-offset-28-300",
+    "catalogue-a4-cover-c300-offset-32-300",
+    "catalogue-a4-cover-c300-offset-36-300",
+    "catalogue-a4-cover-c300-offset-36-500",
+    "catalogue-a4-cover-c300-offset-36-1000",
+    "owner-earring-tag-50x40-1000",
+    "owner-earring-tag-50x40-2000",
+    "owner-earring-tag-50x40-4000",
+    "owner-earring-tag-85x50-500",
+    "owner-earring-tag-85x50-1000",
+    "owner-earring-tag-85x50-2000"
+  ],
+  "status": "applied-to-local-widget-data-not-published",
+  "pendingCells": [],
+  "baseline": {
+    "path": ".price-revisions/data-published-20261012-408e5bf6.json",
+    "sha256": "408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99",
+    "priceFactCount": 177,
+    "snapshotDate": "2026-10-12",
+    "publicFixturePath": "docs/published-price-baseline-20261012.json",
+    "byteLength": 353748
+  },
+  "provenance": {
+    "type": "business-owner-price-update",
+    "ownerConfirmedOn": "2026-10-13",
+    "appliesToProviders": [
+      "thanh-an",
+      "vinh-phat"
+    ],
+    "websitePublicationVerified": false,
+    "evidenceLibraryFileIds": [
+      "libfile_71d73ba906d08191a35d51f97dfb965f"
+    ],
+    "localImageMaterialization": "failed-stopped-without-bypass",
+    "source": "Parent direct pixel review plus second reader, followed by human owner confirmation of all cells."
+  },
+  "scope": {
+    "bagCells": 16,
+    "rectangularTagCells": 12,
+    "earringTagCells": 6,
+    "catalogueCoverC300Cells": 28,
+    "untouchedTaKtsCatalogue": true,
+    "untouchedAllC150Catalogue": true,
+    "untouchedOrdinaryNamecards": true
+  },
+  "changes": [
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-20x14x6-300",
+      "originalPriceVnd": 9500,
+      "ownerUnitPriceVnd": 11000,
+      "quantity": 300,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "20x14x6",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-25x18x8-300",
+      "originalPriceVnd": 11500,
+      "ownerUnitPriceVnd": 13000,
+      "quantity": 300,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "25x18x8",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-31x21x10-300",
+      "originalPriceVnd": 12500,
+      "ownerUnitPriceVnd": 13500,
+      "quantity": 300,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "31x21x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-37x27x10-300",
+      "originalPriceVnd": 15000,
+      "ownerUnitPriceVnd": 16500,
+      "quantity": 300,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "37x27x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-20x14x6-500",
+      "originalPriceVnd": 7500,
+      "ownerUnitPriceVnd": 8000,
+      "quantity": 500,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "20x14x6",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-25x18x8-500",
+      "originalPriceVnd": 8500,
+      "ownerUnitPriceVnd": 9800,
+      "quantity": 500,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "25x18x8",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-31x21x10-500",
+      "originalPriceVnd": 9800,
+      "ownerUnitPriceVnd": 11000,
+      "quantity": 500,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "31x21x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-37x27x10-500",
+      "originalPriceVnd": 12000,
+      "ownerUnitPriceVnd": 13000,
+      "quantity": 500,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "37x27x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-20x14x6-1000",
+      "originalPriceVnd": 5500,
+      "ownerUnitPriceVnd": 5500,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "20x14x6",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-25x18x8-1000",
+      "originalPriceVnd": 6500,
+      "ownerUnitPriceVnd": 6500,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "25x18x8",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-31x21x10-1000",
+      "originalPriceVnd": 7500,
+      "ownerUnitPriceVnd": 7500,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "31x21x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-37x27x10-1000",
+      "originalPriceVnd": 9000,
+      "ownerUnitPriceVnd": 9000,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "37x27x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-20x14x6-2000",
+      "originalPriceVnd": 4500,
+      "ownerUnitPriceVnd": 4700,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "20x14x6",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-25x18x8-2000",
+      "originalPriceVnd": 5500,
+      "ownerUnitPriceVnd": 5500,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "25x18x8",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-31x21x10-2000",
+      "originalPriceVnd": 5800,
+      "ownerUnitPriceVnd": 6400,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "31x21x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "paper-bag-vp",
+      "factId": "vp-bag-37x27x10-2000",
+      "originalPriceVnd": 7500,
+      "ownerUnitPriceVnd": 8000,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "37x27x10",
+        "dimensionsUnit": "cm",
+        "material": "c300",
+        "sides": 1,
+        "variant": "vertical",
+        "finishing": "film",
+        "cord": "ordinary-nylon"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-50x30-1500",
+      "originalPriceVnd": 120,
+      "ownerUnitPriceVnd": 140,
+      "quantity": 1500,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "50x30",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-50x30-3000",
+      "originalPriceVnd": 100,
+      "ownerUnitPriceVnd": 120,
+      "quantity": 3000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "50x30",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-50x30-6000",
+      "originalPriceVnd": 90,
+      "ownerUnitPriceVnd": 105,
+      "quantity": 6000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "50x30",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-45x45-1000",
+      "originalPriceVnd": 170,
+      "ownerUnitPriceVnd": 170,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "45x45",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": 170000,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-45x45-2000",
+      "originalPriceVnd": 140,
+      "ownerUnitPriceVnd": 140,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "45x45",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": 280000,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-45x45-4000",
+      "originalPriceVnd": 110,
+      "ownerUnitPriceVnd": 130,
+      "quantity": 4000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "45x45",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-90x27-1000",
+      "originalPriceVnd": 170,
+      "ownerUnitPriceVnd": 170,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "90x27",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": 170000,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-90x27-2000",
+      "originalPriceVnd": 140,
+      "ownerUnitPriceVnd": 140,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "90x27",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": 280000,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-90x27-4000",
+      "originalPriceVnd": 110,
+      "ownerUnitPriceVnd": 130,
+      "quantity": 4000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "90x27",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-90x54-500",
+      "originalPriceVnd": 300,
+      "ownerUnitPriceVnd": 340,
+      "quantity": 500,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "90x54",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-90x54-1000",
+      "originalPriceVnd": 210,
+      "ownerUnitPriceVnd": 210,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "90x54",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": 210000,
+      "isNewRecord": false
+    },
+    {
+      "productId": "tag-vp",
+      "factId": "vp-tag-90x54-2000",
+      "originalPriceVnd": 180,
+      "ownerUnitPriceVnd": 200,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "size": "90x54",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor",
+        "finishing": "rectangle-square-hole",
+        "holeCount": 1,
+        "holeShape": "round",
+        "holeDiameterMm": 3
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-12-200",
+      "originalPriceVnd": 22000,
+      "ownerUnitPriceVnd": 22000,
+      "quantity": 200,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 12,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-16-200",
+      "originalPriceVnd": 28000,
+      "ownerUnitPriceVnd": 26000,
+      "quantity": 200,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 16,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-20-200",
+      "originalPriceVnd": 32000,
+      "ownerUnitPriceVnd": 30000,
+      "quantity": 200,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 20,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-24-200",
+      "originalPriceVnd": 37000,
+      "ownerUnitPriceVnd": 35000,
+      "quantity": 200,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 24,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-28-200",
+      "originalPriceVnd": 40000,
+      "ownerUnitPriceVnd": 38000,
+      "quantity": 200,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 28,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-32-200",
+      "originalPriceVnd": 45000,
+      "ownerUnitPriceVnd": 42000,
+      "quantity": 200,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 32,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-36-200",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 45000,
+      "quantity": 200,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 36,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-12-300",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 20000,
+      "quantity": 300,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 12,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-16-300",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 23000,
+      "quantity": 300,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 16,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-20-300",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 27000,
+      "quantity": 300,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 20,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-24-300",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 30000,
+      "quantity": 300,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 24,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-28-300",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 34000,
+      "quantity": 300,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 28,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-32-300",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 38000,
+      "quantity": 300,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 32,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-36-300",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 40000,
+      "quantity": 300,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 36,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-12-500",
+      "originalPriceVnd": 12000,
+      "ownerUnitPriceVnd": 14000,
+      "quantity": 500,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 12,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-16-500",
+      "originalPriceVnd": 15000,
+      "ownerUnitPriceVnd": 15000,
+      "quantity": 500,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 16,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-20-500",
+      "originalPriceVnd": 17000,
+      "ownerUnitPriceVnd": 17000,
+      "quantity": 500,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 20,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-24-500",
+      "originalPriceVnd": 19500,
+      "ownerUnitPriceVnd": 19500,
+      "quantity": 500,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 24,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-28-500",
+      "originalPriceVnd": 21000,
+      "ownerUnitPriceVnd": 21000,
+      "quantity": 500,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 28,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-32-500",
+      "originalPriceVnd": 24000,
+      "ownerUnitPriceVnd": 24000,
+      "quantity": 500,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 32,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-36-500",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 25000,
+      "quantity": 500,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 36,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-12-1000",
+      "originalPriceVnd": 7500,
+      "ownerUnitPriceVnd": 7500,
+      "quantity": 1000,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 12,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-16-1000",
+      "originalPriceVnd": 9000,
+      "ownerUnitPriceVnd": 9000,
+      "quantity": 1000,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 16,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-20-1000",
+      "originalPriceVnd": 10000,
+      "ownerUnitPriceVnd": 10000,
+      "quantity": 1000,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 20,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-24-1000",
+      "originalPriceVnd": 11500,
+      "ownerUnitPriceVnd": 11500,
+      "quantity": 1000,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 24,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-28-1000",
+      "originalPriceVnd": 12500,
+      "ownerUnitPriceVnd": 12500,
+      "quantity": 1000,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 28,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c250-offset-32-1000",
+      "originalPriceVnd": 14500,
+      "ownerUnitPriceVnd": 14500,
+      "quantity": 1000,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 32,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": false
+    },
+    {
+      "productId": "catalogue",
+      "factId": "catalogue-a4-cover-c300-offset-36-1000",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 15000,
+      "quantity": 1000,
+      "quantityUnit": "cuốn",
+      "specs": {
+        "size": "a4",
+        "pages": 36,
+        "material": "cover-c300",
+        "cover": "c300",
+        "inside": "c150",
+        "printing": "offset4",
+        "finishing": "staple",
+        "pagesIncludeCover": true
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "earring-tag-vp",
+      "factId": "owner-earring-tag-50x40-1000",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 390,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "shapesAllowed": [
+          "ellipse",
+          "round",
+          "flower",
+          "heart"
+        ],
+        "holeCountAllowed": "one-or-many",
+        "holeDiameterRangeMm": [
+          1,
+          5
+        ],
+        "size": "50x40",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor"
+      },
+      "sourceTotalVnd": 390000,
+      "isNewRecord": true
+    },
+    {
+      "productId": "earring-tag-vp",
+      "factId": "owner-earring-tag-50x40-2000",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 330,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "shapesAllowed": [
+          "ellipse",
+          "round",
+          "flower",
+          "heart"
+        ],
+        "holeCountAllowed": "one-or-many",
+        "holeDiameterRangeMm": [
+          1,
+          5
+        ],
+        "size": "50x40",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "earring-tag-vp",
+      "factId": "owner-earring-tag-50x40-4000",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 270,
+      "quantity": 4000,
+      "quantityUnit": "cái",
+      "specs": {
+        "shapesAllowed": [
+          "ellipse",
+          "round",
+          "flower",
+          "heart"
+        ],
+        "holeCountAllowed": "one-or-many",
+        "holeDiameterRangeMm": [
+          1,
+          5
+        ],
+        "size": "50x40",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "earring-tag-vp",
+      "factId": "owner-earring-tag-85x50-500",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 800,
+      "quantity": 500,
+      "quantityUnit": "cái",
+      "specs": {
+        "shapesAllowed": [
+          "ellipse",
+          "round",
+          "flower",
+          "heart"
+        ],
+        "holeCountAllowed": "one-or-many",
+        "holeDiameterRangeMm": [
+          1,
+          5
+        ],
+        "size": "85x50",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "earring-tag-vp",
+      "factId": "owner-earring-tag-85x50-1000",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 490,
+      "quantity": 1000,
+      "quantityUnit": "cái",
+      "specs": {
+        "shapesAllowed": [
+          "ellipse",
+          "round",
+          "flower",
+          "heart"
+        ],
+        "holeCountAllowed": "one-or-many",
+        "holeDiameterRangeMm": [
+          1,
+          5
+        ],
+        "size": "85x50",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    },
+    {
+      "productId": "earring-tag-vp",
+      "factId": "owner-earring-tag-85x50-2000",
+      "originalPriceVnd": null,
+      "ownerUnitPriceVnd": 420,
+      "quantity": 2000,
+      "quantityUnit": "cái",
+      "specs": {
+        "shapesAllowed": [
+          "ellipse",
+          "round",
+          "flower",
+          "heart"
+        ],
+        "holeCountAllowed": "one-or-many",
+        "holeDiameterRangeMm": [
+          1,
+          5
+        ],
+        "size": "85x50",
+        "dimensionsUnit": "mm",
+        "material": "c300",
+        "sides": 2,
+        "printing": "offset-multicolor"
+      },
+      "sourceTotalVnd": null,
+      "isNewRecord": true
+    }
+  ],
+  "matrices": {
+    "bag": {
+      "sizes": [
+        "20x14x6",
+        "25x18x8",
+        "31x21x10",
+        "37x27x10"
+      ],
+      "unit": "VND/cái",
+      "prices": {
+        "300": [
+          11000,
+          13000,
+          13500,
+          16500
+        ],
+        "500": [
+          8000,
+          9800,
+          11000,
+          13000
+        ],
+        "1000": [
+          5500,
+          6500,
+          7500,
+          9000
+        ],
+        "2000": [
+          4700,
+          5500,
+          6400,
+          8000
+        ]
+      }
+    },
+    "rectangularTag": {
+      "unit": "VND/cái",
+      "prices": {
+        "vp-tag-50x30-1500": 140,
+        "vp-tag-50x30-3000": 120,
+        "vp-tag-50x30-6000": 105,
+        "vp-tag-45x45-1000": 170,
+        "vp-tag-45x45-2000": 140,
+        "vp-tag-45x45-4000": 130,
+        "vp-tag-90x27-1000": 170,
+        "vp-tag-90x27-2000": 140,
+        "vp-tag-90x27-4000": 130,
+        "vp-tag-90x54-500": 340,
+        "vp-tag-90x54-1000": 210,
+        "vp-tag-90x54-2000": 200
+      },
+      "retainedSourceTotals": {
+        "vp-tag-45x45-1000": 170000,
+        "vp-tag-45x45-2000": 280000,
+        "vp-tag-90x27-1000": 170000,
+        "vp-tag-90x27-2000": 280000,
+        "vp-tag-90x54-1000": 210000
+      }
+    },
+    "earringTag": {
+      "unit": "VND/cái",
+      "prices": {
+        "50x40": [
+          [
+            1000,
+            390
+          ],
+          [
+            2000,
+            330
+          ],
+          [
+            4000,
+            270
+          ]
+        ],
+        "85x50": [
+          [
+            500,
+            800
+          ],
+          [
+            1000,
+            490
+          ],
+          [
+            2000,
+            420
+          ]
+        ]
+      }
+    },
+    "catalogue": {
+      "pages": [
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36
+      ],
+      "unit": "VND/cuốn",
+      "prices": {
+        "200": [
+          22000,
+          26000,
+          30000,
+          35000,
+          38000,
+          42000,
+          45000
+        ],
+        "300": [
+          20000,
+          23000,
+          27000,
+          30000,
+          34000,
+          38000,
+          40000
+        ],
+        "500": [
+          14000,
+          15000,
+          17000,
+          19500,
+          21000,
+          24000,
+          25000
+        ],
+        "1000": [
+          7500,
+          9000,
+          10000,
+          11500,
+          12500,
+          14500,
+          15000
+        ]
+      }
+    }
+  },
+  "countExplanation": "The historical baseline contained 18 VP offset cover-C250 catalogue rows (no 36-page rows) and 12 rectangular tags (no earring rows). The complete approved matrix therefore adds 10 catalogue rows and 6 earring rows, producing 193 facts; no TA KTS row was replaced to force an expected count.",
+  "taxRule": "Historical VAT fields retained unchanged. No new VAT rate, inclusive-price or statutory-current-tax claim was introduced.",
+  "integrationNote": "Current owner prices/specs take explicit owner authority; historical source URLs/providers/verifiedAtUtc remain for provenance. New rows carry sourceOwnerRecipe and isNewRecord/isNewTier, never an invented originalSourceRecord.",
+  "unresolvedRecipeFields": {
+    "productId": "earring-tag-vp",
+    "fields": [
+      "laminationChoice",
+      "laminationIncludedInPrice"
+    ],
+    "quoteBehavior": "Zalo handoff for lamination inclusion/choice; confirmed owner table remains available without computed final quote"
+  },
+  "currentWebsiteEvidence": {
+    "productId": "earring-tag-vp",
+    "url": "https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/",
+    "readAtUtc": "2026-10-13T03:46:16Z",
+    "verifiedFields": {
+      "material": "c300",
+      "sides": 2,
+      "printing": "offset-multicolor"
+    },
+    "laminationInPriceUnspecified": true,
+    "availableLaminationOptions": [
+      "matte",
+      "none"
+    ],
+    "publishedSourceTotalsVnd": {
+      "owner-earring-tag-50x40-1000": 390000,
+      "owner-earring-tag-50x40-2000": 660000,
+      "owner-earring-tag-50x40-4000": 1080000,
+      "owner-earring-tag-85x50-500": 400000,
+      "owner-earring-tag-85x50-1000": 490000,
+      "owner-earring-tag-85x50-2000": 840000
+    },
+    "scope": "General product specifications and printed totals verified on the current page; this supplemental evidence does not rewrite the historical primary owner-price record."
+  },
+  "metadataRefinement": {
+    "readAtUtc": "2026-10-13T03:46:16Z",
+    "unchanged193PriceAndPrimarySourceFingerprintSha256": "37f040218fa97365900ebd993906095f7820a7728740ae8cdb297f0982e25de0",
+    "unchangedOwnerApprovalDate": "2026-10-13",
+    "unchangedBaselineSha256": "408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99"
+  }
+}

@@ -11,14 +11,14 @@
     ['red-envelope', 'Bao lì xì', ['red-envelope']],
     ['receipt', 'Phiếu thu', ['receipt', 'receipt-vp']],
     ['folder', 'Folder kẹp file', ['folder-vp']],
-    ['tag', 'Tag treo', ['tag-vp']],
+    ['tag', 'Tag treo', ['tag-vp', 'earring-tag-vp']],
     ['menu', 'Menu', ['menu-paper']],
     ['wedding', 'Thiệp cưới', ['wedding']]
   ];
   const CONTACT_URLS = new Set(['https://zalo.me/0898739868', 'https://zalo.me/0898113688', 'https://zalo.me/0934559479']);
   const MATERIALS = {
     'c100':'Couche 100gsm', 'c150':'Couche 150gsm', 'c200':'Couche 200gsm', 'c250':'Couche 250gsm', 'c300':'Couche 300gsm',
-    'all-c150':'C150 toàn bộ', 'cover-c250':'Bìa C250 / ruột C150', 'carbonless':'Carbonless', 'fort80':'Fort 80gsm',
+    'all-c150':'C150 toàn bộ', 'cover-c250':'Bìa C250 / ruột C150', 'cover-c300':'Bìa C300 / ruột C150', 'carbonless':'Carbonless', 'fort80':'Fort 80gsm',
     'fort100':'Fort 100gsm', 'fort120':'Fort 120gsm', 'briston300':'Briston 300gsm', 'briston350':'Briston 350gsm',
     'decal-paper':'Decal giấy', 'art-paper':'Giấy mỹ thuật / Fort / Kraft / giấy gân', 'art-fort-kraft-textured':'Giấy mỹ thuật / Fort / Kraft / giấy gân'
   };
@@ -27,6 +27,8 @@
   const displayText = value => String(value).replace(/Vĩnh\s*Phát|vinh[\s-]*phat|invinhphat\.com/gi,'giá tham khảo');
   const providerName = provider => provider === 'vinh-phat' ? 'Giá tham khảo' : 'Thanh Ấn';
   const factKind = f => f.priceKind || 'per_unit';
+  const ownerUpdated = f => f.ownerPriceRevision?.kind === 'business-owner-price-update';
+  const hasSourceTotal = f => Number.isSafeInteger(f.sourceTotalVnd) && f.sourceTotalVnd >= 0 && factKind(f) !== 'source_total' && (!ownerUpdated(f) || f.sourceTotalVnd === f.quantity * f.priceVnd);
   const safeSource = url => root.ThanhAnFAQ.safeLink(url);
   function isMenuRequest(text) {
     const raw = String(text || '').trim();
@@ -59,13 +61,23 @@
     if (s.physicalSheetsPerBook) parts.push(s.physicalSheetsPerBook + ' tờ vật lý/cuốn');
     if (s.variant === 'with-film') parts.push('Có cán màng');
     if (s.variant === 'without-film' || s.variant === 'no-film') parts.push('Không cán màng');
+    if (s.variant === 'vertical') parts.push('Túi đứng');
+    if (s.sides) parts.push('In ' + s.sides + ' mặt');
+    if (s.finishing === 'film') parts.push('Cán màng');
+    if (s.finishing === 'staple') parts.push('Đóng kim');
+    if (s.cord === 'ordinary-nylon') parts.push('Dây dù thường');
+    if (categoryId === 'tag' && s.finishing === 'rectangle-square-hole') parts.push('Chữ nhật / vuông');
+    if (categoryId === 'tag' && product.id === 'earring-tag-vp') parts.push('Tag bông tai');
+    if (s.holeCount && s.holeDiameterMm) parts.push(s.holeCount + ' lỗ ' + (s.holeShape === 'round' ? 'tròn ' : '') + s.holeDiameterMm + ' mm');
+    if (s.holeCountAllowed === 'one-or-many' && Array.isArray(s.holeDiameterRangeMm) && s.holeDiameterRangeMm.length === 2) parts.push('1 hoặc nhiều lỗ ' + s.holeDiameterRangeMm.join('–') + ' mm');
     if (s.pocketHeightCm) parts.push('Túi ' + s.pocketHeightCm + ' cm');
     if (categoryId === 'namecard' && !s.cardsPerBox) parts.push('Bảng theo hộp; quy cách cần xác nhận');
-    if (categoryId === 'tag') parts.push('Cán màng cần xác nhận');
+    if (categoryId === 'tag' && fact.rawSourceFlags?.laminationAmbiguous) parts.push('Cán màng cần xác nhận');
     return parts.filter(Boolean).join(' · ') || product.variant || product.name;
   }
   function snapshotIsFresh(data, now) {
-    return Number.isFinite(now) && now >= Date.parse(data.verifiedAtUtc) && now < Date.parse(data.snapshotDate + 'T00:00:00Z') + data.priceReviewAfterDays * 86400000;
+    const approvedAt = data.ownerPriceRevision ? Date.parse(data.ownerPriceRevision.approvedOn + 'T00:00:00Z') : Date.parse(data.verifiedAtUtc);
+    return Number.isFinite(now) && now >= Date.parse(data.verifiedAtUtc) && now >= approvedAt && now < Date.parse(data.snapshotDate + 'T00:00:00Z') + data.priceReviewAfterDays * 86400000;
   }
   function buildCatalog(data, now = Date.now()) {
     if (!root.ThanhAnFAQ) throw new Error('Thiếu bộ kiểm tra dữ liệu giá');
@@ -77,10 +89,15 @@
       if (!products.length) continue;
       const variants = [];
       const preferred = new Map();
+      const sourceRows = new Map();
       for (const product of products) for (const fact of product.priceFacts || []) {
         const key = rowKey(fact);
+        const sourceKey = canonical({row:key, provider:fact.provider, sourceUrl:fact.sourceUrl, ownerUpdated:ownerUpdated(fact)});
+        const sourceMeaning = canonical({priceVnd:fact.priceVnd, priceBasis:fact.priceBasis || null, sourceTotalVnd:fact.sourceTotalVnd, conditions:[...fact.conditions].sort()});
+        if (sourceRows.has(sourceKey) && sourceRows.get(sourceKey) !== sourceMeaning) throw new Error('Bảng có dòng trùng quy cách nhưng giá hoặc điều kiện khác nhau; cần nhà in xác nhận.');
+        sourceRows.set(sourceKey,sourceMeaning);
         const previous = preferred.get(key);
-        if (!previous || (fact.provider === 'thanh-an' && previous.fact.provider !== 'thanh-an')) preferred.set(key, {product, fact});
+        if (!previous || (ownerUpdated(fact) && !ownerUpdated(previous.fact)) || (ownerUpdated(fact) === ownerUpdated(previous.fact) && fact.provider === 'thanh-an' && previous.fact.provider !== 'thanh-an')) preferred.set(key, {product, fact});
       }
       const tables = new Map();
       for (const {product, fact} of preferred.values()) {
@@ -92,13 +109,14 @@
           tables.set(key, variant); variants.push(variant);
         }
         variant.rows.push(fact);
-        for (const url of [fact.sourceUrl, ...(fact.secondarySourceUrls || [])]) if (!variant.sourceUrls.includes(url)) variant.sourceUrls.push(url);
+        for (const url of [fact.sourceUrl, ...(fact.secondarySourceUrls || [])]) if (safeSource(url) && !variant.sourceUrls.includes(url)) variant.sourceUrls.push(url);
         if (!variant.sourceNotes.includes(fact.sourceNote)) variant.sourceNotes.push(fact.sourceNote);
         for (const condition of fact.rawSourceFlags?.missingConditions || []) if (!variant.missingConditions.includes(condition)) variant.missingConditions.push(condition);
       }
       for (const variant of variants) {
         variant.rows.sort((a,b) => (a.specs?.pages || 0) - (b.specs?.pages || 0) || a.quantity - b.quantity);
         variant.referenceOnly = variant.rows.every(f => factKind(f) === 'reference_display');
+        variant.ownerUpdated = variant.rows.some(ownerUpdated);
       }
       for (const product of products) {
         for (const estimate of product.referenceEstimates || []) variants.push({id:'estimate-' + estimate.id, categoryId:id, kind:'estimate',
@@ -110,7 +128,7 @@
       }
       categories.push({id, name, variants});
     }
-    return {fresh, snapshotDate:data.snapshotDate, snapshotLabel:data.snapshotLabel, categories};
+    return {fresh, snapshotDate:data.snapshotDate, snapshotLabel:data.snapshotLabel, ownerPriceRevision:data.ownerPriceRevision, categories};
   }
   function priceMeaning(f) {
     if (factKind(f) === 'source_total') return 'Tổng gói / đơn theo bảng';
@@ -124,7 +142,7 @@
     const clock = typeof config.now === 'function' ? config.now : () => Date.now();
     let catalog = buildCatalog(data, clock()), destroyed = false, state = {screen:'categories', categoryId:null, variantId:null};
     const make = (tag, className, text, parent) => {const e = doc.createElement(tag);if(className)e.className=className;if(text !== undefined)e.textContent=displayText(text);if(parent)parent.appendChild(e);return e;};
-    const element = make('section', 'ta-price-menu');element.setAttribute('aria-label', 'Chọn sản phẩm và xem bảng giá website');
+    const element = make('section', 'ta-price-menu');element.setAttribute('aria-label', 'Chọn sản phẩm và xem bảng giá');
     function activity() {if (typeof config.onActivity === 'function') config.onActivity('working');}
     function action(label, className, parent, callback) {
       const button = make('button', className, label, parent);button.type='button';
@@ -138,11 +156,12 @@
       if(subtitle)make('p','ta-price-intro',subtitle,element);
       if(focus)heading.focus({preventScroll:true});
     }
-    function sourceLinks(parent, urls) {
+    function sourceLinks(parent, urls, ownerPrices = false) {
+      if (!urls.some(safeSource)) return;
       const links = make('div','ta-price-sources',undefined,parent);
       for(const url of [...new Set(urls)]) {
         const safe=safeSource(url);if(!safe)continue;
-        const a=make('a','ta-price-source','Xem bảng giá gốc',links);
+        const a=make('a','ta-price-source',ownerPrices ? 'Xem trang sản phẩm tham chiếu' : 'Xem bảng giá gốc',links);
         a.href=safe;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';
       }
     }
@@ -158,17 +177,18 @@
       }
     }
     function metadata(variant) {
-      make('p','ta-price-date','Nguồn: '+providerName(variant.provider)+' · Dữ liệu website ngày '+catalog.snapshotLabel+'. Cần nhà in xác nhận đơn thực tế.',element);
-      sourceLinks(element,variant.sourceUrls);
+      if (variant.ownerUpdated) make('p','ta-price-date','Giá do chủ nhà in xác nhận ngày 13/10/2026.' + (variant.sourceUrls.some(safeSource) ? ' Trang sản phẩm bên dưới là nguồn tham chiếu.' : ''),element);
+      else make('p','ta-price-date','Nguồn: '+providerName(variant.provider)+' · Dữ liệu website ngày '+catalog.snapshotLabel+'. Cần nhà in xác nhận đơn thực tế.',element);
+      sourceLinks(element,variant.sourceUrls,variant.ownerUpdated);
     }
     function showCategories(options = {}) {
       if(destroyed)return;refresh();state={screen:'categories', categoryId:null, variantId:null};
-      header('Bạn cần in gì?', 'Chọn sản phẩm, rồi chọn quy cách để xem toàn bộ bảng đã công bố.', null, options.focus === true);
+      header('Bạn cần in gì?', 'Chọn sản phẩm, rồi chọn quy cách để xem bảng giá.', null, options.focus === true);
       const list=make('div','ta-price-options',undefined,element);
       for(const category of catalog.categories) {
         const b=action(category.name,'ta-price-category',list,()=>showCategory(category.id));b.dataset.categoryId=category.id;
       }
-      make('p','ta-price-note','Giá là dữ liệu website ngày '+catalog.snapshotLabel+'. Ưu tiên bảng Thanh Ấn cho đúng quy cách; giá tham khảo bổ sung các phương án còn thiếu và cần tư vấn viên xác nhận.',element);
+      make('p','ta-price-note',catalog.ownerPriceRevision ? 'Các bảng được cập nhật theo giá chủ nhà in xác nhận ngày 13/10/2026; những bảng khác giữ dữ liệu website ngày '+catalog.snapshotLabel+'.' : 'Giá là dữ liệu website ngày '+catalog.snapshotLabel+'. Ưu tiên bảng Thanh Ấn cho đúng quy cách; giá tham khảo bổ sung các phương án còn thiếu và cần tư vấn viên xác nhận.',element);
     }
     function showCategory(id) {
       if(destroyed)return;refresh();const category=catalog.categories.find(c=>c.id===id);if(!category)return;
@@ -178,7 +198,7 @@
       for(const variant of category.variants) {
         const b=action('', 'ta-price-variant',list,()=>showVariant(variant.id));b.dataset.variantId=variant.id;
         make('span','ta-price-variant-label',variant.label,b);
-        make('small','ta-price-variant-meta',providerName(variant.provider)+' · '+(variant.kind==='table' ? variant.referenceOnly ? 'Bảng tham khảo' : 'Bảng giá website' : variant.kind==='estimate' ? 'Chỉ có ước tính' : variant.kind==='conflict' ? 'Cần tư vấn xác nhận' : 'Chưa có bảng đủ quy cách'),b);
+        make('small','ta-price-variant-meta',variant.ownerUpdated ? 'Giá chủ nhà in xác nhận' : providerName(variant.provider)+' · '+(variant.kind==='table' ? variant.referenceOnly ? 'Bảng tham khảo' : 'Bảng giá website' : variant.kind==='estimate' ? 'Chỉ có ước tính' : variant.kind==='conflict' ? 'Cần tư vấn xác nhận' : 'Chưa có bảng đủ quy cách'),b);
       }
     }
     function renderTable(variant) {
@@ -190,7 +210,7 @@
       const table=make('table','ta-price-table',undefined,wrapper);table.dataset.variantId=variant.id;
       make('caption','ta-sr-only','Toàn bộ các dòng đã xác minh cho '+variant.label,table);
       const hasPages=rows.some(row=>row.specs?.pages);const head=make('tr','',undefined,make('thead','',undefined,table));
-      for(const label of [...(hasPages?['Số trang']:[]),'Số lượng','Giá tại nguồn','Ý nghĩa / đơn vị']) {const th=make('th','',label,head);th.scope='col';}
+      for(const label of [...(hasPages?['Số trang']:[]),'Số lượng',variant.ownerUpdated ? 'Giá hiện tại' : 'Giá tại nguồn','Ý nghĩa / đơn vị']) {const th=make('th','',label,head);th.scope='col';}
       const body=make('tbody','',undefined,table);
       for(const row of rows) {
         const tr=make('tr','',undefined,body);tr.dataset.factId=row.id;
@@ -203,11 +223,11 @@
         make('td','ta-price-meaning',priceMeaning(row),tr);
       }
       for(const note of variant.sourceNotes)make('p','ta-price-note',note,element);
-      if(rows.some(row=>row.sourceTotalVnd !== null && factKind(row)!=='source_total')) {
+      if(rows.some(hasSourceTotal)) {
         const totals=make('details','ta-price-totals',undefined,element);
-        make('summary','','Xem tổng ghi sẵn tại nguồn (không phải phép tính của Mầm)',totals);
+        make('summary','',variant.ownerUpdated ? 'Xem tổng lô đã xác nhận' : 'Xem tổng ghi sẵn tại nguồn (không phải phép tính của Mầm)',totals);
         const list=make('ul','',undefined,totals);
-        for(const row of rows) if(row.sourceTotalVnd !== null && factKind(row)!=='source_total')make('li','',row.quantity.toLocaleString('vi-VN')+' '+row.quantityUnit+': '+money(row.sourceTotalVnd)+' · Tổng nguồn công bố',list);
+        for(const row of rows) if(hasSourceTotal(row))make('li','',row.quantity.toLocaleString('vi-VN')+' '+row.quantityUnit+': '+money(row.sourceTotalVnd)+(ownerUpdated(row) ? ' · Tổng lô chủ nhà in xác nhận' : ' · Tổng nguồn công bố'),list);
       }
       const details=make('details','ta-price-row-details',undefined,element);make('summary','','Xem toàn bộ điều kiện của từng dòng',details);
       for(const row of rows) {
@@ -219,7 +239,7 @@
     function showVariant(id) {
       if(destroyed)return;refresh();const category=catalog.categories.find(c=>c.variants.some(v=>v.id===id));const variant=category?.variants.find(v=>v.id===id);if(!variant)return;
       state={screen:'table',categoryId:category.id,variantId:id};
-      header(variant.label,variant.kind==='table' ? variant.referenceOnly ? 'Bảng tham khảo từ website · Điều kiện cần xác nhận' : 'Bảng giá đã công bố cho đúng phương án này' : 'Thông tin nguồn cần tư vấn xác nhận',()=>showCategory(category.id),true);
+      header(variant.label,variant.kind==='table' ? variant.ownerUpdated ? 'Bảng giá chủ nhà in xác nhận cho quy cách này' : variant.referenceOnly ? 'Bảng tham khảo từ website · Điều kiện cần xác nhận' : 'Bảng giá đã công bố cho đúng phương án này' : 'Thông tin nguồn cần tư vấn xác nhận',()=>showCategory(category.id),true);
       metadata(variant);
       if(!catalog.fresh)make('p','ta-price-warning','Snapshot đã đến hạn kiểm tra hoặc chưa thể dùng ở thời điểm này. Mầm tạm ngừng hiển thị giá; hãy nhắn Zalo để xác nhận.',element);
       else if(variant.kind==='table')renderTable(variant);

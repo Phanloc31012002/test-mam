@@ -1,35 +1,44 @@
 # Cấu hình Gemini Free trên Vercel
 
-Mã đã có, tính năng mặc định tắt. Chưa kiểm chứng gọi thật/quota project-model. FAQ/báo giá local vẫn hoạt động khi không cấu hình. Gói không chứa khóa, không tự tạo khóa hay bật billing.
+Cấu hình Production đã được chấp thuận và kiểm chứng **hai lần phân loại Gemini thật/UI xác nhận thành công** ngày **13/10/2026**, trên commit `6907`. Chủ sở hữu tự lưu khóa có sẵn dưới dạng **Secret, Production**; người hỗ trợ chỉ xác nhận tên/loại/phạm vi biến, không đọc giá trị. Không tạo khóa mới hoặc bật billing. Gói mã không chứa khóa; khi thiếu cấu hình, FAQ/báo giá local vẫn hoạt động.
+
+Production commit `6907`, redeploy Vercel `5RbbRAEtkL3ALgZgk2d1KdNA3Ust` đã Ready. [Demo Production](https://test-mam.vercel.app/) dùng `gemini-3.5-flash-lite`. Một câu thử tổng hợp là “quyển giới thiệu bộ sưu tập quần áo”: local chưa hiểu, Gemini gợi ý catalogue và UI xác nhận đúng. Không gửi thông tin cá nhân/lịch sử khách. Deployment cuối của dữ liệu/giao diện mới còn chờ xác nhận.
 
 ## Kiểm tra trước
 
-Chủ sở hữu dùng khóa có sẵn trong **Default Gemini Project**, không tạo thêm. Trong AI Studio tự kiểm tra đúng project ở Free Tier, model chọn có Free Tier và quota đang hoạt động. Ảnh chỉ “Free tier / Set up billing” chưa xác minh quota model. Không gửi key trong chat/tài liệu/screenshot/console.
+Đã kiểm tra trong AI Studio xác thực: **Default Gemini Project**, Free Tier và quota thực tế của model. Dùng khóa có sẵn của project, không tạo thêm. Không gửi key trong chat/tài liệu/screenshot/console.
 
-Default `gemini-3.8-flash`; alternative cho phép `gemini-3.5-flash-lite`. Ngày 13/10/2026 trang Google liệt kê Free cho hai model. Quota RPM/TPM/RPD phụ thuộc project/model, không hứa lượt/ngày hoặc dùng bảng cũ thay AI Studio hiện tại. [Giá](https://ai.google.dev/gemini-api/docs/pricing), [model](https://ai.google.dev/gemini-api/docs/models), [quota](https://ai.google.dev/gemini-api/docs/rate-limits).
+Production chọn **gemini-3.5-flash-lite**; mã cũng cho phép gemini-3.8-flash và dùng nó làm default nếu không đặt model. Quota quan sát ngày 13/10/2026 trong project:
+
+| Model | RPM | TPM | RPD |
+| --- | --- | --- | --- |
+| gemini-3.5-flash-lite — đang dùng | 15 | 250K | 500 |
+| gemini-3.8-flash — chưa chọn | 5 | 250K | 20 |
+
+Các số là **giới hạn hiển thị lúc kiểm tra**, không phải số lượt/token còn lại hoặc bảo đảm hạn mức cố định. Quota tính theo project/model, không từng khóa; cần kiểm tra lại khi thay model hoặc Google đổi hạn mức. [Giá](https://ai.google.dev/gemini-api/docs/pricing), [model](https://ai.google.dev/gemini-api/docs/models), [quota](https://ai.google.dev/gemini-api/docs/rate-limits).
 
 Free có thể dùng dữ liệu để cải thiện sản phẩm và người rà soát; không gửi thông tin cá nhân/nhạy cảm/bí mật. Bản thử chỉ người xác nhận 18+ tại Việt Nam. [Điều khoản](https://ai.google.dev/gemini-api/terms).
 
-## Biến Production sau khi được chấp thuận
+## Biến Production đã lưu
 
-Persistent credential cần chủ sở hữu chấp thuận cụ thể project Vercel, scope Production và việc server gửi câu đã đồng ý tới Google. Chủ khóa tự nhập vào UI Environment Variables bảo mật của [test-mam](https://vercel.com/httpsgithubcomphanloc31012002/test-mam/settings/environment-variables); không chuyển key cho người hỗ trợ. Chọn **Production**, không dùng PUBLIC_*/NEXT_PUBLIC_* hoặc commit key.
+Chủ sở hữu đã chấp thuận project Vercel/scope Production và việc gửi câu đã đồng ý tới Google, rồi tự nhập khóa trong UI Environment Variables bảo mật của [test-mam](https://vercel.com/httpsgithubcomphanloc31012002/test-mam/settings/environment-variables). Không chuyển key cho người hỗ trợ, không dùng PUBLIC_*/NEXT_PUBLIC_* hoặc commit key.
 
 | Biến server | Giá trị |
 | --- | --- |
-| GEMINI_API_KEY | Khóa có sẵn, chủ sở hữu tự nhập dưới dạng secret |
-| GEMINI_MODEL | gemini-3.8-flash hoặc gemini-3.5-flash-lite |
-| GEMINI_FREE_TIER_VERIFIED_MODEL | Chính xác model đã kiểm tra Free trong project |
-| GEMINI_QUOTA_VERIFIED | true, chỉ sau kiểm tra quota project/model thực tế |
+| GEMINI_API_KEY | Khóa có sẵn; Secret, Production; chủ sở hữu tự nhập |
+| GEMINI_MODEL | gemini-3.5-flash-lite; Production |
+| GEMINI_FREE_TIER_VERIFIED_MODEL | gemini-3.5-flash-lite; Production |
+| GEMINI_QUOTA_VERIFIED | true; Production; đã kiểm tra quota project/model |
 
 VERCEL/VERCEL_ENV do nền tảng cung cấp, không giả lập để bật local. APP_ORIGIN mặc định `https://test-mam.vercel.app`; domain khác phải đúng HTTPS origin, không slash/path/wildcard. Preview mặc định tắt; chỉ mở có chủ đích với APP_ALLOW_PREVIEW=true và APP_ORIGIN chính xác. Không tự mở scope secret sang Preview/Development.
 
 Cờ Free/quota chỉ ghi nhận kiểm tra thủ công, app không tự xác minh billing. Khi model/quota/điều khoản đổi, bỏ cờ xác nhận và review trước khi bật. Không thêm billing/paid upgrade để vượt quota trong phạm vi này.
 
-Biến Vercel mới áp dụng ở deployment sau lưu/redeploy. Cần Ready và đúng commit chứa endpoint, lưu biến chưa chứng minh deployment dùng cấu hình mới. [Environment variables](https://vercel.com/docs/environment-variables), [Node Function](https://vercel.com/docs/functions/runtimes/node-js).
+Đã redeploy và kiểm tra Ready sau lưu biến; lần phân loại thật xác nhận endpoint dùng cấu hình mới. Khi thay đổi tiếp, biến mới cần deployment mới, không suy từ thao tác lưu. [Environment variables](https://vercel.com/docs/environment-variables), [Node Function](https://vercel.com/docs/functions/runtimes/node-js).
 
 ## Nghiệm thu không lộ khóa
 
-1. Từ Việt Nam mở đúng deployment, chat và phần Gemini. GET chỉ trả version/enabled/privacyVersion. Checkbox tắt thì kiểm tra scope/origin/region/flags/quota qua UI, không log key.
+1. Từ Việt Nam mở đúng deployment, chat rồi mở phần thu gọn **Thông tin & quyền riêng tư**. Giao diện chính không cần nhãn model/backend, nhưng disclosure Google và opt-in vẫn được giữ. GET chỉ trả version/enabled/privacyVersion. Checkbox tắt thì kiểm tra scope/origin/region/flags/quota qua UI, không log key.
 2. Đọc thông báo rồi xác nhận 18+/Việt Nam/đồng ý. Dùng câu thử không riêng tư mà local chưa nhận diện. Model chỉ gợi ý intent/category; khách xác nhận rồi local hỏi số lượng/quy cách.
 3. Hỏi giá/FAQ local hiểu không gọi Google; response không model text/giá/link lạ. Hết quota/lỗi/timeout quay local, không retry/tự đổi model.
 4. Revoke/Làm mới/đóng/destroy hủy request/kết quả muộn, reload không giữ chat/đồng ý. Không dùng thông tin khách thật.
@@ -42,3 +51,7 @@ Limiter best effort **mỗi instance** (6/IP/phút, 30 tổng/phút, 2 đồng t
 Gỡ GEMINI_QUOTA_VERIFIED, làm cờ model không khớp hoặc gỡ secret rồi deploy lại để tắt; GET enabled:false, local vẫn hoạt động. Không sửa policy giá để xử lý lỗi Gemini.
 
 Standalone không endpoint; WordPress plugin mặc định tắt/không backend Gemini, chưa cài website Thanh Ấn. Không sửa bảo mật/hosting WordPress, không tự nhắn khách/doanh nghiệp, không gửi lịch sử/lưu chat bền vững/bật billing.
+
+Lần gọi thật/Ready ở trên thuộc commit `6907`, không phải xác nhận bản sửa giá/giao diện mới đã phát hành. Runtime đã hoàn tất giá/metadata với 193 dòng/22 sản phẩm-biến thể, gồm 62 owner-revision. Source cuối đạt **652/652 Node**, **55/55 mock** ở cả 1280×720 và 320×568, cùng **107/107 native/widget** ở 1280×720 sau chạy lại đúng source, không có lỗi. Deployment cuối vẫn cần đối chiếu Ready/commit thực tế. Website updates là công việc riêng; dataset giữ baseline lịch sử và không khẳng định từng giá sửa đã công bố chính xác trên web.
+
+Quy cách bông tai nay có C300/offset hai mặt từ [nguồn tham khảo thứ hai](https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/). Chỉ còn cán màng mờ hoặc không cán và việc giá đã gồm phương án nào cần xác nhận; ownerRecipeIncomplete vẫn true nên chuyển tư vấn. Nguồn này không đổi giá/VAT, không thay URL null của record chủ cơ sở hoặc tạo đồng bộ live.

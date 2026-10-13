@@ -4,7 +4,10 @@ const run=byId('run'),list=byId('results'),summary=byId('summary');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const frame=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 const pointerFrame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+function compactPrice(block,quantity,unit,total,specs=[]){const text=block.querySelector('.ta-message-bubble').textContent,lines=text.split('\n'),amount=quantity.toLocaleString('vi-VN')+' '+unit+': '+total.toLocaleString('vi-VN')+' ₫';return lines.length===2&&specs.every(spec=>lines[0].includes(spec))&&(lines[1]===amount||lines[1]===amount+' (chưa VAT)')&&!/Tổng tham khảo|Nguồn giá|mức nguồn|quy tắc chủ|đơn thực tế|cần tư vấn viên/i.test(text);}
+function textContrast(element){const rgb=value=>{const match=value.match(/^rgba?\(([^)]+)\)$/);if(!match)return null;const values=match[1].split(/[\s,\/]+/).filter(Boolean).map(Number);return {r:values[0]/255,g:values[1]/255,b:values[2]/255,a:values[3]??1};},over=(top,bottom)=>{const a=top.a+bottom.a*(1-top.a);return {r:(top.r*top.a+bottom.r*bottom.a*(1-top.a))/a,g:(top.g*top.a+bottom.g*bottom.a*(1-top.a))/a,b:(top.b*top.a+bottom.b*bottom.a*(1-top.a))/a,a};};const chain=[];for(let node=element;node;node=node.parentElement)chain.push(node);let background={r:1,g:1,b:1,a:1};for(const node of chain.reverse()){const color=rgb(getComputedStyle(node).backgroundColor);if(color)background=over(color,background);}const foreground=rgb(getComputedStyle(element).color);if(!foreground)return 0;const luminance=color=>[color.r,color.g,color.b].map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4).reduce((sum,c,i)=>sum+c*[.2126,.7152,.0722][i],0),a=luminance(over(foreground,background)),b=luminance(background);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);}
 const SPRITE_SHA='4cc6c9f4bc61882379472dfa7fa91ca128b90933b0ae3cda9fff3da91dc6d1f8';
+const EARRING_SOURCE='https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/';
 const NATIVE_STATES=[['idle',0,6],['running-right',1,8],['running-left',2,8],['waving',3,4],['jumping',4,5],['failed',5,8],['waiting',6,6],['running',7,6],['review',8,6]];
 function pixels(canvas){return canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,192,208).data;}
 function pixelHash(rgba){let hash=2166136261;for(const value of rgba)hash=Math.imul((hash^value)>>>0,16777619)>>>0;return hash.toString(16).padStart(8,'0');}
@@ -184,6 +187,11 @@ async function tests(){
    window.dispatchEvent(new Event('blur'));check('Blur ends armed native attention and restores original idle',!mascot.getAttention().active&&mascot.getFrame().row===0);
   }else check('Fine-pointer native tracking correctly follows device and reduced-motion preferences',nativeCanvas.dataset.reducedMotion===String(reducedSystem));
   launcher.click();check('Hidden launcher pauses while visible avatar resumes',mascot.element.dataset.paused==='true'&&a.avatarMascot.element.dataset.paused==='false');check('Launcher opens and focuses input',!panel.hidden&&s.activeElement===input&&launcher.getAttribute('aria-expanded')==='true');
+  const greetingBubble=log.querySelector('.ta-message-bubble'),clearControl=s.querySelector('.ta-clear');
+  const readableSizes={message:parseFloat(getComputedStyle(greetingBubble).fontSize),input:parseFloat(getComputedStyle(input).fontSize),clear:parseFloat(getComputedStyle(clearControl).fontSize)};
+  check('Customer message and input fonts are readable with large quick and clear controls',readableSizes.message>=16&&readableSizes.input>=16&&readableSizes.clear>=14&&clearControl.getBoundingClientRect().height>=44&&[...s.querySelectorAll('.ta-quick button')].every(button=>button.getBoundingClientRect().height>=44),JSON.stringify(readableSizes));
+  const readableContrast={message:textContrast(greetingBubble),input:textContrast(input),clear:textContrast(clearControl)};
+  check('Rendered customer message, input and clear colors meet a 4.5 to 1 contrast target',Object.values(readableContrast).every(value=>value>=4.5),JSON.stringify(readableContrast));
   const panelWrap=s.querySelector('.ta-panel-wrap'),outerAvatar=s.querySelector('.ta-avatar'),avatarBox=a.avatarMascot.element.getBoundingClientRect(),openedPanelBox=panel.getBoundingClientRect();
   const compactAvatarLayout=matchMedia('(max-width: 560px)').matches;
   const avatarApart=compactAvatarLayout?avatarBox.bottom<=openedPanelBox.top+.5:avatarBox.right<=openedPanelBox.left+.5;
@@ -198,16 +206,18 @@ async function tests(){
   check('HTML/XSS input is literal text, never parsed',log.querySelector('.ta-message-user .ta-message-bubble').textContent==='<img src=x onerror=alert(1)>'&&log.querySelectorAll('img,script').length===0);
   check('Submission clears input and keeps keyboard focus',input.value===''&&s.activeElement===input);
   const row=a.data.products.flatMap(p=>p.priceFacts||[])[0];await a.send(row.lookupQuery);
-  check('Exact source row renders correct data and safe external source',log.lastElementChild.textContent.includes(ThanhAnFAQ.money(row.priceVnd))&&log.lastElementChild.querySelector('.ta-source').href===row.sourceUrl&&log.lastElementChild.querySelector('.ta-source').rel.includes('noopener'));
+  const exactRowResult=ThanhAnFAQ.answer(row.lookupQuery,a.data);
+  const exactTotal=log.lastElementChild.querySelector('.ta-quote-total');
+  check('Exact source row renders a compact readable total with verified unit basis and safe optional source',compactPrice(log.lastElementChild,row.quantity,row.quantityUnit,exactRowResult.quote.totalVnd)&&exactTotal&&Number(getComputedStyle(exactTotal).fontWeight)>=600&&textContrast(exactTotal)>=4.5&&exactRowResult.quote.unitPriceVnd===row.priceVnd&&log.lastElementChild.querySelector('.ta-source').href===row.sourceUrl&&log.lastElementChild.querySelector('.ta-source').rel.includes('noopener')&&log.lastElementChild.querySelector('.ta-source').closest('details')?.open===false);
   await a.send('gọi nhân viên');const contacts=Array.from(log.lastElementChild.querySelectorAll('.ta-contact a'));
   check('3 verified contacts render 6 exact chosen links',contacts.length===6&&a.data.contacts.every(c=>contacts.some(link=>link.getAttribute('href')===c.zalo)&&contacts.some(link=>link.getAttribute('href')==='tel:'+c.phone)));
   check('Contact links never include message text or query data',contacts.every(link=>!link.getAttribute('href').includes('?')&&!link.getAttribute('href').includes('text=')));
   const lookup=a.send('Giờ làm việc');await Promise.resolve();
-  check('Local lookup selects native working state with a truthful status',host.dataset.activity==='working'&&a.avatarMascot.getState()==='working'&&s.querySelector('.ta-subtitle').textContent.includes('Đang tra'));
-  await lookup;check('Completed lookup ends loading immediately while the working pose lingers',host.dataset.activity==='idle'&&a.avatarMascot.getState()==='working'&&host.dataset.mascotState==='working'&&!s.querySelector('.ta-subtitle').textContent.includes('Đang tra'));
+  check('Local lookup selects native working state with a truthful status',host.dataset.activity==='working'&&a.avatarMascot.getState()==='working'&&s.querySelector('.ta-subtitle').textContent.includes('Mầm đang tìm giúp bạn'));
+  await lookup;check('Completed lookup ends loading immediately while the working pose lingers',host.dataset.activity==='idle'&&a.avatarMascot.getState()==='working'&&host.dataset.mascotState==='working'&&!s.querySelector('.ta-subtitle').textContent.includes('Mầm đang tìm giúp bạn'));
   await delay(420);check('Inactivity returns the working mascot to standing',host.dataset.activity==='idle'&&a.avatarMascot.getState()==='idle'&&host.dataset.mascotState==='idle');
   input.value='Catalogue';input.dispatchEvent(new Event('input',{bubbles:true}));
-  check('Typing a question starts native working without a loading claim',host.dataset.activity==='idle'&&a.avatarMascot.getState()==='working'&&!s.querySelector('.ta-subtitle').textContent.includes('Đang tra'));
+  check('Typing a question starts native working without a loading claim',host.dataset.activity==='idle'&&a.avatarMascot.getState()==='working'&&!s.querySelector('.ta-subtitle').textContent.includes('Mầm đang tìm giúp bạn'));
   await delay(250);const workingFrameBefore=a.avatarMascot.getFrame(),workingPixelsBefore=pixelHash(pixels(a.avatarMascot.element));input.value+=' A4';input.dispatchEvent(new Event('input',{bubbles:true}));
   check('Further typing preserves the progressing native working frame instead of restarting it',a.avatarMascot.getFrame().row===7&&a.avatarMascot.getFrame().frame===workingFrameBefore.frame&&pixelHash(pixels(a.avatarMascot.element))===workingPixelsBefore);
   await delay(200);
@@ -218,15 +228,15 @@ async function tests(){
   s.querySelector('.ta-footnote button').click();check('Clear resets session to one greeting',log.childElementCount===1&&log.querySelectorAll('.ta-message-user').length===0&&s.activeElement===input);
   const last=()=>log.lastElementChild.textContent;
   await a.send('cattalouge a4 bìa C250 ruột C150 giá 16 trang');check('Real typo request retains catalogue, A4 and 16 pages',/bao nhiêu cuốn/.test(last())&&!/ấn phẩm nào/.test(last()));
-  await a.send('500');check('Bare quantity reply returns catalogue 15000 per book',last().includes('15.000 ₫/cuốn')&&last().includes('16 trang')&&last().includes('500 cuốn'));
+  await a.send('500');check('Bare quantity reply returns a two-line catalogue total and preserves the hidden per-book basis',compactPrice(log.lastElementChild,500,'cuốn',7500000,['A4','16 trang','C250','C150'])&&log.lastElementChild.querySelector('.ta-quote-details').textContent.includes('15.000'));
   await frame();const quotedBubble=log.lastElementChild.querySelector('.ta-message-bubble').getBoundingClientRect(),logBox=log.getBoundingClientRect();check('Long price reply starts visibly inside the chat viewport',quotedBubble.top>=logBox.top-1&&quotedBubble.top<logBox.bottom-40);
-  await a.send('1000 cuốn');check('Quantity change retains catalogue page count',last().includes('9.000 ₫/cuốn')&&last().includes('16 trang')&&last().includes('1000 cuốn'));
-  await a.send('giá card');await a.send('C300');await a.send('5 hộp');check('Product switch resets catalogue context and quotes C300 box tier',last().includes('80.000 ₫/hộp')&&!last().includes('16 trang'));
+  await a.send('1000 cuốn');check('Quantity change retains catalogue page count in its compact total',compactPrice(log.lastElementChild,1000,'cuốn',9000000,['A4','16 trang'])&&log.lastElementChild.querySelector('.ta-quote-details').textContent.includes('9.000'));
+  await a.send('giá card');await a.send('C300');await a.send('5 hộp');check('Product switch resets catalogue context and quotes the compact C300 total',compactPrice(log.lastElementChild,5,'hộp',400000,['C300'])&&log.lastElementChild.querySelector('.ta-quote-details').textContent.includes('80.000')&&!last().includes('16 trang'));
   s.querySelector('.ta-footnote button').click();await a.send('catalogue a5 200 cuốn');
   check('A5 200 preserves actual size and never substitutes an A4 price',last().includes('A5')&&last().includes('200')&&!last().includes('22.000')&&!last().includes('5.800')&&log.lastElementChild.querySelector('.ta-handoff')!==null);
   s.querySelector('.ta-footnote button').click();await a.send('catalogue A4 toàn bộ C150 16 trang 500 cuốn');
-  check('Missing all-C150 variant retains its exact supplemental source',last().includes('13.000')&&log.lastElementChild.querySelector('.ta-source').href.includes('invinhphat.com'));
-  check('Supplemental reply hides branding while its original source link and amount remain',last().includes('Giá tham khảo')&&!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(log.lastElementChild.textContent)&&log.lastElementChild.querySelector('.ta-source').href===a.data.products.find(product=>product.id==='catalogue').priceFacts.find(fact=>fact.id==='catalogue-a4-all-c150-16-500').sourceUrl);
+  check('Missing all-C150 variant shows a compact total and retains its exact optional source',compactPrice(log.lastElementChild,500,'cuốn',6500000,['A4','16 trang','C150'])&&log.lastElementChild.querySelector('.ta-quote-details').textContent.includes('13.000')&&log.lastElementChild.querySelector('.ta-source').href.includes('invinhphat.com'));
+  check('Supplemental details preserve the reference label and source without adding branding to the compact bubble',last().includes('Giá tham khảo')&&!log.lastElementChild.querySelector('.ta-message-bubble').textContent.includes('Nguồn')&&!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(log.lastElementChild.textContent)&&log.lastElementChild.querySelector('.ta-source').href===a.data.products.find(product=>product.id==='catalogue').priceFacts.find(fact=>fact.id==='catalogue-a4-all-c150-16-500').sourceUrl);
   s.querySelector('.ta-footnote button').click();await a.send('500');check('Clear also forgets product and pending slots',!last().includes('₫/cuốn')&&!last().includes('₫/hộp'));
   s.querySelector('.ta-footnote button').click();await a.send('Xem giá');
   const quoteChoices=log.lastElementChild.querySelector('.ta-quote-products');
@@ -253,6 +263,9 @@ async function tests(){
   const vpCatalogue=a.data.products.find(product=>product.id==='catalogue').priceFacts.filter(fact=>fact.provider==='vinh-phat'&&fact.specs.material==='all-c150');
   check('Supplemental all-C150 menu preserves all 18 rows and the 13000 book tier',exactTable(vpCatalogue)&&[...menu.querySelectorAll('.ta-price-source')].some(link=>link.href===vpCatalogue[0].sourceUrl)&&[...menu.querySelectorAll('.ta-price-table tbody tr')].some(row=>row.querySelector('th').textContent==='16'&&row.querySelector('.ta-price-quantity').dataset.quantity==='500'&&row.querySelector('.ta-price-amount').textContent===ThanhAnFAQ.money(13000)));
   check('Supplemental menu hides supplier branding and keeps original provenance links',menu.textContent.includes('Giá tham khảo')&&!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(menu.textContent)&&[...menu.querySelectorAll('.ta-price-source')].every(link=>link.textContent==='Xem bảng giá gốc'&&link.hostname==='invinhphat.com'&&link.rel.includes('noopener')));
+  menu.querySelector('.ta-price-back').click();menu.querySelector('[data-variant-id="table-catalogue-a4-cover-c250-offset-12-200"]').click();
+  const ownerC300=a.data.products.find(product=>product.id==='catalogue').priceFacts.filter(fact=>fact.specs.material==='cover-c300'&&fact.specs.printing==='offset4');
+  check('Owner-confirmed C300 offset catalogue preserves all 28 updated rows without changing the historical source',ownerC300.length===28&&exactTable(ownerC300)&&menu.textContent.includes('C300')&&ownerC300.every(fact=>fact.ownerPriceRevision?.websitePublicationVerified===false)&&[...menu.querySelectorAll('.ta-price-source')].every(link=>link.hostname==='invinhphat.com'));
   menu.querySelector('.ta-price-back').click();menu.querySelector('[data-variant-id="estimate-catalogue-a5-all-c150-12-1000-estimate"]').click();
   check('A5 menu keeps its estimate separate from a fixed table and preserves the 200-book warning',menu.querySelectorAll('.ta-price-table').length===0&&menu.querySelector('.ta-price-estimate').textContent.includes('5.800')&&menu.querySelector('.ta-price-estimate').textContent.includes('1.000')&&menu.textContent.includes('A5 200')&&menu.querySelectorAll('.ta-price-warning').length>=2);
   menu.querySelector('.ta-price-back').click();menu.querySelector('.ta-price-back').click();
@@ -260,14 +273,23 @@ async function tests(){
   menu.querySelector('[data-category-id="namecard"]').click();menu.querySelector('[data-variant-id="table-namecard-vp-2"]').click();
   const vpCards=a.data.products.find(product=>product.id==='namecard-vp').priceFacts;
   check('Offset namecard table retains 90/120/160 thousand package totals without per-box conversion',exactTable(vpCards)&&[...menu.querySelectorAll('.ta-price-meaning')].every(cell=>ThanhAnFAQ.normalize(cell.textContent).includes('tong goi'))&&[...menu.querySelectorAll('.ta-price-source')].every(link=>link.hostname==='invinhphat.com'&&link.rel.includes('noopener')));
+  menu.querySelector('.ta-price-back').click();menu.querySelector('.ta-price-back').click();menu.querySelector('[data-category-id="tag"]').click();
+  for(const [variantId,size] of [['table-owner-earring-tag-50x40-1000','50x40'],['table-owner-earring-tag-85x50-500','85x50']]){
+   menu.querySelector('[data-variant-id="'+variantId+'"]').click();const earringRows=a.data.products.find(product=>product.id==='earring-tag-vp').priceFacts.filter(fact=>fact.specs.size===size);
+   const referenceLinks=[...menu.querySelectorAll('.ta-price-source')];
+   check('Owner earring '+size+' menu preserves unit amounts, exact secondary source and incomplete-lamination handoff',earringRows.length===3&&exactTable(earringRows)&&referenceLinks.length===1&&referenceLinks[0].href===EARRING_SOURCE&&referenceLinks[0].target==='_blank'&&referenceLinks[0].rel.includes('noopener')&&referenceLinks[0].referrerPolicy==='no-referrer'&&menu.querySelectorAll('.ta-price-zalo').length===3&&earringRows.every(fact=>fact.sourceUrl===null&&fact.secondarySourceUrls?.length===1&&fact.secondarySourceUrls[0]===EARRING_SOURCE&&fact.specs.material==='c300'&&fact.specs.sides===2&&fact.rawSourceFlags.ownerRecipeIncomplete&&fact.specs.finishing===undefined));
+   menu.querySelector('.ta-price-back').click();
+  }
+  const incompleteOwner=a.data.products.find(product=>product.id==='earring-tag-vp').priceFacts[0];await a.send(incompleteOwner.lookupQuery);
+  check('Incomplete owner earring specifications require local handoff rather than a calculated quote',!log.lastElementChild.classList.contains('ta-message-quote')&&log.lastElementChild.querySelector('.ta-handoff')!==null&&ThanhAnFAQ.answer(incompleteOwner.lookupQuery,a.data).handoff===true);
   await a.send('giá card');await a.send('C300');await a.send('5 hộp');
-  check('Typed conversation remains available after price-menu navigation with the Thanh An box tier',last().includes('80.000 ₫/hộp')&&log.lastElementChild.querySelector('.ta-source').hostname==='innhanhtphcm.com'&&!last().includes('120.000'));
+  check('Typed conversation remains available after price-menu navigation with the compact Thanh An total',compactPrice(log.lastElementChild,5,'hộp',400000,['C300'])&&log.lastElementChild.querySelector('.ta-quote-details').textContent.includes('80.000')&&log.lastElementChild.querySelector('.ta-source').hostname==='innhanhtphcm.com'&&!last().includes('120.000'));
   s.querySelector('.ta-footnote button').click();
   check('Clear removes mounted price menus as well as conversation state',!menu.isConnected&&s.querySelectorAll('.ta-price-menu').length===0&&log.childElementCount===1);
   const sourceRow=a.data.products.find(product=>product.id==='catalogue').priceFacts.find(fact=>fact.id==='catalogue-a4-all-c150-16-500');
   await a.send(sourceRow.lookupQuery);
   const generatedUser=log.lastElementChild.previousElementSibling;
-  check('Canonical source-row echo hides branding without changing the selected price or source',generatedUser.classList.contains('ta-message-user')&&!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(generatedUser.textContent+log.lastElementChild.textContent)&&log.lastElementChild.textContent.includes('13.000')&&log.lastElementChild.querySelector('.ta-source').href===sourceRow.sourceUrl);
+  check('Canonical source-row echo hides branding while preserving compact total, hidden basis and source',generatedUser.classList.contains('ta-message-user')&&!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(generatedUser.textContent+log.lastElementChild.textContent)&&compactPrice(log.lastElementChild,500,'cuốn',6500000,['A4','16 trang','C150'])&&log.lastElementChild.querySelector('.ta-quote-details').textContent.includes('13.000')&&log.lastElementChild.querySelector('.ta-source').href===sourceRow.sourceUrl);
   s.querySelector('.ta-footnote button').click();
   const count=log.childElementCount;s.querySelectorAll('.ta-quick button')[1].click();await frame();await delay(20);check('Quick service button works',log.childElementCount>count&&log.lastElementChild.textContent.includes('Thanh Ấn'));
   for(let n=0;n<30;n++)await a.send('chào');check('Conversation memory is bounded to 50 blocks',log.childElementCount<=50);

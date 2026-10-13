@@ -32,18 +32,19 @@
     const titles=el('div','',undefined,header);const title=el('h2','ta-title','Mầm của Thanh Ấn',titles);title.id='ta-mam-title';
     const subtitle=el('p','ta-subtitle',undefined,titles);el('span','ta-status-dot','',subtitle);const statusLabel=el('span','','Trợ lý thông tin in ấn',subtitle);
     const close=el('button','ta-close','×',header);close.type='button';close.setAttribute('aria-label','Đóng trò chuyện');
-    const scope=el('div','ta-scope',undefined,panel);el('strong','','FAQ & giá website',scope);el('span','',' · Dữ liệu '+data.snapshotLabel+' · Cần xác nhận báo giá',scope);
+    const scope=el('div','ta-scope',undefined,panel);el('span','','Giá & thông tin in ấn',scope);
     const aiClient=config.aiEndpoint&&root.ThanhAnGemini?root.ThanhAnGemini.create({endpoint:assetUrl(config.aiEndpoint),fetchImpl:config.aiFetch}):null;
     let aiConsent=null;
     if(aiClient){
       const details=el('details','ta-ai-options',undefined,panel);
-      const summary=el('summary','','Gemini thử nghiệm · đang kiểm tra',details);
-      el('p','ta-ai-notice','Khi bật AI, câu chưa hiểu được Google xử lý. Bản miễn phí có thể dùng nội dung để cải thiện sản phẩm và có người xét duyệt. Đừng nhập thông tin cá nhân hoặc bí mật.',details);
+      el('summary','','Thông tin & quyền riêng tư',details);
+      el('p','ta-ai-notice','Mầm hỗ trợ thông tin in ấn và giá trong bảng. Chat chỉ nằm trong phiên mở trang.',details);
+      el('p','ta-ai-notice','Nếu bạn bật hỗ trợ hiểu câu hỏi, câu chưa hiểu sẽ được gửi cho Google. Dịch vụ miễn phí có thể dùng nội dung để cải thiện sản phẩm và có người xét duyệt. Đừng nhập thông tin cá nhân hoặc bí mật.',details);
       const consentLabel=el('label','ta-ai-label',undefined,details);
       aiConsent=el('input','ta-ai-consent',undefined,consentLabel);aiConsent.type='checkbox';aiConsent.disabled=true;
       el('span','','Tôi từ 18 tuổi, đang tại Việt Nam và đồng ý gửi câu chưa hiểu cho Google.',consentLabel);
       aiConsent.addEventListener('change',()=>{aiConsent.checked=aiClient.setConsent(aiConsent.checked);});
-      aiClient.check().then(enabled=>{if(destroyed)return;aiConsent.disabled=!enabled;summary.textContent=enabled?'Gemini thử nghiệm · tùy chọn':'Gemini chưa kết nối · đang dùng FAQ';});
+      aiClient.check().then(enabled=>{if(destroyed)return;aiConsent.disabled=!enabled;});
     }
     const log=el('div','ta-log',undefined,panel);log.setAttribute('role','log');log.setAttribute('aria-live','polite');log.setAttribute('aria-relevant','additions');log.setAttribute('aria-label','Cuộc trò chuyện với Mầm');
     const quick=el('div','ta-quick',undefined,panel);
@@ -53,7 +54,7 @@
     const input=el('input','ta-input',undefined,form);input.id='ta-mam-input';input.type='text';input.placeholder='Bạn đang cần in gì?';input.maxLength=1000;input.autocomplete='off';input.setAttribute('enterkeyhint','send');
     const submit=el('button','ta-send',undefined,form);submit.type='submit';submit.setAttribute('aria-label','Gửi câu hỏi');icon(submit);
     const alert=el('p','ta-alert','',panel);alert.setAttribute('role','status');alert.hidden=true;
-    const foot=el('p','ta-footnote',undefined,panel);el('span','','Chat chỉ lưu trong phiên mở trang. ',foot);const clear=el('button','','Làm mới',foot);clear.type='button';clear.style.cssText='border:0;background:transparent;color:#596c50;font-size:10px;padding:3px;text-decoration:underline;min-height:24px';clear.addEventListener('click',()=>{if(destroyed)return;generation++;cancelPaint();aiClient?.setConsent(false);if(aiConsent)aiConsent.checked=false;destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();welcome();input.value='';input.focus();});
+    const foot=el('p','ta-footnote',undefined,panel);const clear=el('button','ta-clear','Làm mới',foot);clear.type='button';clear.style.cssText='border:0;background:transparent;text-decoration:underline';clear.addEventListener('click',()=>{if(destroyed)return;generation++;cancelPaint();aiClient?.setConsent(false);if(aiConsent)aiConsent.checked=false;destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();welcome();input.value='';input.focus();});
     const launcher=el('button','ta-launcher',undefined,shell);launcher.type='button';launcher.setAttribute('aria-expanded','false');launcher.setAttribute('aria-controls',panel.id);launcher.setAttribute('aria-label','Mở trò chuyện với Mầm');
     const launcherLabel=el('span','ta-launcher-label','Mầm giúp bạn nhé?',launcher);el('small','','Tìm giá & thông tin in ấn',launcherLabel);
     const launcherPlant=el('span','ta-launcher-plant',undefined,launcher);const launcherMascot=root.ThanhAnMascot.create({reducedMotion:config.reducedMotion,attentionDurationMs:config.attentionDurationMs});launcherPlant.appendChild(launcherMascot.element);el('span','ta-collapse-icon','⌄',launcherPlant);
@@ -88,7 +89,7 @@
     }
     function setActivity(state,keepDesk=false){
       host.dataset.activity=state;
-      statusLabel.textContent=state==='working'?'Đang tra bảng giá & FAQ':state==='greeting'?'Chào bạn, Mầm đây!':'Trợ lý thông tin in ấn';
+      statusLabel.textContent=state==='working'?'Mầm đang tìm giúp bạn…':state==='greeting'?'Chào bạn, Mầm đây!':'Trợ lý thông tin in ấn';
       if(state==='working'||(state==='idle'&&keepDesk)){keepWorking();return;}
       clearTimeout(deskTimer);deskTimer=null;setMascotState(state);
       if(state==='greeting')activityTimer=setTimeout(()=>{if(!destroyed)setActivity('idle');},900);
@@ -100,7 +101,29 @@
     function addMessage(text,user=false){const block=el('div','ta-message'+(user?' ta-message-user':''),undefined,log);el('p','ta-message-name',user?'Bạn':'Mầm · Thanh Ấn',block);el('div','ta-message-bubble',text,block);while(log.childElementCount>50)removeMessage(log.firstElementChild);return block;}
     function addSource(parent,source){const url=root.ThanhAnFAQ.safeLink(source.url);if(!url)return;const a=el('a','ta-source',source.label,parent);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';}
     function addContacts(parent){for(const c of data.contacts){const row=el('div','ta-contact',undefined,parent);const name=el('div','ta-contact-person',c.name,row);el('small','',c.phone.replace(/(\d{4})(\d{3})(\d{3})/,'$1 $2 $3'),name);const zalo=el('a','ta-zalo','Zalo ↗',row);zalo.href=c.zalo;zalo.target='_blank';zalo.rel='noopener noreferrer';zalo.referrerPolicy='no-referrer';zalo.setAttribute('aria-label','Mở Zalo của '+c.name);const tel=el('a','ta-tel','Gọi',row);tel.href='tel:'+c.phone;tel.setAttribute('aria-label','Gọi '+c.name);}}
-    function render(result){const block=addMessage(result.compactText||result.text);if(result.quote?.conditions?.length){const details=el('details','ta-quote-details',undefined,block);el('summary','','Quy cách & điều kiện',details);const list=el('ul','',undefined,details);result.quote.conditions.forEach(condition=>el('li','',condition,list));}if(result.sources){const links=el('div','ta-source-links',undefined,block);result.sources.forEach(s=>addSource(links,s));}if(result.suggestions){const buttons=el('div','ta-suggestions',undefined,block);result.suggestions.forEach(query=>{const b=el('button','ta-chip',query,buttons);b.type='button';b.addEventListener('click',()=>send(query));});}if(result.contacts)addContacts(block);if(result.handoff&&!result.contacts){const handoff=el('div','ta-handoff',undefined,block);const b=el('button','','Nhắn Zalo để tư vấn →',handoff);b.type='button';b.addEventListener('click',()=>send('Liên hệ Zalo'));}if(log.clientHeight&&block.offsetHeight>log.clientHeight){log.scrollTop+=block.getBoundingClientRect().top-log.getBoundingClientRect().top-12;}else log.scrollTop=log.scrollHeight;}
+    function render(result){
+      const block=addMessage(result.compactText||result.text);
+      let sourceParent=block;
+      if(result.quote){
+        block.classList.add('ta-message-quote');
+        const bubble=block.querySelector('.ta-message-bubble');
+        const lines=(result.compactText||result.text).split('\n');
+        if(lines.length===2){bubble.replaceChildren(document.createTextNode(lines[0]+'\n'));el('span','ta-quote-total',lines[1],bubble);}
+        const details=el('details','ta-quote-details',undefined,block);
+        el('summary','','Quy cách & nguồn giá',details);
+        const quote=result.quote;
+        if(quote.conditions?.length){const list=el('ul','',undefined,details);quote.conditions.forEach(condition=>el('li','',condition,list));}
+        if(Number.isSafeInteger(quote.unitPriceVnd))el('p','','Giá làm căn cứ: '+quote.unitPriceVnd.toLocaleString('vi-VN')+' ₫/'+quote.unit+' · Mức số lượng '+quote.sourceQuantity.toLocaleString('vi-VN')+' '+quote.quantityUnit+'.',details);
+        if(quote.provenance?.kind==='business-owner-price-update')el('p','','Giá do Thanh Ấn xác nhận ngày '+quote.provenance.approvedOn+'. Nguồn website được giữ để tham chiếu.',details);
+        else if(quote.provider==='vinh-phat')el('p','','Giá tham khảo bổ sung; cần xác nhận khi đặt in.',details);
+        sourceParent=details;
+      }
+      if(result.sources){const links=el('div','ta-source-links',undefined,sourceParent);result.sources.forEach(s=>addSource(links,s));}
+      if(result.suggestions){const buttons=el('div','ta-suggestions',undefined,block);result.suggestions.forEach(query=>{const b=el('button','ta-chip',query,buttons);b.type='button';b.addEventListener('click',()=>send(query));});}
+      if(result.contacts)addContacts(block);
+      if(result.handoff&&!result.contacts&&!result.quote){const handoff=el('div','ta-handoff',undefined,block);const b=el('button','','Nhắn Zalo để tư vấn →',handoff);b.type='button';b.addEventListener('click',()=>send('Liên hệ Zalo'));}
+      if(log.clientHeight&&block.offsetHeight>log.clientHeight){log.scrollTop+=block.getBoundingClientRect().top-log.getBoundingClientRect().top-12;}else log.scrollTop=log.scrollHeight;
+    }
     const categoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư', 'red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
     function renderQuoteChoices(){
       conversation.reset();const block=addMessage('Bạn cần in gì? 🌱');
@@ -119,7 +142,7 @@
       if(categoryId)menu.showCategory(categoryId);
       if(log.clientHeight)log.scrollTo({top:log.scrollTop+block.getBoundingClientRect().top-log.getBoundingClientRect().top-12,behavior:'instant'});
     }
-    function welcome(){render({text:'Hello, mình là Mầm nè 🌱\nBạn cần in gì? Mầm tra giá đúng quy cách từ bảng đã đăng. Giá bổ sung là giá tham khảo; quy cách riêng thì mình kết nối Zalo nhé.',suggestions:['Danh thiếp C300','Catalogue','Decal giấy','Giờ làm việc']});}
+    function welcome(){render({text:'Chào bạn, Mầm đây 🌱 Bạn cần in gì để Mầm giúp nhé?',suggestions:['Danh thiếp C300','Catalogue','Decal giấy','Giờ làm việc']});}
     function renderAiSuggestion(suggestion){
       if(suggestion.intent==='product'){
         const category=root.ThanhAnPriceMenu.buildCatalog(data).categories.find(c=>c.id===suggestion.categoryId);
@@ -152,7 +175,7 @@
           else{
             const local=conversation.answer(text);let usedAI=false;
             if(local.kind==='unknown'&&aiClient?.getState().consent){
-              statusLabel.textContent='Mầm đang nhờ Gemini hiểu ý…';
+              statusLabel.textContent='Mầm đang tìm giúp bạn…';
               const suggestion=await aiClient.suggest(text);
               if(destroyed||generation!==requestGeneration)return;
               if(suggestion)usedAI=renderAiSuggestion(suggestion);

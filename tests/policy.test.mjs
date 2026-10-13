@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import '../widget/policy.js';
 import {VP_SOURCE_PRODUCTS} from '../tools/vinhphat-facts.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('../widget/data.json',import.meta.url),'utf8'));
+const publishedBaseline=JSON.parse(fs.readFileSync(new URL('../docs/published-price-baseline-20261012.json',import.meta.url),'utf8'));
 const faq=globalThis.ThanhAnFAQ;
-const fresh=Date.parse('2026-10-12T12:00:00Z');
+const fresh=Date.parse('2026-10-13T12:00:00Z');
+const earringSupplementalSource='https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/';
 const ask=text=>faq.answer(text,data,fresh);
 test('seed validates the preserved 67 source rows and all additive helper rows',()=>{
   assert.equal(faq.validateData(data),data);assert.ok(data.products.length>=13);
@@ -59,7 +61,7 @@ function noQuote(r){
 function selectedRow(r,id){
   const f=fact(id);
   assert.ok(f,'verified fixture row exists: '+id);
-  assert.equal(r.kind,f.priceKind==='reference_display'?'reference':'price');
+  assert.equal(r.kind,f.priceKind==='reference_display'||f.rawSourceFlags?.ownerRecipeIncomplete?'reference':'price');
   assert.equal(r.factId,id);
   if(f.priceKind==='reference_display'){
     assert.ok(r.text.includes(faq.money(f.priceVnd)));
@@ -75,7 +77,7 @@ function selectedRow(r,id){
   }
   for(const condition of f.conditions)assert.ok(r.text.includes(faq.displayText(condition)),condition);
   assert.match(r.text,/12\/10\/2026/);
-  assert.equal(r.sources[0].url,f.sourceUrl);
+  if(f.sourceUrl)assert.equal(r.sources[0].url,f.sourceUrl);else {assert.deepEqual(f.secondarySourceUrls,[earringSupplementalSource]);assert.deepEqual(r.sources.map(s=>s.url),[earringSupplementalSource]);assert.ok(faq.safeLink(earringSupplementalSource));assert.equal(r.quote,undefined);}
   assert.equal(r.handoff,true);
   assert.ok(r.text.includes(faq.displayText(f.sourceNote)));
 }
@@ -96,8 +98,8 @@ test('expiry boundary, invalid and pre-verification clocks stop all price paths'
   }
 });
 test('future verified snapshot cannot quote before its verification time',()=>{
-  const future=structuredClone(data);
-  future.snapshotDate='2026-10-13';future.snapshotLabel='13/10/2026';future.verifiedAtUtc='2026-10-13T03:29:00Z';
+  const future=structuredClone(publishedBaseline);
+  future.snapshotDate='2026-10-14';future.snapshotLabel='14/10/2026';future.verifiedAtUtc='2026-10-14T03:29:00Z';
   for(const p of future.products){p.verifiedAtUtc=future.verifiedAtUtc;for(const estimate of p.referenceEstimates||[])estimate.verifiedAtUtc=future.verifiedAtUtc;}
   const r=faq.answer('Decal giấy',future,fresh);assert.equal(r.kind,'stale');noQuote(r);
 });
@@ -215,11 +217,13 @@ test('negative and arithmetic quantities cannot reuse a supported card price',()
   }
 });
 
-test('additive data keeps all Thanh An rows and adds 36 Vinh Phat rows plus one separate estimate',()=>{
+test('owner revision keeps the original website baseline and separate published variants',()=>{
   const cat=product('catalogue');
-  assert.equal(cat.priceFacts.length,57);
+  assert.equal(cat.priceFacts.length,67);
   assert.equal(cat.priceFacts.filter(f=>f.id.startsWith('catalogue-a4-all-c150-')).length,18);
   assert.equal(cat.priceFacts.filter(f=>f.id.startsWith('catalogue-a4-cover-c250-offset-')).length,18);
+  assert.equal(cat.priceFacts.filter(f=>f.specs.material==='cover-c300').length,28);
+  assert.equal(publishedBaseline.products.flatMap(p=>p.priceFacts||[]).length,177);
   assert.equal(cat.referenceEstimates.length,1);
   assert.equal(data.products.flatMap(p=>p.referenceEstimates||[]).length,1);
   assert.ok(!cat.priceFacts.some(f=>f.specs?.size==='a5'));
@@ -236,7 +240,7 @@ test('Vinh Phat catalogue matrix matches both published material variants',()=>{
   for(const [variant,rows] of Object.entries(matrices)){
     for(let i=0;i<rows.length;i++){
       for(let j=0;j<3;j++){
-        const f=fact('catalogue-a4-'+variant+'-'+(12+i*4)+'-'+[200,500,1000][j]);
+        const current=fact('catalogue-a4-'+variant+'-'+(12+i*4)+'-'+[200,500,1000][j]);const f=current.originalSourceRecord||current;
         assert.ok(f);assert.equal(f.priceVnd,rows[i][j]);assert.equal(f.specs.size,'a4');
         assert.equal(f.specs.material,variant==='all-c150'?'all-c150':'cover-c250');
         assert.equal(f.specs.printing,'offset4');assert.equal(f.sourceTotalVnd,null);
@@ -259,12 +263,12 @@ test('catalogue material must be chosen even after size, pages and quantity are 
 test('cover and inside phrase selects the cover variant instead of the cheaper all-C150 row',()=>{
   const s=newSession();
   selectedRow(s.answer('catalogue A4 16 trang 500 cuốn bìa C250 ruột C150'),'catalogue-a4-16-500');
-  selectedRow(s.answer('offset'),'catalogue-a4-cover-c250-offset-16-500');
+  noQuote(s.answer('offset'));selectedRow(s.answer('bìa C300 ruột C150'),'catalogue-a4-cover-c250-offset-16-500');
 });
 test('printing method switches choose their own source and unsupported method cannot reuse a price',()=>{
   const s=newSession();
   selectedRow(s.answer('catalogue A4 C250 KTS 16 trang 500 cuốn'),'catalogue-a4-16-500');
-  selectedRow(s.answer('offset'),'catalogue-a4-cover-c250-offset-16-500');
+  noQuote(s.answer('offset'));selectedRow(s.answer('C300'),'catalogue-a4-cover-c250-offset-16-500');
   selectedRow(s.answer('C150'),'catalogue-a4-all-c150-16-500');
   const r=s.answer('KTS');assert.equal(r.handoff,true);noQuote(r);noQuote(s.answer('giá?'));
 });
@@ -319,7 +323,7 @@ test('all eight helper families retain their 110 verified amounts, specs and raw
   for(const sourceProduct of VP_SOURCE_PRODUCTS){
     assert.ok(product(sourceProduct.id),sourceProduct.id);
     for(const sourceFact of sourceProduct.priceFacts){
-      const f=fact(sourceFact.id);assert.ok(f,sourceFact.id);
+      const current=fact(sourceFact.id);assert.ok(current,sourceFact.id);const f=current.originalSourceRecord||current;
       for(const key of ['priceVnd','sourceTotalVnd','priceKind','sourceUrl','provider'])assert.equal(f[key],sourceFact[key],sourceFact.id+' '+key);
       assert.deepEqual(f.specs,sourceFact.specs,sourceFact.id+' specs');
       assert.deepEqual(f.rawSourceFlags,sourceFact.rawSourceFlags,sourceFact.id+' raw source flags');
@@ -372,7 +376,7 @@ test('receipt quotes a book rate, shows only an explicitly requested stored tota
 });
 test('vertical bag preserves all three dimensions without assigning axes or reusing a different depth',()=>{
   const s=newSession();noQuote(s.answer('túi giấy đứng Vĩnh Phát'));noQuote(s.answer('300 cái'));
-  const r=s.answer('20x14x6 cm');selectedRow(r,'vp-bag-20x14x6-300');assert.ok(r.text.includes('9.500 ₫/cái'));
+  const r=s.answer('20x14x6 cm');selectedRow(r,'vp-bag-20x14x6-300');assert.ok(r.text.includes('11.000 ₫/cái'));assert.equal(fact('vp-bag-20x14x6-300').originalSourceRecord.priceVnd,9500);
   assert.equal(fact('vp-bag-20x14x6-300').rawSourceFlags.dimensionAxesUnknown,true);
   assert.equal(fact('vp-bag-20x14x6-300').rawSourceFlags.accessoriesUnknown,true);
   assert.doesNotMatch(r.text,/dài 20.*rộng 14.*cao 6/i);
@@ -388,7 +392,7 @@ test('folder remains a reference while paper and overall size are unknown and tw
 });
 test('tag publishes the standard rectangle row with an unresolved film caveat and blocks explicit film',()=>{
   const s=newSession();noQuote(s.answer('tag treo Vĩnh Phát'));noQuote(s.answer('1500 cái'));
-  const r=s.answer('50x30 mm');selectedRow(r,'vp-tag-50x30-1500');assert.ok(r.text.includes('120 ₫/cái'));
+  const r=s.answer('50x30 mm');selectedRow(r,'vp-tag-50x30-1500');assert.ok(r.text.includes('140 ₫/cái'));assert.equal(fact('vp-tag-50x30-1500').originalSourceRecord.priceVnd,120);
   assert.equal(fact('vp-tag-50x30-1500').rawSourceFlags.laminationAmbiguous,true);
   assert.equal(fact('vp-tag-50x30-1500').rawSourceFlags.otherDieCutSeparate,true);
   noQuote(s.answer('cán màng mờ'));noQuote(s.answer('3000 cái'));
@@ -401,11 +405,11 @@ test('helper reference displays and unit rows stop at expiry just like published
 
 test('supplemental price branding is hidden while every original row and source remain intact',()=>{
   const before=JSON.stringify(data),rows=data.products.flatMap(p=>p.priceFacts||[]).filter(f=>f.provider==='vinh-phat');
-  assert.equal(rows.length,149);
+  assert.equal(rows.length,165);
   for(const f of rows){
     const r=ask(f.lookupQuery);selectedRow(r,f.id);
-    assert.equal(r.provider,'vinh-phat');assert.equal(r.factId,f.id);assert.equal(r.sources[0].url,f.sourceUrl);
-    assert.match(r.text,/Nguồn giá: Giá tham khảo\./);
+    assert.equal(r.provider,'vinh-phat');assert.equal(r.factId,f.id);if(f.sourceUrl)assert.equal(r.sources[0].url,f.sourceUrl);else {assert.deepEqual(r.sources.map(s=>s.url),[earringSupplementalSource]);assert.equal(r.quote,undefined);}
+    assert.match(r.text,f.ownerPriceRevision?/Nguồn giá: Chủ cơ sở xác nhận ngày 2026-10-13/:/Nguồn giá: Giá tham khảo\./);
     assert.doesNotMatch(r.text,/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu);
     assert.ok(r.sources.every(source=>!/\bV[ĩi]nh[\s-]*Ph[áa]t\b|invinhphat\.com/iu.test(source.label)));
   }
