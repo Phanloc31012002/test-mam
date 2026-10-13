@@ -20,6 +20,20 @@
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const contains = (text, phrase) => (' ' + text + ' ').includes(' ' + normalize(phrase) + ' ');
   const money = value => new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+  // Owner-provided navigation only. Historical source URLs and prices stay raw.
+  const DISPLAY_LINKS=Object.freeze({
+    'https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/':'https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re',
+    'https://invinhphat.com/san-pham/in-name-card-gia-re/':'https://innhanhtphcm.com/san-pham/dia-chi-in-combo-10-hop-card',
+    'https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/':'https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re',
+    'https://invinhphat.com/san-pham/in-catalouge/':'https://innhanhtphcm.com/san-pham/in-catalogue-gia-re-lay-lien-tai-tphcm',
+    'https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/':'https://innhanhtphcm.com/san-pham/in-to-roi-lay-ngay',
+    'https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/':'https://innhanhtphcm.com/san-pham/in-bao-thu-a5-in-nhanh-gia-re',
+    'https://invinhphat.com/san-pham/phieu-thu-cac-loai/':'https://innhanhtphcm.com/san-pham/in-bien-nhan-gia-re',
+    'https://invinhphat.com/san-pham/in-tui-giay-gia-re/':'https://innhanhtphcm.com/san-pham/in-tui-giay-uy-tin',
+    'https://invinhphat.com/san-pham/in-folder-kep-file/':'https://innhanhtphcm.com/san-pham/in-bia-kep-ho-so-tphcm',
+    'https://invinhphat.com/san-pham/in-tag-treo-the-bai/':'https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay'
+  });
+  const displayLink=value=>typeof value==='string'&&Object.hasOwn(DISPLAY_LINKS,value)?DISPLAY_LINKS[value]:value;
   // Presentation only: provider ids, row selectors, source URLs and data stay unchanged.
   const displayText = value => String(value ?? '').replace(/\bhttps?:\/\/(?:www\.)?invinhphat\.com(?:\/[^\s]*)?/giu, 'nguồn tham khảo').replace(/\binvinhphat\.com\b/giu, 'nguồn tham khảo').replace(/\bV[ĩi]nh[\s-]*Ph[áa]t\b/giu, 'Giá tham khảo');
   const safeLink = value => {
@@ -306,6 +320,36 @@
     const approvedCategoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư','red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
     const clarify = (p, text, suggestions = []) => response('clarify', text, {productId:p.id,compactText:displayText((text.match(/^[^?]*\?/)||[text])[0]),pendingField:state?.pending, sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], suggestions});
     const handoff = (p, text) => response('handoff', text, {productId:p.id,compactText:'Quy cách hoặc số lượng này cần báo giá riêng. Bạn nhắn Zalo để được tư vấn nhé.', sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], handoff:true});
+    function basicInformation(raw) {
+      if (!raw || raw.length > 1000) return null;
+      const text=normalize(raw).replace(/\b(?:giay\s*)?c\s*300\s*la\s*(?:gi|j)\b/g,'c300 la gi').replace(/\b([ac])\s+(\d{1,3})\b/g,'$1$2').replace(/\bkt(?=a[45]\b)/g,'kich thuoc ').replace(/\b(?:kt|k t|kthuoc|kth)\b/g,'kich thuoc').replace(/\bbn\b/g,'bao nhieu').replace(/\bla j\b/g,'la gi');
+      // Basic references cannot bypass input guards or absorb a price/order request.
+      if (/[<>]|javascript\s*:|system\s*:|developer\s*:|ignore.*(instruction|rule)|bo qua.*(quy tac|huong dan|tat ca)|doi.*(quy tac|chinh sach)|api\s*key|prompt|hack|script/i.test(text+' '+raw)) return null;
+      if (hasAny(text,['gia','bao gia','bang gia','tien','tinh tong','tong cong','vat','thue','giam gia','chiet khau','mien phi','free','zalo','lien he','thoi tiet','bitcoin','viet code','lap trinh','y te'])) return null;
+      const reference=text=>response('faq',text,{compactText:text,basicInformation:true,informationScope:'common-reference-not-price-condition'});
+      const sizeQuestion=hasAny(text,['kich thuoc','kho giay','kho','size','may cm','may mm']);
+      const explicitQuestion=/\?/.test(raw)||hasAny(text,['bao nhieu','la gi','la j','the nao','nhu nao','nhu the nao']);
+      if (!explicitQuestion && /\b\d+\s*(?:hop|cuon|quyen|cai|con|to|tam|tem|tag|bo|tui|thiep)\b/.test(text)) return null;
+      const formats=[...new Set([...text.matchAll(/\b(a[45])\b/g)].map(m=>m[1]))];
+      const namedEnvelope=hasAny(text,['bao thu','bi thu','phong bi','envelope']);
+      if (formats.length===1 && (sizeQuestion||explicitQuestion) && !/^a[45]$/.test(text) && (!namedEnvelope||contains(text,'kho giay'))) {
+        const dimensions={a4:'21 × 29,7',a5:'14,8 × 21'};
+        return reference('Dạ, khổ '+formats[0].toUpperCase()+' có kích thước '+dimensions[formats[0]]+' cm ạ.');
+      }
+      const card=hasAny(text,['danh thiep','card visit','name card','namecard','card']);
+      const customCard=hasAny(text,['kho rieng','kich thuoc rieng','kho lon','loai lon','mau lon','lon hon','to hon','ngoai kho','tuy chinh','custom','theo yeu cau']);
+      const cardSizeAlias=hasAny(text,['lon bao nhieu','to co nao'])&&!/\b\d+\s*(?:hop|cuon|quyen|cai|con|to|tam|tem|tag|bo|tui|thiep|k|dong|vnd|nghin|ngan|trieu)\b/.test(text)&&!raw.includes('₫');
+      if(card&&(sizeQuestion||cardSizeAlias)&&!customCard&&formats.length===0&&!contains(text,'vinh phat')&&!/\d+(?:[.,]\d+)?\s*[x×]\s*\d/i.test(raw)&&matchingProducts(normalize(raw),data).length<=1) {
+        const ref=data.cardPrintingInformation?.standardSizeReference;
+        const result=reference('Dạ, kích thước danh thiếp thông dụng là 9 × 5,4 cm ạ.');
+        return ref?{...result,sources:[{label:'Xem chi tiết',url:ref.sourceUrl}]}:result;
+      }
+      if(/\bc300\b/.test(text)&&hasAny(text,['la gi','giay gi','loai gi','loai giay gi','dinh luong','bao nhieu gsm'])) {
+        const info=data.cardPrintingInformation?.digital;
+        if(info?.material==='c300'&&websiteSource(info.sourceUrl))return {...reference('Dạ, C300 là giấy Couche có định lượng 300 g/m² ạ.'),sources:[{label:'Xem chi tiết',url:info.sourceUrl}]};
+      }
+      return null;
+    }
     function informationField(text,raw) {
       if(hasAny(text,['thoi gian','bao lau','khi nao','may ngay','mat may ngay']))return 'leadTime';
       const question=/\?/.test(raw)||hasAny(text,['bao nhieu','the nao','nhu nao','nhu the nao','la gi','giay gi','giay nao','loai nao','loai giay nao','loai giay gi','chat lieu gi','chat lieu nao','kich thuoc nao','kho nao','co can mang khong','can mang gi','can mang nao','may mat','so mat','in 1 mat khong','in 2 mat khong','in mot mat khong','in hai mat khong','gui file gi','can file gi','dinh dang file','file dinh dang']);
@@ -408,6 +452,8 @@
     }
     function sessionAnswer(input, options) {
       const raw = String(input || '').trim();
+      const basic=basicInformation(raw);
+      if(basic)return basic;
       // Compact Vietnamese replies and thousands separators remain deterministic.
       const text = normalize(raw.replace(/×/g, 'x').replace(/(\d)[.,](?=\d{3}(?:\D|$))/g, '$1').replace(/([a-zA-ZÀ-ỹ]{2,})(\d)/g, '$1 $2')).replace(/\b(\d{2,3})\s*gsm\b/g, '$1');
       const base = answer(raw, data, time());
@@ -590,7 +636,7 @@
     }
     return Object.freeze({answer:sessionAnswer, reset});
   }
-  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText,OWNER_TIER_POLICY,CARD_PRINTING_POLICY,INFORMATION_FIELDS});
+  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText,displayLink,DISPLAY_LINKS,OWNER_TIER_POLICY,CARD_PRINTING_POLICY,INFORMATION_FIELDS});
 })(typeof window !== 'undefined' ? window : globalThis);
 </script><script>(function(root){
   'use strict';
@@ -931,6 +977,7 @@
   const ownerUpdated = f => f.ownerPriceRevision?.kind === 'business-owner-price-update';
   const hasSourceTotal = f => Number.isSafeInteger(f.sourceTotalVnd) && f.sourceTotalVnd >= 0 && factKind(f) !== 'source_total' && (!ownerUpdated(f) || f.sourceTotalVnd === f.quantity * f.priceVnd);
   const safeSource = url => root.ThanhAnFAQ.safeLink(url);
+  const displaySource = url => root.ThanhAnFAQ.safeLink(root.ThanhAnFAQ.displayLink(url));
   function isMenuRequest(text) {
     const raw = String(text || '').trim();
     if (!raw || raw.length > 1000 || /[^\p{L}\p{M}\s?.!,]/u.test(raw)) return false;
@@ -1060,18 +1107,24 @@
       if(subtitle)make('p','ta-price-intro',subtitle,element);
       if(focus)heading.focus({preventScroll:true});
     }
-    function sourceLinks(parent, urls, ownerPrices = false) {
-      if (!urls.some(safeSource)) return;
+    function sourceLinks(parent, urls) {
+      const visible = new Set();
+      for (const raw of [...new Set(urls)]) {
+        const safe = displaySource(raw);
+        if (safe) visible.add(safe);
+      }
+      if (!visible.size) return;
       const links = make('div','ta-price-sources',undefined,parent);
-      for(const url of [...new Set(urls)]) {
-        const safe=safeSource(url);if(!safe)continue;
-        const a=make('a','ta-price-source',ownerPrices ? 'Xem trang sản phẩm tham chiếu' : 'Xem bảng giá gốc',links);
+      for(const safe of visible) {
+        const a=make('a','ta-price-source','Xem chi tiết',links);
         a.href=safe;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';
       }
     }
     function footer() {
       const foot=make('div','ta-price-footer',undefined,element);
-      make('strong','','Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.',foot);
+      make('h4','ta-price-consult-title','Tư vấn qua Zalo',foot);
+      make('p','ta-price-consult-note','Website chưa có đủ giá và quy cách. Bạn nhắn Zalo để được tư vấn nhé.',foot);
+      make('strong','ta-price-consult-notice','Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.',foot);
       const contacts=make('div','ta-price-contacts',undefined,foot);
       for(const contact of data.contacts) {
         if(!CONTACT_URLS.has(contact.zalo))continue;
@@ -1083,7 +1136,7 @@
     function metadata(variant) {
       if (variant.ownerUpdated) make('p','ta-price-date','Giá do chủ nhà in xác nhận ngày 13/10/2026.' + (variant.sourceUrls.some(safeSource) ? ' Trang sản phẩm bên dưới là nguồn tham chiếu.' : ''),element);
       else make('p','ta-price-date','Nguồn: '+providerName(variant.provider)+' · Dữ liệu website ngày '+(variant.sourceSnapshotDate ? variant.sourceSnapshotDate.split('-').reverse().join('/') : catalog.snapshotLabel)+'. Cần nhà in xác nhận đơn thực tế.',element);
-      sourceLinks(element,variant.sourceUrls,variant.ownerUpdated);
+      sourceLinks(element,variant.sourceUrls);
     }
     function showCategories(options = {}) {
       if(destroyed)return;refresh();state={screen:'categories', categoryId:null, variantId:null};
@@ -1093,6 +1146,7 @@
         const b=action(category.name,'ta-price-category',list,()=>showCategory(category.id));b.dataset.categoryId=category.id;
       }
       make('p','ta-price-note',catalog.ownerPriceRevision ? 'Các bảng được cập nhật theo giá chủ nhà in xác nhận ngày 13/10/2026. Ngày nguồn website được ghi riêng ở từng bảng.' : 'Giá là dữ liệu website ngày '+catalog.snapshotLabel+'. Ưu tiên bảng Thanh Ấn cho đúng quy cách; giá tham khảo bổ sung các phương án còn thiếu và cần tư vấn viên xác nhận.',element);
+      footer();
     }
     function showCategory(id) {
       if(destroyed)return;refresh();const category=catalog.categories.find(c=>c.id===id);if(!category)return;
@@ -1104,6 +1158,7 @@
         make('span','ta-price-variant-label',variant.label,b);
         make('small','ta-price-variant-meta',variant.ownerUpdated ? 'Giá chủ nhà in xác nhận' : providerName(variant.provider)+' · '+(variant.kind==='table' ? variant.referenceOnly ? 'Bảng tham khảo' : 'Bảng giá website' : variant.kind==='estimate' ? 'Chỉ có ước tính' : variant.kind==='conflict' ? 'Cần tư vấn xác nhận' : 'Chưa có bảng đủ quy cách'),b);
       }
+      footer();
     }
     function renderTable(variant) {
       const rows=variant.rows;
@@ -1143,7 +1198,7 @@
     function showVariant(id) {
       if(destroyed)return;refresh();const category=catalog.categories.find(c=>c.variants.some(v=>v.id===id));const variant=category?.variants.find(v=>v.id===id);if(!variant)return;
       state={screen:'table',categoryId:category.id,variantId:id};
-      header(variant.label,variant.kind==='table' ? variant.ownerUpdated ? 'Bảng giá chủ nhà in xác nhận cho quy cách này' : variant.referenceOnly ? 'Bảng tham khảo từ website · Điều kiện cần xác nhận' : 'Bảng giá đã công bố cho đúng phương án này' : 'Thông tin nguồn cần tư vấn xác nhận',()=>showCategory(category.id),true);
+      header(variant.label,variant.kind==='table' ? variant.ownerUpdated ? 'Bảng giá chủ nhà in xác nhận cho quy cách này' : variant.referenceOnly ? 'Bảng tham khảo từ website · Điều kiện cần xác nhận' : 'Bảng giá đã công bố cho đúng phương án này' : 'Quy cách này cần được tư vấn xác nhận.',()=>showCategory(category.id),true);
       metadata(variant);
       if(!catalog.fresh || variant.fresh === false)make('p','ta-price-warning','Snapshot đã đến hạn kiểm tra hoặc chưa thể dùng ở thời điểm này. Mầm tạm ngừng hiển thị giá; hãy nhắn Zalo để xác nhận.',element);
       else if(variant.kind==='table')renderTable(variant);
@@ -1326,6 +1381,162 @@
   }
   root.ThanhAnSourceInfo=Object.freeze({create,fields:FIELDS});
 })(typeof window!=='undefined'?window:globalThis);
+</script><script>(function(root){
+  'use strict';
+  const THRESHOLD=6;
+  function create(options={}){
+    const {host,getBounds}=options;
+    const handles=[...new Set(options.handles||[])];
+    const view=host?.ownerDocument?.defaultView||root;
+    if(!host?.style||!host.classList||!handles.length||handles.some(handle=>!handle?.addEventListener||!handle.classList)||typeof getBounds!=='function'||!view.addEventListener)throw new Error('Drag requires a host, handles and visible bounds');
+    const margin=options.margin===undefined?8:options.margin;
+    if(!Number.isFinite(margin)||margin<0||margin>40)throw new Error('Drag margin is invalid');
+    const originalTranslate=host.style.translate||'';
+    const originalDragging=host.classList.contains('ta-dragging');
+    const originalSurfaces=new Map(handles.map(handle=>[handle,handle.classList.contains('ta-drag-surface')]));
+    let x=0,y=0,gesture=null,suppression=null,destroyed=false;
+    function state(){return {x,y,pressed:!!gesture,dragging:!!gesture?.dragging,destroyed};}
+    function rectangle(){
+      try{
+        const rect=getBounds();
+        if(!rect||![rect.left,rect.top,rect.right,rect.bottom].every(Number.isFinite)||rect.right<=rect.left||rect.bottom<=rect.top)return null;
+        return {left:rect.left-x,top:rect.top-y,right:rect.right-x,bottom:rect.bottom-y};
+      }catch(_){return null;}
+    }
+    function viewport(){
+      const vv=view.visualViewport;
+      const width=vv?.width||view.innerWidth,height=vv?.height||view.innerHeight;
+      const left=vv?.offsetLeft||0,top=vv?.offsetTop||0;
+      if(![width,height,left,top].every(Number.isFinite)||width<=0||height<=0)return null;
+      return {left:left+margin,top:top+margin,right:left+width-margin,bottom:top+height-margin};
+    }
+    function clampAxis(value,min,max){
+      // A larger union cannot fit; keep its leading edge and drag surface reachable.
+      if(min>max)return Math.round(min);
+      const low=Math.ceil(min),high=Math.floor(max);
+      if(low>high)return (min+max)/2;
+      return Math.min(high,Math.max(low,Math.round(value)));
+    }
+    function position(nextX,nextY){
+      const rect=rectangle(),vp=viewport();
+      if(!rect||!vp)return false;
+      const newX=clampAxis(nextX,vp.left-rect.left,vp.right-rect.right);
+      const newY=clampAxis(nextY,vp.top-rect.top,vp.bottom-rect.bottom);
+      if(newX===x&&newY===y)return false;
+      x=newX;y=newY;host.style.translate=x+'px '+y+'px';
+      if(typeof options.onMove==='function'){try{options.onMove(Object.freeze({x,y}));}catch(_){}}
+      return true;
+    }
+    function restoreCursor(){if(!originalDragging)host.classList.remove('ta-dragging');}
+    function release(current){
+      if(current?.captured){try{current.handle.releasePointerCapture(current.id);}catch(_){}}
+    }
+    function cancel(){const current=gesture;gesture=null;suppression=null;restoreCursor();release(current);}
+    function interactive(node){
+      const tag=String(node.tagName||'').toLowerCase();
+      return /^(?:button|input|textarea|select|a|summary)$/.test(tag)||node.isContentEditable===true||node.getAttribute?.('contenteditable')==='true'||node.getAttribute?.('role')==='button';
+    }
+    function allowedTarget(target,handle){
+      let node=target;
+      while(node){
+        if(interactive(node)&&!node.classList?.contains('ta-drag-handle'))return false;
+        if(node===handle)return true;
+        node=node.parentNode;
+      }
+      return false;
+    }
+    function down(event){
+      if(destroyed||gesture||event.isPrimary===false||(typeof event.button==='number'&&event.button!==0)||!Number.isFinite(event.clientX)||!Number.isFinite(event.clientY))return;
+      suppression=null;
+      const handle=event.currentTarget;
+      if(!allowedTarget(event.target,handle))return;
+      gesture={id:event.pointerId,handle,startX:event.clientX,startY:event.clientY,x,y,dragging:false,captured:false};
+    }
+    function move(event){
+      const current=gesture;
+      if(destroyed||!current||event.pointerId!==current.id||!Number.isFinite(event.clientX)||!Number.isFinite(event.clientY))return;
+      const dx=event.clientX-current.startX,dy=event.clientY-current.startY;
+      if(!current.dragging){
+        if(dx*dx+dy*dy<THRESHOLD*THRESHOLD||!rectangle()||!viewport())return;
+        current.dragging=true;host.classList.add('ta-dragging');
+        try{current.handle.setPointerCapture(current.id);current.captured=true;}catch(_){}
+      }
+      if(event.cancelable!==false)event.preventDefault();
+      position(current.x+dx,current.y+dy);
+    }
+    function up(event){
+      const current=gesture;
+      if(!current||event.pointerId!==current.id)return;
+      gesture=null;restoreCursor();release(current);
+      if(current.dragging){
+        suppression={handle:current.handle,id:current.id,until:Date.now()+500};
+        if(event.cancelable!==false)event.preventDefault();
+      }
+    }
+    function pointerCancel(event){if(gesture&&event.pointerId===gesture.id)cancel();}
+    function lost(event){if(gesture&&event.pointerId===gesture.id)cancel();}
+    function click(event){
+      const block=suppression;
+      if(!block)return;
+      if(Date.now()>block.until){suppression=null;return;}
+      if(event.detail===0||(typeof event.pointerId==='number'&&event.pointerId!==block.id))return;
+      const path=typeof event.composedPath==='function'?event.composedPath():null;
+      const matches=path?path.includes(block.handle):(event.target===block.handle||block.handle.contains?.(event.target));
+      if(!matches)return;
+      suppression=null;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation?.();
+    }
+    function reclamp(){if(destroyed)return false;cancel();return position(x,y);}
+    function reset(){if(destroyed)return;cancel();x=0;y=0;host.style.translate=originalTranslate;}
+    for(const handle of handles){handle.classList.add('ta-drag-surface');handle.addEventListener('pointerdown',down);handle.addEventListener('lostpointercapture',lost);}
+    view.addEventListener('pointermove',move,{capture:true,passive:false});
+    view.addEventListener('pointerup',up,true);view.addEventListener('pointercancel',pointerCancel,true);view.addEventListener('click',click,true);
+    view.addEventListener('blur',cancel);view.addEventListener('resize',reclamp);
+    const visual=view.visualViewport;
+    visual?.addEventListener('resize',reclamp);visual?.addEventListener('scroll',reclamp);
+    return Object.freeze({reclamp,reset,getState:state,destroy(){
+      if(destroyed)return;reset();destroyed=true;
+      for(const handle of handles){handle.removeEventListener('pointerdown',down);handle.removeEventListener('lostpointercapture',lost);if(!originalSurfaces.get(handle))handle.classList.remove('ta-drag-surface');}
+      view.removeEventListener('pointermove',move,true);view.removeEventListener('pointerup',up,true);view.removeEventListener('pointercancel',pointerCancel,true);view.removeEventListener('click',click,true);
+      view.removeEventListener('blur',cancel);view.removeEventListener('resize',reclamp);visual?.removeEventListener('resize',reclamp);visual?.removeEventListener('scroll',reclamp);
+    }});
+  }
+  root.ThanhAnDrag=Object.freeze({create});
+})(typeof window!=='undefined'?window:globalThis);
+</script><script>(function(root){
+  'use strict';
+  function create(options={}){
+    const delayMs=options.delayMs===undefined?320:options.delayMs;
+    const timers=options.timers||root;
+    if(!Number.isFinite(delayMs)||delayMs<0||delayMs>5000)throw new Error('Presentation delay is invalid');
+    if(typeof timers.setTimeout!=='function'||typeof timers.clearTimeout!=='function')throw new Error('Presentation timers are required');
+    const schedule=timers.setTimeout.bind(timers),clear=timers.clearTimeout.bind(timers);
+    let pending=null,destroyed=false;
+    function finish(record){
+      if(record.settled)return;
+      record.settled=true;
+      const timer=record.timer;record.timer=null;
+      if(timer!==null){try{clear(timer);}catch(_){}}
+      if(pending===record)pending=null;
+      record.resolve();
+    }
+    function cancel(){if(pending)finish(pending);}
+    function begin(){
+      cancel();
+      if(destroyed)return Promise.resolve();
+      let resolve;
+      const promise=new Promise(done=>{resolve=done;});
+      const record={resolve,timer:null,settled:false};pending=record;
+      try{
+        const timer=schedule(()=>finish(record),delayMs);
+        if(record.settled){try{clear(timer);}catch(_){}}
+        else record.timer=timer;
+      }catch(_){finish(record);}
+      return promise;
+    }
+    return Object.freeze({begin,cancel,destroy(){if(destroyed)return;destroyed=true;cancel();},getState:()=>({pending:pending!==null,destroyed,delayMs})});
+  }
+  root.ThanhAnPresentation=Object.freeze({create});
+})(typeof window!=='undefined'?window:globalThis);
 </script><script>(function (root) {
   'use strict';
   let mounted = null;
@@ -1337,7 +1548,7 @@
   }
   function assetUrl(value) { const u=new URL(value,document.baseURI);if(u.origin!==location.origin||!['http:','https:'].includes(u.protocol))throw new Error('Tài nguyên cần cùng nguồn với trang');return u.href; }
   async function createWidget(config={}) {
-    if(!root.ThanhAnFAQ||!root.ThanhAnMascot||!root.ThanhAnPriceMenu)throw new Error('Thiếu thành phần widget');
+    if(!root.ThanhAnFAQ||!root.ThanhAnMascot||!root.ThanhAnPriceMenu||!root.ThanhAnPresentation)throw new Error('Thiếu thành phần widget');
     let data=config.data;
     if(!data){const r=await fetch(assetUrl(config.dataUrl),{credentials:'omit',cache:'no-cache',referrerPolicy:'no-referrer'});if(!r.ok)throw new Error('Không tải được dữ liệu FAQ');data=await r.json();}
     root.ThanhAnFAQ.validateData(data);
@@ -1370,6 +1581,7 @@
     data=JSON.parse(JSON.stringify(data));
     function freeze(value){Object.freeze(value);Object.values(value).forEach(v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v))freeze(v);});}freeze(data);
     const conversation=root.ThanhAnFAQ.createSession?root.ThanhAnFAQ.createSession(data):{answer:text=>root.ThanhAnFAQ.answer(text,data),reset(){}};
+    const presentation=root.ThanhAnPresentation.create({delayMs:320});
     function snapshotInformation(query){
       const corpus=config.informationData;
       if(!query||corpus?.schemaVersion!==1||!Array.isArray(corpus.products)||!corpus.fieldNames?.includes(query.field))return null;
@@ -1396,6 +1608,9 @@
     const subtitle=el('p','ta-subtitle',undefined,titles);el('span','ta-status-dot','',subtitle);const statusLabel=el('span','','Trợ lý thông tin in ấn',subtitle);
     const headerActions=el('div','ta-header-actions ta-footnote',undefined,header);
     const close=el('button','ta-close','×',headerActions);close.type='button';close.setAttribute('aria-label','Đóng trò chuyện');
+    let dragController=null;
+    const dragButton=root.ThanhAnDrag?el('button','ta-window-drag ta-drag-handle','↔',headerActions):null;
+    if(dragButton){dragButton.type='button';dragButton.setAttribute('aria-label','Di chuyển hoặc đặt lại vị trí');dragButton.setAttribute('title','Kéo để di chuyển; bấm để về vị trí ban đầu');headerActions.insertBefore(dragButton,close);dragButton.addEventListener('click',()=>{dragController?.reset();dragController?.reclamp();});}
     const aiClient=config.aiEndpoint&&root.ThanhAnGemini?root.ThanhAnGemini.create({endpoint:assetUrl(config.aiEndpoint),fetchImpl:config.aiFetch}):null;
     const infoClient=config.infoEndpoint&&root.ThanhAnSourceInfo?root.ThanhAnSourceInfo.create({endpoint:assetUrl(config.infoEndpoint),productIds:data.products.map(product=>product.id),fetchImpl:config.infoFetch}):null;
     let aiConsent=null,privacyButton=null,privacyDocument=null;
@@ -1432,22 +1647,22 @@
     const input=el('input','ta-input',undefined,form);input.id='ta-mam-input';input.type='text';input.placeholder='Bạn đang cần in gì?';input.maxLength=1000;input.autocomplete='off';input.setAttribute('enterkeyhint','send');
     const submit=el('button','ta-send',undefined,form);submit.type='submit';submit.setAttribute('aria-label','Gửi câu hỏi');icon(submit);
     const alert=el('p','ta-alert','',panel);alert.setAttribute('role','status');alert.hidden=true;
-    const clear=el('button','ta-clear','↻',headerActions);clear.type='button';clear.setAttribute('aria-label','Làm mới');clear.setAttribute('title','Làm mới trò chuyện');headerActions.insertBefore(clear,close);clear.addEventListener('click',()=>{if(destroyed)return;generation++;cancelPaint();infoClient?.abort();removeTyping();aiClient?.setConsent(false);if(aiConsent)aiConsent.checked=false;showChat(false);destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();welcome();input.value='';input.focus();});
+    const clear=el('button','ta-clear','↻',headerActions);clear.type='button';clear.setAttribute('aria-label','Làm mới');clear.setAttribute('title','Làm mới trò chuyện');headerActions.insertBefore(clear,close);clear.addEventListener('click',()=>{if(destroyed)return;generation++;pendingText=null;presentation.cancel();cancelPaint();infoClient?.abort();removeTyping();aiClient?.setConsent(false);if(aiConsent)aiConsent.checked=false;showChat(false);destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();greetingShown=false;if(!panel.hidden)welcome();input.value='';input.focus();});
     const launcher=el('button','ta-launcher',undefined,shell);launcher.type='button';launcher.setAttribute('aria-expanded','false');launcher.setAttribute('aria-controls',panel.id);launcher.setAttribute('aria-label','Mở trò chuyện với Mầm');
     const launcherLabel=el('span','ta-launcher-label','Mầm giúp bạn nhé?',launcher);el('small','','Tìm giá & thông tin in ấn',launcherLabel);
     const launcherPlant=el('span','ta-launcher-plant',undefined,launcher);const launcherMascot=root.ThanhAnMascot.create({reducedMotion:config.reducedMotion,attentionDurationMs:config.attentionDurationMs});launcherPlant.appendChild(launcherMascot.element);el('span','ta-collapse-icon','⌄',launcherPlant);
-    let destroyed=false,activityTimer=null,deskTimer=null,generation=0,queue=Promise.resolve();
+    let destroyed=false,activityTimer=null,deskTimer=null,generation=0,queue=Promise.resolve(),pendingText=null,greetingShown=false;
     const activityIdleMs=Number.isFinite(config.activityIdleMs)?Math.max(100,Math.min(60000,config.activityIdleMs)):10000;
     const paintWaits=new Set();
     const priceMenus=new Map();
     const typingBubbles=new Set();
     function removeTyping(){for(const bubble of typingBubbles)bubble.remove();typingBubbles.clear();}
-    function showTyping(){
-      const block=el('div','ta-message ta-message-typing',undefined,log);
+    function showTyping(parent=log){
+      const block=el('div','ta-message ta-message-typing',undefined,parent);
       const bubble=el('div','ta-typing-bubble',undefined,block);
       const dots=el('span','ta-typing-dots',undefined,bubble);dots.setAttribute('aria-hidden','true');
       for(let i=0;i<3;i++)el('span','ta-typing-dot','',dots);
-      el('span','ta-sr-only','Mầm đang trả lời',bubble);typingBubbles.add(block);log.scrollTop=log.scrollHeight;
+      el('span','ta-sr-only','Mầm đang trả lời',bubble);typingBubbles.add(block);if(parent===log)log.scrollTop=log.scrollHeight;
       return()=>{block.remove();typingBubbles.delete(block);};
     }
     function destroyMenus(){for(const menu of priceMenus.values())menu.destroy();priceMenus.clear();}
@@ -1499,7 +1714,7 @@
       if(state==='greeting')activityTimer=setTimeout(()=>{if(!destroyed)setActivity('idle');},900);
     }
     input.addEventListener('input',()=>{if(input.value.length||host.dataset.mascotState==='working')keepWorking();});
-    function setOpen(value){if(destroyed)return;panel.hidden=!value;panelWrap.hidden=!value;avatarMascot.setPaused(!value);launcherMascot.setPaused(value);launcher.setAttribute('aria-expanded',String(value));launcher.setAttribute('aria-label',value?'Thu gọn trò chuyện với Mầm':'Mở trò chuyện với Mầm');if(value){setActivity('greeting');input.focus({preventScroll:true});}else{generation++;cancelPaint();removeTyping();showChat(false);aiClient?.abort();infoClient?.abort();setActivity('idle');launcher.focus({preventScroll:true});}}
+    function setOpen(value){if(destroyed)return;panel.hidden=!value;panelWrap.hidden=!value;avatarMascot.setPaused(!value);launcherMascot.setPaused(value);launcher.setAttribute('aria-expanded',String(value));launcher.setAttribute('aria-label',value?'Thu gọn trò chuyện với Mầm':'Mở trò chuyện với Mầm');if(value){setActivity('greeting');input.focus({preventScroll:true});if(!greetingShown&&!log.childElementCount)welcome();}else{generation++;pendingText=null;presentation.cancel();cancelPaint();removeTyping();if(!log.childElementCount)greetingShown=false;showChat(false);aiClient?.abort();infoClient?.abort();setActivity('idle');launcher.focus({preventScroll:true});}dragController?.reclamp();}
     launcher.addEventListener('click',()=>setOpen(panel.hidden));close.addEventListener('click',()=>setOpen(false));
     shadow.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){event.preventDefault();if(!auxiliary.hidden)showChat();else setOpen(false);}});
     function addMessage(text,user=false){
@@ -1507,7 +1722,11 @@
       const polite=user||/^Dạ(?:\s|[,.:!?]|$)/u.test(copy)?copy:'Dạ, '+copy.charAt(0).toLocaleLowerCase('vi-VN')+copy.slice(1);
       const block=el('div','ta-message'+(user?' ta-message-user':''),undefined,log);el('p','ta-message-name',user?'Bạn':'Mầm · Thanh Ấn',block);el('div','ta-message-bubble',polite,block);while(log.childElementCount>50)removeMessage(log.firstElementChild);return block;
     }
-    function addSource(parent,source){const url=root.ThanhAnFAQ.safeLink(source.url);if(!url)return;const a=el('a','ta-source',source.label,parent);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';}
+    function addSource(parent,source){
+      const original=root.ThanhAnFAQ.safeLink(source.url);if(!original)return;
+      const url=root.ThanhAnFAQ.safeLink(root.ThanhAnFAQ.displayLink?root.ThanhAnFAQ.displayLink(original):original);if(!url)return;
+      const a=el('a','ta-source','Xem chi tiết',parent);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';
+    }
     function addContacts(parent){for(const c of data.contacts){const row=el('div','ta-contact',undefined,parent);const name=el('div','ta-contact-person',c.name,row);el('small','',c.phone.replace(/(\d{4})(\d{3})(\d{3})/,'$1 $2 $3'),name);const zalo=el('a','ta-zalo','Zalo ↗',row);zalo.href=c.zalo;zalo.target='_blank';zalo.rel='noopener noreferrer';zalo.referrerPolicy='no-referrer';zalo.setAttribute('aria-label','Mở Zalo của '+c.name);const tel=el('a','ta-tel','Gọi',row);tel.href='tel:'+c.phone;tel.setAttribute('aria-label','Gọi '+c.name);}}
     function render(result,returnFocus){
       if(result.kind==='information'&&result.text.includes('\n• ')){
@@ -1520,35 +1739,36 @@
         addContacts(auxBody);return;
       }
       const block=addMessage(result.compactText||result.text);
-      let sourceParent=block;
       if(result.quote){
         block.classList.add('ta-message-quote');
         const bubble=block.querySelector('.ta-message-bubble');
         const lines=(result.compactText||result.text).split('\n');
         if(lines.length===2){bubble.replaceChildren(document.createTextNode(lines[0]+'\n'));el('span','ta-quote-total',lines[1],bubble);}
         const details=el('details','ta-quote-details',undefined,block);
-        el('summary','','Quy cách & nguồn giá',details);
+        el('summary','','Quy cách & lưu ý',details);
         const quote=result.quote;
         if(quote.conditions?.length){const list=el('ul','',undefined,details);quote.conditions.forEach(condition=>el('li','',condition,list));}
         if(Number.isSafeInteger(quote.unitPriceVnd))el('p','','Giá làm căn cứ: '+quote.unitPriceVnd.toLocaleString('vi-VN')+' ₫/'+quote.unit+' · Mức số lượng '+quote.sourceQuantity.toLocaleString('vi-VN')+' '+quote.quantityUnit+'.',details);
         if(quote.provenance?.kind==='business-owner-price-update')el('p','','Giá do Thanh Ấn xác nhận ngày '+quote.provenance.approvedOn+'. Nguồn website được giữ để tham chiếu.',details);
         else if(quote.provider==='vinh-phat')el('p','','Giá tham khảo bổ sung; cần xác nhận khi đặt in.',details);
-        sourceParent=details;
       }
-      if(result.sources||result.informationConditions?.length){
-        if(!result.quote){sourceParent=el('details','ta-source-details',undefined,block);el('summary','',result.informationConditions?.length?'Quy cách & lưu ý':'Thông tin nguồn',sourceParent);}
-        if(result.informationConditions?.length){const list=el('ul','',undefined,sourceParent);result.informationConditions.forEach(condition=>el('li','',condition,list));}
-        if(result.sources){const links=el('div','ta-source-links',undefined,sourceParent);result.sources.forEach(s=>addSource(links,s));}
-      }
-      if(result.suggestions){const queries=result.suggestions.filter(query=>!['xem gia','xem bang gia','lien he zalo'].includes(root.ThanhAnFAQ.normalize(query)));if(queries.length){const buttons=el('div','ta-suggestions',undefined,block);queries.forEach(query=>{const b=el('button','ta-chip',query,buttons);b.type='button';b.addEventListener('click',()=>send(query));});}}
+      if(result.informationConditions?.length){const list=el('ul','ta-information-notes',undefined,block);result.informationConditions.forEach(condition=>el('li','',condition,list));}
+      if(result.sources?.length){const links=el('div','ta-source-links',undefined,block);const visible=new Set();result.sources.forEach(source=>{const url=root.ThanhAnFAQ.displayLink?.(source.url)||source.url;if(!visible.has(url)){visible.add(url);addSource(links,source);}});}
+      if(result.suggestions){const queries=result.suggestions.filter(query=>!['xem gia','xem bang gia','lien he zalo'].includes(root.ThanhAnFAQ.normalize(query)));if(queries.length){const buttons=el('div','ta-suggestions',undefined,block);queries.forEach(query=>{const b=el('button','ta-chip',query,buttons);b.type='button';b.addEventListener('click',()=>send(query));});if(result.kind!=='greeting')addConsultChoice(block);}}
       if(result.contacts)addContacts(block);
       if(log.clientHeight&&block.offsetHeight>log.clientHeight){log.scrollTop+=block.getBoundingClientRect().top-log.getBoundingClientRect().top-12;}else log.scrollTop=log.scrollHeight;
     }
     const categoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư', 'red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
+    function addConsultChoice(parent){
+      const area=el('div','ta-consult-choice',undefined,parent);
+      el('p','','Website chưa có đủ mọi mức giá và quy cách. Nếu chưa tìm thấy nhu cầu của bạn, hãy chọn tư vấn qua Zalo.',area);
+      const button=el('button','ta-chip ta-consult-cta','Tư vấn qua Zalo',area);button.type='button';button.addEventListener('click',()=>send('Liên hệ Zalo'));
+    }
     function renderQuoteChoices(){
       conversation.reset();const block=addMessage('Dạ, bạn cần in sản phẩm nào ạ? 🌱');
       const choices=el('div','ta-suggestions ta-quote-products',undefined,block);
       root.ThanhAnPriceMenu.buildCatalog(data).categories.forEach(category=>{const b=el('button','ta-chip',category.name,choices);b.type='button';b.addEventListener('click',()=>send(categoryQueries[category.id]));});
+      addConsultChoice(block);
       if(log.clientHeight&&block.offsetHeight>log.clientHeight)log.scrollTop+=block.getBoundingClientRect().top-log.getBoundingClientRect().top-12;
       else log.scrollTop=log.scrollHeight;
     }
@@ -1559,10 +1779,22 @@
         auxiliary.scrollTo({top:0,behavior:'instant'});
       }});
       auxBody.appendChild(menu.element);priceMenus.set(menu.element,menu);
+      const bypass=new WeakSet();
+      menu.element.addEventListener('click',event=>{
+        const button=event.target.closest?.('.ta-price-category,.ta-price-variant');
+        if(!button||bypass.has(button)||destroyed)return;
+        event.preventDefault();event.stopImmediatePropagation();generation++;pendingText=null;presentation.cancel();removeTyping();aiClient?.abort();infoClient?.abort();
+        const current=generation,finish=showTyping(auxBody),wait=presentation.begin();auxBody.prepend([...typingBubbles].at(-1));auxiliary.scrollTop=0;setActivity('working');
+        queue=(async()=>{try{await wait;if(destroyed||current!==generation||!menu.element.isConnected)return;finish();bypass.add(button);button.click();}finally{finish();bypass.delete(button);if(!destroyed&&current===generation)setActivity('idle',!panel.hidden);}})();
+      },true);
       if(categoryId)menu.showCategory(categoryId);
       auxBack.focus({preventScroll:true});
     }
-    function welcome(){render({text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?',suggestions:['Danh thiếp C300','Catalogue','Decal giấy','Giờ làm việc']});}
+    function welcome(){
+      greetingShown=true;const current=generation,finish=showTyping(),wait=presentation.begin();
+      queue=(async()=>{await wait;finish();if(!destroyed&&current===generation)render({kind:'greeting',text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?',suggestions:['Danh thiếp C300','Catalogue','Decal giấy','Giờ làm việc']});})();
+      return queue;
+    }
     function renderAiSuggestion(suggestion){
       if(suggestion.intent==='product'){
         const category=root.ThanhAnPriceMenu.buildCatalog(data).categories.find(c=>c.id===suggestion.categoryId);
@@ -1570,6 +1802,7 @@
         const block=addMessage('Dạ, bạn đang cần '+category.name.toLowerCase()+' phải không ạ? Bạn chọn để xem quy cách nhé.');
         const button=el('button','ta-chip','Xem lựa chọn '+category.name,block);button.type='button';
         button.addEventListener('click',()=>{if(destroyed)return;send(categoryQueries[category.id]);});
+        addConsultChoice(block);
         log.scrollTop=log.scrollHeight;return true;
       }
       const queries={services:'Dịch vụ',hours:'Giờ làm việc',address:'Địa chỉ',contact:'Liên hệ Zalo',greeting:'Hello'};
@@ -1580,55 +1813,78 @@
       if(destroyed)return Promise.resolve();
       const text=String(value||'').trim();
       if(!text){input.focus();return Promise.resolve();}
-      const requestGeneration=generation;
+      if(pendingText===text)return queue;
+      const requestGeneration=++generation;pendingText=text;greetingShown=true;
+      presentation.cancel();cancelPaint();removeTyping();aiClient?.abort();infoClient?.abort();
       const returnFocus=shadow.activeElement||input;showChat(false);
       input.value='';alert.hidden=true;
       if(!panel.hidden)input.focus({preventScroll:true});
-      queue=queue.then(async()=>{
-        if(destroyed||generation!==requestGeneration)return;
-        addMessage(text,true);setActivity('working');
-        let finishTyping=null;
-        try{
-          if(root.ThanhAnFAQ.normalize(text)==='xem toan bang gia'||(root.ThanhAnPriceMenu.isMenuRequest(text)&&root.ThanhAnFAQ.normalize(text).includes('bang gia')))renderPriceMenu(undefined,returnFocus);
-          else if(root.ThanhAnPriceMenu.isMenuRequest(text))renderQuoteChoices();
-          else{
-            let local=conversation.answer(text);let usedAI=false;
-            if(local.kind==='unknown'&&languageMemory){
-              const mapped=languageMemory.lookup(text);
-              if(mapped?.intent==='product')local=conversation.answer(text,{approvedCategoryId:mapped.categoryId});
-              else if(mapped?.intent==='out_of_scope')local={...local,kind:'out_of_scope'};
-              else if(mapped){const queries={services:'Dịch vụ',hours:'Giờ làm việc',address:'Địa chỉ',contact:'Liên hệ Zalo',greeting:'Hello'};if(queries[mapped.intent])local=conversation.answer(queries[mapped.intent]);}
-            }
-            if(local.informationQuery&&infoClient){
-              finishTyping=showTyping();await nextPaint();
-              if(destroyed||generation!==requestGeneration)return;
-              const info=await infoClient.get(local.informationQuery.productId,local.informationQuery.field);
-              if(destroyed||generation!==requestGeneration)return;
-              finishTyping();finishTyping=null;
-              if(info?.kind==='information')local={kind:'information',text:info.text,sources:info.sources.map(source=>({url:source.url,label:source.provider==='thanh-an'?'Quy cách trên website Thanh Ấn':'Thông tin tham khảo bổ sung'}))};
-            }
-            else if(local.informationQuery){local=snapshotInformation(local.informationQuery)||local;}
-            if(local.kind==='unknown'&&aiClient?.getState().consent){
-              finishTyping=showTyping();await nextPaint();
-              if(destroyed||generation!==requestGeneration)return;
-              const suggestion=await aiClient.suggest(text);
-              if(destroyed||generation!==requestGeneration)return;
-              finishTyping();finishTyping=null;
-              if(suggestion)usedAI=renderAiSuggestion(suggestion);
-            }
-            if(!usedAI)render(local.kind==='greeting'?{...local,text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?'}:local,returnFocus);
+      addMessage(text,true);setActivity('working');
+      const normalized=root.ThanhAnFAQ.normalize(text);
+      const menuRequest=root.ThanhAnPriceMenu.isMenuRequest(text);
+      const wholeTable=normalized==='xem toan bang gia'||(menuRequest&&normalized.includes('bang gia'));
+      // Apply visitor turns in order before any presentation or network wait.
+      // A newer turn can cancel an old render while retaining product context.
+      let local=null,localError=null;
+      try{
+        if(menuRequest||wholeTable)conversation.reset();
+        else{
+          local=conversation.answer(text);
+          if(local.kind==='unknown'&&languageMemory){
+            const mapped=languageMemory.lookup(text);
+            if(mapped?.intent==='product')local=conversation.answer(text,{approvedCategoryId:mapped.categoryId});
+            else if(mapped?.intent==='out_of_scope')local={...local,kind:'out_of_scope'};
+            else if(mapped){const queries={services:'Dịch vụ',hours:'Giờ làm việc',address:'Địa chỉ',contact:'Liên hệ Zalo',greeting:'Hello'};if(queries[mapped.intent])local=conversation.answer(queries[mapped.intent]);}
           }
         }
-        catch(_){if(!destroyed&&generation===requestGeneration)render({text:'Dạ, thông tin này cần kiểm tra thêm. Bạn chọn tư vấn viên qua Zalo để được xác nhận ạ.',contacts:true},returnFocus);}
-        finally{finishTyping?.();if(!destroyed&&generation===requestGeneration)setActivity('idle',!panel.hidden);}
-      });
+      }catch(error){localError=error;}
+      const finishTyping=showTyping(),minimumWait=presentation.begin();
+      queue=(async()=>{
+        try{
+          if(localError)throw localError;
+          let suggestion=null;
+          if(local?.informationQuery&&infoClient){
+              const info=await infoClient.get(local.informationQuery.productId,local.informationQuery.field);
+              if(destroyed||generation!==requestGeneration)return;
+              if(info?.kind==='information')local={kind:'information',text:info.text,sources:info.sources.map(source=>({url:source.url,label:source.provider==='thanh-an'?'Quy cách trên website Thanh Ấn':'Thông tin tham khảo bổ sung'}))};
+          }else if(local?.informationQuery)local=snapshotInformation(local.informationQuery)||local;
+          if(local?.kind==='unknown'&&aiClient?.getState().consent){
+              suggestion=await aiClient.suggest(text);
+              if(destroyed||generation!==requestGeneration)return;
+          }
+          await minimumWait;
+          if(destroyed||generation!==requestGeneration)return;
+          finishTyping();
+          if(wholeTable)renderPriceMenu(undefined,returnFocus);
+          else if(menuRequest)renderQuoteChoices();
+          else if(!suggestion||!renderAiSuggestion(suggestion))render(local.kind==='greeting'?{...local,text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?'}:local,returnFocus);
+        }
+        catch(_){await minimumWait;if(!destroyed&&generation===requestGeneration){finishTyping();render({text:'Dạ, thông tin này cần kiểm tra thêm. Bạn chọn tư vấn viên qua Zalo để được xác nhận ạ.',contacts:true},returnFocus);}}
+        finally{finishTyping();if(!destroyed&&generation===requestGeneration){pendingText=null;setActivity('idle',!panel.hidden);}}
+      })();
       return queue;
     }
-    form.addEventListener('submit',event=>{event.preventDefault();send(input.value);});setActivity('idle');welcome();
+    form.addEventListener('submit',event=>{event.preventDefault();send(input.value);});setActivity('idle');
     document.body.appendChild(host);
-    try{await Promise.all([cssReady,launcherMascot.ready,avatarMascot.ready]);}catch(e){destroyed=true;aiClient?.destroy();infoClient?.destroy();host.remove();launcherMascot.destroy();avatarMascot.destroy();throw e;}
+    try{await Promise.all([cssReady,launcherMascot.ready,avatarMascot.ready]);}catch(e){destroyed=true;presentation.destroy();aiClient?.destroy();infoClient?.destroy();host.remove();launcherMascot.destroy();avatarMascot.destroy();throw e;}
     host.style.visibility='visible';
-    mounted={host,shadow,data,open:()=>setOpen(true),close:()=>setOpen(false),send,launcherMascot,avatarMascot,destroy(){if(destroyed)return;destroyed=true;aiClient?.destroy();infoClient?.destroy();removeTyping();cancelPaint();clearTimeout(activityTimer);clearTimeout(deskTimer);destroyMenus();host.remove();launcherMascot.destroy();avatarMascot.destroy();if(typeof config.onStateChange==='function'){try{config.onStateChange('idle');}catch(_){}}if(mounted&&mounted.host===host)mounted=null;}};
+    function updateAvailableHeight(){
+      const viewport=root.visualViewport,height=Math.max(160,Math.round(Math.min(root.innerHeight,viewport?.height||root.innerHeight)));
+      host.style.setProperty('--ta-available-height',height+'px');
+      const keyboard=Boolean(viewport&&viewport.height<root.innerHeight-100);
+      host.dataset.keyboardCompact=String(keyboard);host.dataset.keyboardSmall=String(keyboard&&height<320);
+    }
+    updateAvailableHeight();root.addEventListener('resize',updateAvailableHeight);root.visualViewport?.addEventListener('resize',updateAvailableHeight);
+    if(root.ThanhAnDrag){
+      dragController=root.ThanhAnDrag.create({host,handles:[header,launcherMascot.element,avatarMascot.element],margin:8,getBounds:()=>{
+        const nodes=panel.hidden?[launcher]:[panel,avatar];
+        const rects=nodes.map(node=>node.getBoundingClientRect()).filter(rect=>rect.width>0&&rect.height>0);
+        if(!rects.length)return host.getBoundingClientRect();
+        const left=Math.min(...rects.map(rect=>rect.left)),right=Math.max(...rects.map(rect=>rect.right)),top=Math.min(...rects.map(rect=>rect.top)),bottom=Math.max(...rects.map(rect=>rect.bottom));
+        return{left,right,top,bottom,width:right-left,height:bottom-top};
+      }});dragController.reclamp();
+    }
+    mounted={host,shadow,data,open:()=>setOpen(true),close:()=>setOpen(false),send,launcherMascot,avatarMascot,dragController,destroy(){if(destroyed)return;destroyed=true;pendingText=null;presentation.destroy();dragController?.destroy();root.removeEventListener('resize',updateAvailableHeight);root.visualViewport?.removeEventListener('resize',updateAvailableHeight);aiClient?.destroy();infoClient?.destroy();removeTyping();cancelPaint();clearTimeout(activityTimer);clearTimeout(deskTimer);destroyMenus();host.remove();launcherMascot.destroy();avatarMascot.destroy();if(typeof config.onStateChange==='function'){try{config.onStateChange('idle');}catch(_){}}if(mounted&&mounted.host===host)mounted=null;}};
     return mounted;
   }
   function mount(config={}) {
@@ -14516,7 +14772,7 @@
     }
   }
 }
-,styles:":host {\n  all: initial;\n  --ta-ink: #24384b;\n  --ta-muted: #4d6071;\n  --ta-leaf: #2d665c;\n  --ta-cream: #fffbf3;\n  --ta-paper: #fffdf8;\n  --ta-mint: #eaf5ee;\n  --ta-line: #dce2dc;\n  --ta-control: #7f8b8c;\n  --ta-accent: #9f4f39;\n  position: fixed;\n  right: 24px;\n  bottom: 20px;\n  z-index: 99990;\n  width: 392px;\n  max-width: calc(100% - 48px);\n  pointer-events: none;\n  font-family: Arial, Helvetica, sans-serif;\n  font-size: 16px;\n  line-height: 1.5;\n  color: var(--ta-ink);\n  color-scheme: light;\n}\n*, *::before, *::after { box-sizing: border-box; }\nbutton, input, a { font: inherit; }\nbutton { cursor: pointer; }\nbutton:disabled { cursor: not-allowed; }\nbutton, a, input { -webkit-tap-highlight-color: transparent; }\nbutton:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible {\n  outline: 3px solid var(--ta-accent);\n  outline-offset: 3px;\n}\n[hidden] { display: none !important; }\n.ta-widget { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }\n.ta-widget > * { pointer-events: auto; }\n.ta-panel-wrap { position: relative; width: 100%; pointer-events: none; }\n.ta-panel-wrap > .ta-panel, .ta-panel-wrap > .ta-avatar { pointer-events: auto; }\n.ta-panel {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  max-width: 100%;\n  height: min(640px, calc(100dvh - 104px));\n  min-height: 0;\n  overflow: hidden;\n  border: 1px solid var(--ta-line);\n  border-radius: 22px;\n  background: var(--ta-paper);\n  box-shadow: 0 18px 60px #24384b24;\n  animation: ta-panel-in .18s ease-out;\n}\n.ta-header { display: flex; gap: 8px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--ta-ink); background: var(--ta-ink); color: #fff; flex: none; }\n.ta-header > :first-child { flex: 1; min-width: 0; }\n.ta-title { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 700; letter-spacing: -.2px; }\n.ta-subtitle { margin: 3px 0 0; font-size: 16px; line-height: 1.35; color: #d5e6e2; }\n.ta-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #a7d6ac; margin-right: 6px; }\n.ta-header-actions.ta-footnote { display: flex; align-items: center; flex: none; gap: 2px; margin: 0; padding: 0; }\n.ta-clear, .ta-close { display: inline-grid; place-items: center; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border: 0; border-radius: 12px; padding: 0; background: transparent; color: var(--ta-muted); text-decoration: none; line-height: 1; }\n.ta-clear { font-size: 24px; }\n.ta-header .ta-clear, .ta-header .ta-close { color: #fff; }\n.ta-header .ta-clear:hover, .ta-header .ta-close:hover { background: #ffffff1f; }\n.ta-header button:focus-visible { outline-color: #f8c494; }\n.ta-close { font-size: 26px; }\n.ta-clear:hover, .ta-close:hover { background: var(--ta-mint); color: var(--ta-ink); }\n.ta-scope { flex: none; padding: 6px 14px; font-size: 16px; color: var(--ta-muted); background: var(--ta-cream); border-bottom: 1px solid var(--ta-line); }\n.ta-scope strong { font-weight: 600; }\n\n/* A single visible view owns vertical scrolling; the panel and table never do. */\n.ta-content { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }\n.ta-log, .ta-aux-view { flex: 1 1 auto; width: 100%; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: auto; scrollbar-width: thin; scrollbar-color: #a8b8b1 transparent; }\n.ta-log { padding: 14px 14px 4px; }\n.ta-aux-view { background: var(--ta-paper); }\n.ta-aux-head { display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 2; padding: 8px 12px; background: var(--ta-cream); border-bottom: 1px solid var(--ta-line); }\n.ta-aux-head h2, .ta-aux-head h3, .ta-aux-title { flex: 1; min-width: 0; margin: 0; font-size: 18px; line-height: 1.4; font-weight: 600; }\n.ta-view-back { flex: none; min-height: 44px; padding: 8px 10px; border: 1px solid var(--ta-control); border-radius: 11px; background: var(--ta-paper); color: var(--ta-ink); font-size: 16px; line-height: 1.35; }\n.ta-view-back:hover { background: var(--ta-mint); }\n.ta-aux-body { min-width: 0; padding: 12px; font-size: 16px; line-height: 1.5; overflow: visible; }\n.ta-aux-body p { margin: 0 0 12px; }\n.ta-aux-body a { color: var(--ta-leaf); text-underline-offset: 3px; }\n\n.ta-message { max-width: 100%; margin: 0 0 16px; }\n.ta-message-name { margin: 0 0 5px 2px; font-size: 16px; line-height: 1.4; color: var(--ta-muted); }\n.ta-message-bubble { padding: 12px 14px; border-radius: 4px 17px 17px 17px; background: var(--ta-mint); color: var(--ta-ink); font-size: 16px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }\n.ta-message-user { margin-left: 28px; }\n.ta-message-user .ta-message-name { margin-right: 3px; text-align: right; }\n.ta-message-user .ta-message-bubble { border-radius: 17px 4px 17px 17px; background: #304a5e; color: #fff; }\n.ta-message-quote .ta-message-bubble { line-height: 1.6; }\n.ta-quote-total { font-weight: 600; color: var(--ta-ink); }\n.ta-source-details, .ta-quote-details { margin-top: 5px; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-source-details summary, .ta-quote-details summary { display: list-item; list-style-position: inside; min-height: 44px; padding: 10px 2px; cursor: pointer; color: var(--ta-muted); overflow-wrap: anywhere; }\n.ta-source-details p, .ta-quote-details p { margin: 8px 0; }\n.ta-source-details ul, .ta-quote-details ul { margin: 6px 0; padding-left: 20px; }\n.ta-source-links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; }\n.ta-source { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; gap: 4px; font-size: 16px; color: var(--ta-leaf); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }\n.ta-source::after { content: '↗'; font-size: 16px; }\n.ta-handoff { margin: 8px 0 0; padding: 8px 10px; border: 1px solid var(--ta-line); border-radius: 11px; color: var(--ta-muted); background: var(--ta-cream); font-size: 16px; }\n.ta-handoff button { min-height: 44px; padding: 4px 0; border: 0; background: transparent; color: var(--ta-leaf); text-decoration: underline; font-size: 16px; }\n.ta-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }\n.ta-chip { min-height: 44px; padding: 9px 11px; border: 1px solid var(--ta-control); border-radius: 12px; background: var(--ta-paper); color: var(--ta-ink); text-align: left; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }\n.ta-chip:hover { border-color: var(--ta-leaf); background: #dceee4; }\n.ta-quote-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }\n.ta-quick { display: flex; flex: none; gap: 7px; padding: 8px 12px; background: var(--ta-cream); border-top: 1px solid var(--ta-line); }\n.ta-quick .ta-chip { flex: 1; min-width: 0; min-height: 44px; padding: 8px 4px; text-align: center; font-size: 16px; line-height: 1.3; white-space: nowrap; background: var(--ta-paper); }\n.ta-form { display: flex; flex: none; align-items: center; gap: 8px; padding: 0 12px 12px; background: var(--ta-cream); }\n.ta-input { flex: 1; width: 100%; min-width: 0; min-height: 48px; border: 1px solid var(--ta-control); border-radius: 13px; padding: 10px 12px; background: #fff; color: var(--ta-ink); font-size: 16px; line-height: 1.5; outline-offset: 2px; }\n.ta-input::placeholder { color: var(--ta-muted); opacity: 1; }\n.ta-send { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border: 0; border-radius: 13px; padding: 0; background: var(--ta-accent); color: #fff; }\n.ta-send:hover { background: #843f2d; }\n.ta-send svg { width: 20px; height: 20px; }\n.ta-footnote { margin: 0; padding: 0 12px 8px; color: var(--ta-muted); font-size: 16px; }\n.ta-alert { flex: none; margin: 0; padding: 4px 12px 8px; background: var(--ta-cream); color: #85432e; font-size: 16px; line-height: 1.5; }\n.ta-contact { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 10px; border: 1px solid var(--ta-line); border-radius: 13px; background: var(--ta-paper); }\n.ta-contact-person { flex: 1; min-width: 120px; font-size: 16px; }\n.ta-contact-person small { display: block; font-size: 16px; color: var(--ta-muted); }\n.ta-contact a { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 8px 10px; border-radius: 10px; text-decoration: none; font-size: 16px; }\n.ta-contact .ta-zalo { background: var(--ta-leaf); color: #fff; }\n.ta-tel { border: 1px solid var(--ta-control); background: var(--ta-mint); color: var(--ta-ink); }\n.ta-sr-only { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }\n\n/* The optional understanding control stays compact; its explanation opens in the auxiliary view. */\n.ta-ai-options { display: flex; align-items: center; flex: none; gap: 10px; margin: 0; padding: 7px 12px; border-bottom: 1px solid var(--ta-line); background: var(--ta-cream); font-size: 16px; line-height: 1.4; overflow: visible; }\n.ta-ai-label { display: flex; align-items: center; flex: 1; min-width: 0; min-height: 44px; gap: 9px; margin: 0; cursor: pointer; font-size: 16px; }\n.ta-ai-consent { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--ta-leaf); }\n.ta-ai-copy { display: block; flex: 1; min-width: 0; }\n.ta-ai-title { display: block; font-size: 16px; line-height: 1.35; font-weight: 600; color: var(--ta-ink); }\n.ta-ai-helper { display: block; margin: 2px 0 0; color: var(--ta-muted); font-size: 16px; line-height: 1.35; }\n.ta-privacy-open { display: inline-grid; place-items: center; flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border: 1px solid var(--ta-control); border-radius: 12px; background: var(--ta-paper); color: var(--ta-muted); font-size: 20px; }\n.ta-privacy-open:hover { color: var(--ta-ink); background: var(--ta-mint); }\n.ta-ai-notice { margin: 0 0 12px; font-size: 16px; color: var(--ta-ink); line-height: 1.5; }\n.ta-privacy-label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding: 8px 0; font-size: 16px; line-height: 1.5; }\n.ta-privacy-label input { flex: none; width: 20px; height: 20px; margin: 2px 0; accent-color: var(--ta-leaf); }\n\n/* MAM_MASCOT_START */\n.ta-avatar { position: absolute; left: -108px; top: 18px; width: 96px; height: auto; }\n.ta-avatar .ta-mascot, .ta-launcher .ta-mascot { width: 96px; height: auto; }\n.ta-mascot { display: block; width: 100%; height: auto; aspect-ratio: 192/208; image-rendering: pixelated; touch-action: manipulation; user-select: none; flex-shrink: 0; }\n.ta-mascot[data-ready=false] { visibility: hidden; }\n/* Every character pixel and motion comes from the unchanged source sprite. */\n/* MAM_MASCOT_END */\n.ta-launcher { display: flex; align-items: flex-end; gap: 10px; min-width: 112px; min-height: 112px; border: 0; background: none; color: var(--ta-ink); padding: 0; text-align: left; }\n.ta-launcher-label { position: relative; margin-bottom: 21px; padding: 11px 14px; border: 1px solid var(--ta-line); border-radius: 17px 17px 4px 17px; background: var(--ta-cream); box-shadow: 0 6px 22px #24384b12; font-size: 16px; font-weight: 600; white-space: nowrap; }\n.ta-launcher-label small { display: block; margin-top: 3px; font-size: 16px; font-weight: 400; color: var(--ta-muted); }\n.ta-launcher-label::after { content: ''; position: absolute; width: 7px; height: 7px; right: -4px; bottom: 10px; background: var(--ta-cream); border-top: 1px solid var(--ta-line); border-right: 1px solid var(--ta-line); transform: rotate(45deg); }\n.ta-launcher-plant { display: grid; place-items: center; width: 108px; height: 118px; }\n.ta-launcher[aria-expanded=true] { display: none; min-width: 44px; min-height: 44px; }\n.ta-launcher[aria-expanded=true] .ta-launcher-plant { width: 44px; height: 44px; border-radius: 50%; background: var(--ta-leaf); }\n.ta-launcher[aria-expanded=true] .ta-mascot, .ta-launcher[aria-expanded=true] .ta-launcher-label { display: none; }\n.ta-collapse-icon { display: none; color: #fff; font-size: 22px; line-height: 1; }\n.ta-launcher[aria-expanded=true] .ta-collapse-icon { display: block; }\n\n/* MAM_PRICE_MENU_START */\n.ta-price-menu { max-width: 100%; max-height: none; padding: 12px; border: 1px solid var(--ta-line); border-radius: 15px; background: var(--ta-paper); font-size: 16px; line-height: 1.5; overflow: visible; overflow-wrap: anywhere; }\n.ta-aux-body > .ta-price-menu { border: 0; border-radius: 0; padding: 0; }\n.ta-price-title { margin: 0 0 6px; color: var(--ta-ink); font-size: 18px; font-weight: 600; line-height: 1.4; }\n.ta-price-title:focus { outline: none; }\n.ta-price-intro { margin: 0 0 12px; color: var(--ta-muted); font-size: 16px; line-height: 1.5; }\n.ta-price-back { display: block; min-height: 44px; margin: 0 0 8px; padding: 9px 2px; border: 0; background: transparent; color: var(--ta-leaf); font-size: 16px; line-height: 1.5; text-decoration: underline; text-underline-offset: 3px; }\n.ta-price-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }\n.ta-price-variants { grid-template-columns: minmax(0, 1fr); }\n.ta-price-category, .ta-price-variant { min-height: 48px; padding: 10px; border: 1px solid var(--ta-control); border-radius: 12px; background: var(--ta-mint); color: var(--ta-ink); font-size: 16px; line-height: 1.45; text-align: left; overflow-wrap: anywhere; }\n.ta-price-category:hover, .ta-price-variant:hover { border-color: var(--ta-leaf); background: #dceee4; }\n.ta-price-variant-label { display: block; font-weight: 600; }\n.ta-price-variant-meta { display: block; margin-top: 4px; font-size: 16px; font-weight: 400; color: var(--ta-muted); line-height: 1.45; }\n.ta-price-date, .ta-price-note { margin: 10px 0; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-price-sources { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin: 4px 0 10px; }\n.ta-price-source { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; font-size: 16px; color: var(--ta-leaf); line-height: 1.5; text-underline-offset: 3px; }\n.ta-price-conditions { margin: 10px 0; padding-left: 20px; font-size: 16px; color: var(--ta-muted); line-height: 1.55; }\n.ta-price-table-wrap { max-width: 100%; max-height: none; overflow-x: auto; overflow-y: visible; border: 1px solid var(--ta-line); border-radius: 12px; scrollbar-width: thin; overscroll-behavior-x: contain; }\n.ta-price-table { width: 100%; min-width: 360px; border-collapse: collapse; text-align: left; font-size: 16px; line-height: 1.5; }\n.ta-price-table th, .ta-price-table td { padding: 10px 9px; border-bottom: 1px solid var(--ta-line); vertical-align: top; }\n.ta-price-table thead th { background: var(--ta-mint); color: var(--ta-ink); font-size: 16px; font-weight: 600; }\n.ta-price-table tbody th { font-weight: 400; }\n.ta-price-table tbody tr:last-child > * { border-bottom: 0; }\n.ta-price-table tbody tr:nth-child(even) { background: #f5f8f0; }\n.ta-price-amount { font-size: 16px; font-weight: 600; white-space: nowrap; color: var(--ta-ink); }\n.ta-price-quantity { min-width: 78px; }\n.ta-price-meaning { min-width: 110px; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-price-warning { margin: 10px 0; padding: 11px 12px; border: 1px solid #dec6b7; border-radius: 12px; background: #fff3e8; color: #85432e; font-size: 16px; line-height: 1.55; }\n.ta-price-estimate, .ta-price-reference { margin: 10px 0; font-size: 16px; font-weight: 600; color: var(--ta-leaf); line-height: 1.55; }\n.ta-price-totals, .ta-price-row-details { margin-top: 10px; padding-top: 5px; border-top: 1px solid var(--ta-line); font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-price-totals summary, .ta-price-row-details summary { display: list-item; list-style-position: inside; min-height: 44px; padding: 10px 0; cursor: pointer; color: var(--ta-leaf); }\n.ta-price-totals ul, .ta-price-row-condition ul { margin: 6px 0; padding-left: 20px; line-height: 1.5; }\n.ta-price-row-condition { padding: 10px 0 4px; border-top: 1px dashed var(--ta-line); }\n.ta-price-row-condition strong { font-size: 16px; font-weight: 600; color: var(--ta-ink); }\n.ta-price-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ta-line); }\n.ta-price-footer strong { display: block; color: var(--ta-ink); font-size: 16px; font-weight: 700; line-height: 1.55; }\n.ta-price-contacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }\n.ta-aux-body .ta-price-zalo { display: inline-flex; justify-content: center; align-items: center; flex: 1 1 100px; min-height: 44px; padding: 9px 10px; border-radius: 11px; background: var(--ta-leaf); color: #fff; font-size: 16px; line-height: 1.4; text-align: center; text-decoration: none; }\n.ta-price-zalo:hover { background: #215248; }\n/* MAM_PRICE_MENU_END */\n\n.ta-message-typing { margin: 8px 0 12px; }\n.ta-typing-bubble { display: inline-flex; align-items: center; padding: 13px 16px; border-radius: 17px 17px 17px 5px; background: #e8ebec; }\n.ta-typing-dots { display: inline-flex; gap: 5px; align-items: center; height: 10px; }\n.ta-typing-dot { width: 6px; height: 6px; border-radius: 50%; background: #65717a; animation: ta-typing 1.2s ease-in-out infinite; }\n.ta-typing-dot:nth-child(2) { animation-delay: .15s; }\n.ta-typing-dot:nth-child(3) { animation-delay: .3s; }\n@keyframes ta-typing { 0%, 60%, 100% { transform: translateY(0); opacity: .55; } 30% { transform: translateY(-3px); opacity: 1; } }\n@keyframes ta-panel-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }\n@media (max-width: 560px) {\n  :host { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: calc(100% - 24px); max-width: calc(100% - 24px); }\n  .ta-panel-wrap { padding-top: 114px; }\n  .ta-avatar { left: 0; top: 0; }\n  .ta-panel { height: min(650px, calc(100dvh - 144px)); border-radius: 20px; }\n  .ta-header { padding: 9px 10px; gap: 6px; }\n  .ta-header-actions.ta-footnote { gap: 0; }\n  .ta-log { padding: 12px 10px 4px; }\n  .ta-message-bubble { padding: 11px 12px; }\n  .ta-launcher { min-height: 108px; }\n  .ta-launcher-plant { width: 100px; height: 108px; }\n  .ta-launcher-label { max-width: calc(100vw - 140px); margin-bottom: 19px; padding: 9px 10px; white-space: normal; }\n  .ta-quick { gap: 6px; padding: 7px 10px; }\n  .ta-form { padding: 0 10px 10px; }\n  .ta-ai-options { padding: 6px 10px; gap: 8px; }\n}\n@media (max-width: 360px) {\n  .ta-aux-body { padding: 10px; }\n  .ta-price-menu { padding: 10px; }\n  .ta-price-table th, .ta-price-table td { padding: 9px 8px; }\n}\n@media (max-height: 480px) {\n  :host { bottom: 8px; }\n  .ta-panel { height: calc(100dvh - 24px); }\n  .ta-header { padding: 6px 10px; }\n  .ta-ai-options { padding-top: 3px; padding-bottom: 3px; }\n  .ta-ai-helper, .ta-scope { display: none; }\n  .ta-log { padding: 10px 10px 3px; }\n  .ta-quick { padding: 4px 10px; }\n  .ta-form { padding: 0 10px 6px; }\n  .ta-input { min-height: 44px; padding: 8px 10px; }\n  .ta-send { width: 44px; height: 44px; }\n}\n@media (max-width: 560px) and (max-height: 480px) {\n  .ta-panel { height: calc(100dvh - 138px); }\n}\n@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }\n}\n:host([data-reduced-motion=true]) *, :host([data-reduced-motion=true]) *::before, :host([data-reduced-motion=true]) *::after {\n  animation: none !important;\n  transition: none !important;\n  scroll-behavior: auto !important;\n}\r\n",approvedLanguageData:{
+,styles:":host {\n  all: initial;\n  --ta-ink: #24384b;\n  --ta-muted: #4d6071;\n  --ta-leaf: #2d665c;\n  --ta-cream: #fffbf3;\n  --ta-paper: #fffdf8;\n  --ta-mint: #eaf5ee;\n  --ta-line: #dce2dc;\n  --ta-control: #7f8b8c;\n  --ta-accent: #9f4f39;\n  position: fixed;\n  right: 24px;\n  bottom: 20px;\n  z-index: 99990;\n  width: 392px;\n  max-width: calc(100% - 48px);\n  pointer-events: none;\n  font-family: Arial, Helvetica, sans-serif;\n  font-size: 16px;\n  line-height: 1.5;\n  color: var(--ta-ink);\n  color-scheme: light;\n}\n*, *::before, *::after { box-sizing: border-box; }\nbutton, input, a { font: inherit; }\nbutton { cursor: pointer; }\nbutton:disabled { cursor: not-allowed; }\nbutton, a, input { -webkit-tap-highlight-color: transparent; }\nbutton:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible {\n  outline: 3px solid var(--ta-accent);\n  outline-offset: 3px;\n}\n[hidden] { display: none !important; }\n.ta-widget { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }\n.ta-widget > * { pointer-events: auto; }\n.ta-panel-wrap { position: relative; width: 100%; pointer-events: none; }\n.ta-panel-wrap > .ta-panel, .ta-panel-wrap > .ta-avatar { pointer-events: auto; }\n.ta-panel {\n  display: flex;\n  flex-direction: column;\n  width: 100%;\n  max-width: 100%;\n  height: min(640px, calc(var(--ta-available-height, 100dvh) - 104px));\n  min-height: 0;\n  overflow: hidden;\n  border: 1px solid var(--ta-line);\n  border-radius: 22px;\n  background: var(--ta-paper);\n  box-shadow: 0 18px 60px #24384b24;\n  animation: ta-panel-in .18s ease-out;\n}\n.ta-header { display: flex; gap: 8px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--ta-ink); background: var(--ta-ink); color: #fff; flex: none; }\n.ta-header > :first-child { flex: 1; min-width: 0; }\n.ta-title { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 700; letter-spacing: -.2px; }\n.ta-subtitle { margin: 3px 0 0; font-size: 16px; line-height: 1.35; color: #d5e6e2; }\n.ta-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #a7d6ac; margin-right: 6px; }\n.ta-header-actions.ta-footnote { display: flex; align-items: center; flex: none; gap: 2px; margin: 0; padding: 0; }\n.ta-clear, .ta-close, .ta-window-drag { display: inline-grid; place-items: center; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border: 0; border-radius: 12px; padding: 0; background: transparent; color: var(--ta-muted); text-decoration: none; line-height: 1; }\n.ta-clear { font-size: 24px; }\n.ta-header .ta-clear, .ta-header .ta-close, .ta-header .ta-window-drag { color: #fff; }\n.ta-header .ta-clear:hover, .ta-header .ta-close:hover, .ta-header .ta-window-drag:hover { background: #ffffff1f; }\n.ta-header button:focus-visible { outline-color: #f8c494; }\n.ta-close { font-size: 26px; }\n.ta-clear:hover, .ta-close:hover { background: var(--ta-mint); color: var(--ta-ink); }\n.ta-scope { flex: none; padding: 6px 14px; font-size: 16px; color: var(--ta-muted); background: var(--ta-cream); border-bottom: 1px solid var(--ta-line); }\n.ta-scope strong { font-weight: 600; }\n\n/* A single visible view owns vertical scrolling; the panel and table never do. */\n.ta-content { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }\n.ta-log, .ta-aux-view { flex: 1 1 auto; width: 100%; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: auto; scrollbar-width: thin; scrollbar-color: #a8b8b1 transparent; }\n.ta-log { padding: 14px 14px 4px; }\n.ta-aux-view { background: var(--ta-paper); }\n.ta-aux-head { display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 2; padding: 8px 12px; background: var(--ta-cream); border-bottom: 1px solid var(--ta-line); }\n.ta-aux-head h2, .ta-aux-head h3, .ta-aux-title { flex: 1; min-width: 0; margin: 0; font-size: 18px; line-height: 1.4; font-weight: 600; }\n.ta-view-back { flex: none; min-height: 44px; padding: 8px 10px; border: 1px solid var(--ta-control); border-radius: 11px; background: var(--ta-paper); color: var(--ta-ink); font-size: 16px; line-height: 1.35; }\n.ta-view-back:hover { background: var(--ta-mint); }\n.ta-aux-body { min-width: 0; padding: 12px; font-size: 16px; line-height: 1.5; overflow: visible; }\n.ta-aux-body p { margin: 0 0 12px; }\n.ta-aux-body a { color: var(--ta-leaf); text-underline-offset: 3px; }\n\n.ta-message { max-width: 100%; margin: 0 0 16px; }\n.ta-message-name { margin: 0 0 5px 2px; font-size: 16px; line-height: 1.4; color: var(--ta-muted); }\n.ta-message-bubble { padding: 12px 14px; border-radius: 4px 17px 17px 17px; background: var(--ta-mint); color: var(--ta-ink); font-size: 16px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }\n.ta-message-user { margin-left: 28px; }\n.ta-message-user .ta-message-name { margin-right: 3px; text-align: right; }\n.ta-message-user .ta-message-bubble { border-radius: 17px 4px 17px 17px; background: #304a5e; color: #fff; }\n.ta-message-quote .ta-message-bubble { line-height: 1.6; }\n.ta-quote-total { font-weight: 600; color: var(--ta-ink); }\n.ta-quote-details { margin-top: 5px; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-quote-details summary { display: list-item; list-style-position: inside; min-height: 44px; padding: 10px 2px; cursor: pointer; color: var(--ta-muted); overflow-wrap: anywhere; }\n.ta-quote-details p { margin: 8px 0; }\n.ta-quote-details ul, .ta-information-notes { margin: 6px 0; padding-left: 20px; }\n.ta-information-notes { font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-consult-choice { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--ta-line); }\n.ta-consult-choice p { margin: 0 0 8px; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-consult-cta { font-weight: 700; }\n.ta-source-links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; }\n.ta-source { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; gap: 4px; font-size: 16px; color: var(--ta-leaf); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }\n.ta-source::after { content: '↗'; font-size: 16px; }\n.ta-handoff { margin: 8px 0 0; padding: 8px 10px; border: 1px solid var(--ta-line); border-radius: 11px; color: var(--ta-muted); background: var(--ta-cream); font-size: 16px; }\n.ta-handoff button { min-height: 44px; padding: 4px 0; border: 0; background: transparent; color: var(--ta-leaf); text-decoration: underline; font-size: 16px; }\n.ta-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }\n.ta-chip { min-height: 44px; padding: 9px 11px; border: 1px solid var(--ta-control); border-radius: 12px; background: var(--ta-paper); color: var(--ta-ink); text-align: left; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }\n.ta-chip:hover { border-color: var(--ta-leaf); background: #dceee4; }\n.ta-quote-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }\n.ta-quick { display: flex; flex: none; gap: 7px; padding: 8px 12px; background: var(--ta-cream); border-top: 1px solid var(--ta-line); }\n.ta-quick .ta-chip { flex: 1; min-width: 0; min-height: 44px; padding: 8px 4px; text-align: center; font-size: 16px; line-height: 1.3; white-space: nowrap; background: var(--ta-paper); }\n.ta-form { display: flex; flex: none; align-items: center; gap: 8px; padding: 0 12px 12px; background: var(--ta-cream); }\n.ta-input { flex: 1; width: 100%; min-width: 0; min-height: 48px; border: 1px solid var(--ta-control); border-radius: 13px; padding: 10px 12px; background: #fff; color: var(--ta-ink); font-size: 16px; line-height: 1.5; outline-offset: 2px; }\n.ta-input::placeholder { color: var(--ta-muted); opacity: 1; }\n.ta-send { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border: 0; border-radius: 13px; padding: 0; background: var(--ta-accent); color: #fff; }\n.ta-send:hover { background: #843f2d; }\n.ta-send svg { width: 20px; height: 20px; }\n.ta-footnote { margin: 0; padding: 0 12px 8px; color: var(--ta-muted); font-size: 16px; }\n.ta-alert { flex: none; margin: 0; padding: 4px 12px 8px; background: var(--ta-cream); color: #85432e; font-size: 16px; line-height: 1.5; }\n.ta-contact { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 10px; border: 1px solid var(--ta-line); border-radius: 13px; background: var(--ta-paper); }\n.ta-contact-person { flex: 1; min-width: 120px; font-size: 16px; }\n.ta-contact-person small { display: block; font-size: 16px; color: var(--ta-muted); }\n.ta-contact a { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 8px 10px; border-radius: 10px; text-decoration: none; font-size: 16px; }\n.ta-contact .ta-zalo { background: var(--ta-leaf); color: #fff; }\n.ta-tel { border: 1px solid var(--ta-control); background: var(--ta-mint); color: var(--ta-ink); }\n.ta-sr-only { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }\n\n/* The optional understanding control stays compact; its explanation opens in the auxiliary view. */\n.ta-ai-options { display: flex; align-items: center; flex: none; gap: 10px; margin: 0; padding: 7px 12px; border-bottom: 1px solid var(--ta-line); background: var(--ta-cream); font-size: 16px; line-height: 1.4; overflow: visible; }\n.ta-ai-label { display: flex; align-items: center; flex: 1; min-width: 0; min-height: 44px; gap: 9px; margin: 0; cursor: pointer; font-size: 16px; }\n.ta-ai-consent { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--ta-leaf); }\n.ta-ai-copy { display: block; flex: 1; min-width: 0; }\n.ta-ai-title { display: block; font-size: 16px; line-height: 1.35; font-weight: 600; color: var(--ta-ink); }\n.ta-ai-helper { display: block; margin: 2px 0 0; color: var(--ta-muted); font-size: 16px; line-height: 1.35; }\n.ta-privacy-open { display: inline-grid; place-items: center; flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border: 1px solid var(--ta-control); border-radius: 12px; background: var(--ta-paper); color: var(--ta-muted); font-size: 20px; }\n.ta-privacy-open:hover { color: var(--ta-ink); background: var(--ta-mint); }\n.ta-ai-notice { margin: 0 0 12px; font-size: 16px; color: var(--ta-ink); line-height: 1.5; }\n.ta-privacy-label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding: 8px 0; font-size: 16px; line-height: 1.5; }\n.ta-privacy-label input { flex: none; width: 20px; height: 20px; margin: 2px 0; accent-color: var(--ta-leaf); }\n\n/* MAM_MASCOT_START */\n.ta-avatar { position: absolute; left: -108px; top: 18px; width: 96px; height: auto; }\n.ta-avatar .ta-mascot, .ta-launcher .ta-mascot { width: 96px; height: auto; }\n.ta-mascot { display: block; width: 100%; height: auto; aspect-ratio: 192/208; image-rendering: pixelated; touch-action: manipulation; user-select: none; flex-shrink: 0; }\n.ta-mascot[data-ready=false] { visibility: hidden; }\n/* Every character pixel and motion comes from the unchanged source sprite. */\n/* MAM_MASCOT_END */\n.ta-launcher { display: flex; align-items: flex-end; gap: 10px; min-width: 112px; min-height: 112px; border: 0; background: none; color: var(--ta-ink); padding: 0; text-align: left; }\n.ta-launcher-label { position: relative; margin-bottom: 21px; padding: 11px 14px; border: 1px solid var(--ta-line); border-radius: 17px 17px 4px 17px; background: var(--ta-cream); box-shadow: 0 6px 22px #24384b12; font-size: 16px; font-weight: 600; white-space: nowrap; }\n.ta-launcher-label small { display: block; margin-top: 3px; font-size: 16px; font-weight: 400; color: var(--ta-muted); }\n.ta-launcher-label::after { content: ''; position: absolute; width: 7px; height: 7px; right: -4px; bottom: 10px; background: var(--ta-cream); border-top: 1px solid var(--ta-line); border-right: 1px solid var(--ta-line); transform: rotate(45deg); }\n.ta-launcher-plant { display: grid; place-items: center; width: 108px; height: 118px; }\n.ta-launcher[aria-expanded=true] { display: none; min-width: 44px; min-height: 44px; }\n.ta-launcher[aria-expanded=true] .ta-launcher-plant { width: 44px; height: 44px; border-radius: 50%; background: var(--ta-leaf); }\n.ta-launcher[aria-expanded=true] .ta-mascot, .ta-launcher[aria-expanded=true] .ta-launcher-label { display: none; }\n.ta-collapse-icon { display: none; color: #fff; font-size: 22px; line-height: 1; }\n.ta-launcher[aria-expanded=true] .ta-collapse-icon { display: block; }\n\n/* MAM_PRICE_MENU_START */\n.ta-price-menu { max-width: 100%; max-height: none; padding: 12px; border: 1px solid var(--ta-line); border-radius: 15px; background: var(--ta-paper); font-size: 16px; line-height: 1.5; overflow: visible; overflow-wrap: anywhere; }\n.ta-aux-body > .ta-price-menu { border: 0; border-radius: 0; padding: 0; }\n.ta-price-title { margin: 0 0 6px; color: var(--ta-ink); font-size: 18px; font-weight: 600; line-height: 1.4; }\n.ta-price-title:focus { outline: none; }\n.ta-price-intro { margin: 0 0 12px; color: var(--ta-muted); font-size: 16px; line-height: 1.5; }\n.ta-price-back { display: block; min-height: 44px; margin: 0 0 8px; padding: 9px 2px; border: 0; background: transparent; color: var(--ta-leaf); font-size: 16px; line-height: 1.5; text-decoration: underline; text-underline-offset: 3px; }\n.ta-price-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }\n.ta-price-variants { grid-template-columns: minmax(0, 1fr); }\n.ta-price-category, .ta-price-variant { min-height: 48px; padding: 10px; border: 1px solid var(--ta-control); border-radius: 12px; background: var(--ta-mint); color: var(--ta-ink); font-size: 16px; line-height: 1.45; text-align: left; overflow-wrap: anywhere; }\n.ta-price-category:hover, .ta-price-variant:hover { border-color: var(--ta-leaf); background: #dceee4; }\n.ta-price-variant-label { display: block; font-weight: 600; }\n.ta-price-variant-meta { display: block; margin-top: 4px; font-size: 16px; font-weight: 400; color: var(--ta-muted); line-height: 1.45; }\n.ta-price-date, .ta-price-note { margin: 10px 0; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-price-sources { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin: 4px 0 10px; }\n.ta-price-source { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; font-size: 16px; color: var(--ta-leaf); line-height: 1.5; text-underline-offset: 3px; }\n.ta-price-conditions { margin: 10px 0; padding-left: 20px; font-size: 16px; color: var(--ta-muted); line-height: 1.55; }\n.ta-price-table-wrap { max-width: 100%; max-height: none; overflow-x: auto; overflow-y: visible; border: 1px solid var(--ta-line); border-radius: 12px; scrollbar-width: thin; overscroll-behavior-x: contain; }\n.ta-price-table { width: 100%; min-width: 360px; border-collapse: collapse; text-align: left; font-size: 16px; line-height: 1.5; }\n.ta-price-table th, .ta-price-table td { padding: 10px 9px; border-bottom: 1px solid var(--ta-line); vertical-align: top; }\n.ta-price-table thead th { background: var(--ta-mint); color: var(--ta-ink); font-size: 16px; font-weight: 600; }\n.ta-price-table tbody th { font-weight: 400; }\n.ta-price-table tbody tr:last-child > * { border-bottom: 0; }\n.ta-price-table tbody tr:nth-child(even) { background: #f5f8f0; }\n.ta-price-amount { font-size: 16px; font-weight: 600; white-space: nowrap; color: var(--ta-ink); }\n.ta-price-quantity { min-width: 78px; }\n.ta-price-meaning { min-width: 110px; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-price-warning { margin: 10px 0; padding: 11px 12px; border: 1px solid #dec6b7; border-radius: 12px; background: #fff3e8; color: #85432e; font-size: 16px; line-height: 1.55; }\n.ta-price-estimate, .ta-price-reference { margin: 10px 0; font-size: 16px; font-weight: 600; color: var(--ta-leaf); line-height: 1.55; }\n.ta-price-totals, .ta-price-row-details { margin-top: 10px; padding-top: 5px; border-top: 1px solid var(--ta-line); font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-price-totals summary, .ta-price-row-details summary { display: list-item; list-style-position: inside; min-height: 44px; padding: 10px 0; cursor: pointer; color: var(--ta-leaf); }\n.ta-price-totals ul, .ta-price-row-condition ul { margin: 6px 0; padding-left: 20px; line-height: 1.5; }\n.ta-price-row-condition { padding: 10px 0 4px; border-top: 1px dashed var(--ta-line); }\n.ta-price-row-condition strong { font-size: 16px; font-weight: 600; color: var(--ta-ink); }\n.ta-price-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ta-line); }\n.ta-price-consult-title { margin: 0 0 6px; font-size: 17px; line-height: 1.4; color: var(--ta-ink); }\n.ta-price-consult-note { margin: 0 0 8px; font-size: 16px; line-height: 1.5; color: var(--ta-muted); }\n.ta-price-footer strong { display: block; color: var(--ta-ink); font-size: 16px; font-weight: 700; line-height: 1.55; }\n.ta-price-contacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }\n.ta-aux-body .ta-price-zalo { display: inline-flex; justify-content: center; align-items: center; flex: 1 1 100px; min-height: 44px; padding: 9px 10px; border-radius: 11px; background: var(--ta-leaf); color: #fff; font-size: 16px; line-height: 1.4; text-align: center; text-decoration: none; }\n.ta-price-zalo:hover { background: #215248; }\n/* MAM_PRICE_MENU_END */\n\n.ta-message-typing { margin: 8px 0 12px; }\n.ta-typing-bubble { display: inline-flex; align-items: center; padding: 13px 16px; border-radius: 17px 17px 17px 5px; background: #e8ebec; }\n.ta-typing-dots { display: inline-flex; gap: 5px; align-items: center; height: 10px; }\n.ta-typing-dot { width: 6px; height: 6px; border-radius: 50%; background: #65717a; animation: ta-typing 1.2s ease-in-out infinite; }\n.ta-typing-dot:nth-child(2) { animation-delay: .15s; }\n.ta-typing-dot:nth-child(3) { animation-delay: .3s; }\n@keyframes ta-typing { 0%, 60%, 100% { transform: translateY(0); opacity: .55; } 30% { transform: translateY(-3px); opacity: 1; } }\n@keyframes ta-panel-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }\n@media (max-width: 560px) {\n  :host { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: calc(100% - 24px); max-width: calc(100% - 24px); }\n  .ta-panel-wrap { padding-top: 114px; }\n  .ta-avatar { left: 0; top: 0; }\n  .ta-panel { height: min(650px, calc(var(--ta-available-height, 100dvh) - 144px)); border-radius: 20px; }\n  .ta-header { padding: 9px 10px; gap: 6px; }\n  .ta-header-actions.ta-footnote { gap: 0; }\n  .ta-log { padding: 12px 10px 4px; }\n  .ta-message-bubble { padding: 11px 12px; }\n  .ta-launcher { min-height: 108px; }\n  .ta-launcher-plant { width: 100px; height: 108px; }\n  .ta-launcher-label { max-width: calc(100vw - 140px); margin-bottom: 19px; padding: 9px 10px; white-space: normal; }\n  .ta-quick { gap: 6px; padding: 7px 10px; }\n  .ta-form { padding: 0 10px 10px; }\n  .ta-ai-options { padding: 6px 10px; gap: 8px; }\n}\n@media (max-width: 360px) {\n  .ta-aux-body { padding: 10px; }\n  .ta-price-menu { padding: 10px; }\n  .ta-price-table th, .ta-price-table td { padding: 9px 8px; }\n}\n@media (max-height: 480px) {\n  :host { bottom: 8px; }\n  .ta-panel { height: calc(var(--ta-available-height, 100dvh) - 24px); }\n  .ta-header { padding: 6px 10px; }\n  .ta-ai-options { padding-top: 3px; padding-bottom: 3px; }\n  .ta-ai-helper, .ta-scope { display: none; }\n  .ta-log { padding: 10px 10px 3px; }\n  .ta-quick { padding: 4px 10px; }\n  .ta-form { padding: 0 10px 6px; }\n  .ta-input { min-height: 44px; padding: 8px 10px; }\n  .ta-send { width: 44px; height: 44px; }\n}\n@media (max-width: 560px) and (max-height: 480px) {\n  .ta-panel { height: calc(var(--ta-available-height, 100dvh) - 138px); }\n}\n@media (max-width: 560px) {\n  :host([data-keyboard-compact=true]) .ta-avatar { display: none; }\n  :host([data-keyboard-compact=true]) .ta-panel-wrap { padding-top: 0; }\n  :host([data-keyboard-compact=true]) .ta-panel { height: calc(var(--ta-available-height, 100dvh) - 16px); }\n  :host([data-keyboard-small=true]) .ta-ai-options, :host([data-keyboard-small=true]) .ta-subtitle { display: none; }\n  :host([data-keyboard-small=true]) .ta-header { padding: 6px 10px; }\n  :host([data-keyboard-small=true]) .ta-quick { padding: 4px 10px; }\n  :host([data-keyboard-small=true]) .ta-form { padding: 0 10px 6px; }\n}\n@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }\n}\n:host([data-reduced-motion=true]) *, :host([data-reduced-motion=true]) *::before, :host([data-reduced-motion=true]) *::after {\n  animation: none !important;\n  transition: none !important;\n  scroll-behavior: auto !important;\n}\r\n\n.ta-drag-surface, .ta-drag-handle {\n  cursor: grab;\n  touch-action: none;\n  -webkit-user-select: none;\n  user-select: none;\n}\n:host(.ta-dragging) .ta-drag-surface, :host(.ta-dragging) .ta-drag-handle {\n  cursor: grabbing;\n}\n",approvedLanguageData:{
   "schemaVersion": 1,
   "entries": [
     {
@@ -14563,7 +14819,7 @@
     "thanh-an",
     "vinh-phat"
   ],
-  "verifiedAtUtc": "2026-10-13T07:35:47Z",
+  "verifiedAtUtc": "2026-10-13T08:22:13Z",
   "products": [
     {
       "productId": "namecard-c300",
@@ -14636,13 +14892,20 @@
               "text": "Dạ, bạn có thể tham khảo file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG nên từ 300 ppi ạ.",
               "provider": "vinh-phat",
               "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
-              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "verifiedAtUtc": "2026-10-13T08:22:13Z",
               "scope": "common-reference",
               "conditions": [
                 "Yêu cầu file tham khảo bổ sung; nhà in cần kiểm tra lại file cho mẫu và cách in bạn chọn."
               ],
               "evidence": [
-                "300 Pixels/Inch."
+                "phần mềm in ấn: AI,",
+                "AI, Corel,",
+                "Corel, PDF,",
+                "PDF, Photoshop,",
+                "File ảnh PNG,",
+                "PNG, JPG,",
+                "tối thiểu từ 300 Pixels/Inch.",
+                "kiểm tra kích thước, hệ màu thiết kế và chất lượng file in."
               ]
             }
           ]
@@ -15880,13 +16143,20 @@
               "text": "Dạ, bạn có thể chuẩn bị file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG cần từ 300 ppi ạ.",
               "provider": "vinh-phat",
               "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
-              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "verifiedAtUtc": "2026-10-13T08:22:13Z",
               "scope": "product",
               "conditions": [
                 "Nhà in cần kiểm tra khổ, hệ màu và chất lượng file trước khi in."
               ],
               "evidence": [
-                "300 Pixels/Inch."
+                "phần mềm in ấn: AI,",
+                "AI, Corel,",
+                "Corel, PDF,",
+                "PDF, Photoshop,",
+                "File ảnh PNG,",
+                "PNG, JPG,",
+                "tối thiểu từ 300 Pixels/Inch.",
+                "kiểm tra kích thước, hệ màu thiết kế và chất lượng file in."
               ]
             }
           ]
@@ -16964,13 +17234,20 @@
               "text": "Dạ, bạn có thể tham khảo file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG nên từ 300 ppi ạ.",
               "provider": "vinh-phat",
               "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
-              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "verifiedAtUtc": "2026-10-13T08:22:13Z",
               "scope": "common-reference",
               "conditions": [
                 "Yêu cầu file tham khảo bổ sung; nhà in cần kiểm tra lại file cho mẫu và cách in bạn chọn."
               ],
               "evidence": [
-                "300 Pixels/Inch."
+                "phần mềm in ấn: AI,",
+                "AI, Corel,",
+                "Corel, PDF,",
+                "PDF, Photoshop,",
+                "File ảnh PNG,",
+                "PNG, JPG,",
+                "tối thiểu từ 300 Pixels/Inch.",
+                "kiểm tra kích thước, hệ màu thiết kế và chất lượng file in."
               ]
             }
           ]

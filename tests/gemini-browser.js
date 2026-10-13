@@ -2,12 +2,20 @@
 const byId=id=>document.getElementById(id),run=byId('run'),summary=byId('summary'),list=byId('results');
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const frames=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+const microtasks=async()=>{for(let n=0;n<12;n++)await Promise.resolve();};
+async function controlledFinish(promise){let timer;try{await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Presentation did not settle after the controlled deadline')),1500);})]);}finally{clearTimeout(timer);}}
+function manualTimers(){let now=0,nextId=0;const pending=new Map();return {setTimeout(callback,delay){const id=++nextId;pending.set(id,{callback,due:now+delay});return id;},clearTimeout(id){pending.delete(id);},advance(ms){const target=now+ms;for(;;){const ready=[...pending].filter(([,task])=>task.due<=target).sort((a,b)=>a[1].due-b[1].due||a[0]-b[0])[0];if(!ready)break;now=ready[1].due;pending.delete(ready[0]);ready[1].callback();}now=target;},get now(){return now;},get pending(){return pending.size;}};}
 const metadata={version:1,enabled:true,privacyVersion:'google-free-v1'};
 const suggestion={version:1,kind:'suggestion',intent:'product',categoryId:'catalogue'};
 const unknown='zz_mock_gemini_unknown';
 const EARRING_SOURCE='https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/';
+const CATALOGUE_SOURCE='https://invinhphat.com/san-pham/in-catalouge/';
+const CATALOGUE_DISPLAY_SOURCE='https://innhanhtphcm.com/san-pham/in-catalogue-gia-re-lay-lien-tai-tphcm';
+const A5_SOURCE='https://invinhphat.com/san-pham/in-catalogue-a5/';
+const DECAL_SOURCE='https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/';
 const INFO_SOURCE='https://innhanhtphcm.com/san-pham/in-card-visit-offset';
-const INFO_TEXT='MOCK: Kích thước thông dụng là 90 × 54 mm; kích thước riêng cần xác nhận.';
+const INFO_QUERY='cán màng có loại nào?';
+const INFO_TEXT='MOCK: Cán màng mờ hoặc bóng; cần xác nhận loại phù hợp với ấn phẩm.';
 const fakeResponse=(value,status=200)=>({ok:status>=200&&status<300,text:async()=>JSON.stringify(value)});
 function rgb(value){const match=value.match(/^rgba?\(([^)]+)\)$/);if(!match)return null;const values=match[1].split(/[\s,\/]+/).filter(Boolean).map(Number);return {r:values[0]/255,g:values[1]/255,b:values[2]/255,a:values[3]??1};}
 function composite(top,bottom){const a=top.a+bottom.a*(1-top.a);return {r:(top.r*top.a+bottom.r*bottom.a*(1-top.a))/a,g:(top.g*top.a+bottom.g*bottom.a*(1-top.a))/a,b:(top.b*top.a+bottom.b*bottom.a*(1-top.a))/a,a};}
@@ -52,22 +60,73 @@ async function tests(){
    };
    const languageConfig=options.approvedLanguageUrl?{approvedLanguageUrl:options.approvedLanguageUrl,approvedLanguageFetch:options.approvedLanguageFetch}:{approvedLanguageData:options.approvedLanguageData??languageData};
    const infoConfig=options.sourceInfo?{infoEndpoint:'/api/mam-info',infoFetch}:{};
-   widget=await ThanhAnChat.mount({data,styles,reducedMotion:true,aiEndpoint:'/api/mam-assist',aiFetch,...languageConfig,...infoConfig});widget.open();
+   const originalPresentation=window.ThanhAnPresentation;
+   if(options.presentationTimers)window.ThanhAnPresentation=Object.freeze({create:settings=>originalPresentation.create({...settings,timers:options.presentationTimers})});
+   try{widget=await ThanhAnChat.mount({data,styles,reducedMotion:true,aiEndpoint:'/api/mam-assist',aiFetch,...languageConfig,...infoConfig});}finally{window.ThanhAnPresentation=originalPresentation;}
+   widget.open();
    const shadow=widget.shadow,consent=shadow.querySelector('.ta-ai-consent');
    await until(()=>metadataRead);for(let n=0;n<8;n++)await Promise.resolve();
+   if(options.presentationTimers&&!options.keepWelcomePending){options.presentationTimers.advance(320);await microtasks();}
+   if(!options.keepWelcomePending)await until(()=>shadow.querySelector('.ta-log .ta-message:not(.ta-message-user):not(.ta-message-typing)')&&typingAbsent(shadow));
    const optIn=()=>{consent.checked=true;consent.dispatchEvent(new Event('change',{bubbles:true}));};
    const revoke=()=>{consent.checked=false;consent.dispatchEvent(new Event('change',{bubbles:true}));};
    const posts=()=>calls.filter(c=>c.method==='POST');
    return {shadow,consent,optIn,revoke,posts,calls,infoCalls,resolve:()=>resolvePost?.(),resolveInfo:()=>resolveInfo?.()};
   }
   const typingAbsent=shadow=>shadow.querySelectorAll('.ta-message-typing').length===0;
-  function pendingDots(shadow){
+  function pendingDots(shadow,staticHeader=true){
    const rows=[...shadow.querySelectorAll('.ta-message-typing')],dots=[...shadow.querySelectorAll('.ta-typing-dot')],subtitle=shadow.querySelector('.ta-subtitle').textContent,bubble=rows[0]?.querySelector('.ta-typing-bubble'),visibleCopy=bubble?.cloneNode(true);
    visibleCopy?.querySelectorAll('.ta-sr-only').forEach(element=>element.remove());
    const hiddenLabels=[...rows[0]?.querySelectorAll('.ta-sr-only')||[]].every(element=>{const style=getComputedStyle(element);return style.position==='absolute'&&style.overflow==='hidden'&&style.clip==='rect(0px, 0px, 0px, 0px)'&&element.getBoundingClientRect().width<=1&&element.getBoundingClientRect().height<=1;});
-   return rows.length===1&&!!bubble&&!!rows[0].querySelector('.ta-typing-dots')&&visibleCopy.textContent.trim()===''&&hiddenLabels&&rows[0].getBoundingClientRect().height>0&&dots.length===3&&dots.every(dot=>{const style=getComputedStyle(dot),color=rgb(style.backgroundColor),rect=dot.getBoundingClientRect();return color&&color.a>0&&Math.max(color.r,color.g,color.b)-Math.min(color.r,color.g,color.b)<.14&&rect.width>0&&rect.width<=10&&rect.height>0&&rect.height<=10&&style.animationName==='none';})&&subtitle.includes('Trợ lý thông tin in ấn')&&!/đang|tìm giúp|xử lý|processing|loading|Google|Gemini|Flash|backend|provider|API/i.test(subtitle);
+   return rows.length===1&&!!bubble&&!!rows[0].querySelector('.ta-typing-dots')&&visibleCopy.textContent.trim()===''&&hiddenLabels&&rows[0].getBoundingClientRect().height>0&&dots.length===3&&dots.every(dot=>{const style=getComputedStyle(dot),color=rgb(style.backgroundColor),rect=dot.getBoundingClientRect();return color&&color.a>0&&Math.max(color.r,color.g,color.b)-Math.min(color.r,color.g,color.b)<.14&&rect.width>0&&rect.width<=10&&rect.height>0&&rect.height<=10&&style.animationName==='none';})&&(!staticHeader||subtitle.includes('Trợ lý thông tin in ấn'))&&!/đang|tìm giúp|xử lý|processing|loading|Google|Gemini|Flash|backend|provider|API/i.test(subtitle);
   }
-  let f=await mount();
+  const botMessages=shadow=>[...shadow.querySelectorAll('.ta-log .ta-message:not(.ta-message-user):not(.ta-message-typing)')];
+  async function clickPresented(button,shadow){button.click();await sleep(360);await until(()=>typingAbsent(shadow));}
+  async function resetFinished(shadow){await sleep(360);await until(()=>typingAbsent(shadow)&&botMessages(shadow).length===1);}
+  function choiceConsult(menu){const links=[...menu.querySelectorAll('.ta-price-footer .ta-price-zalo')];return links.length===3&&data.contacts.every(person=>links.some(link=>link.getAttribute('href')===person.zalo&&link.target==='_blank'&&link.rel.includes('noopener')&&link.referrerPolicy==='no-referrer'))&&/Tư vấn qua Zalo/u.test(menu.querySelector('.ta-price-footer')?.textContent||'');}
+  // Only presentation timers are controlled here. The actual exported
+  // presentation module, widget, DOM and mocked endpoint clients still run.
+  let clock=manualTimers(),f=await mount({sourceInfo:true,presentationTimers:clock,keepWelcomePending:true});
+  clock.advance(319);await microtasks();const heldWelcome=pendingDots(f.shadow,false)&&botMessages(f.shadow).length===0;
+  clock.advance(1);await microtasks();await until(()=>typingAbsent(f.shadow)&&botMessages(f.shadow).length===1);
+  check('Opening shows only gray dots before the controlled 320ms deadline and then exactly one welcome',heldWelcome&&/^Dạ[,\s]/u.test(lastBubble())&&typingAbsent(f.shadow)&&botMessages(f.shadow).length===1&&clock.pending===0);
+  f.optIn();let timedPending=widget.send('kt a4 là bao nhiêu');await until(()=>pendingDots(f.shadow));clock.advance(319);await microtasks();
+  const heldFaq=pendingDots(f.shadow)&&botMessages(f.shadow).length===1&&!botMessages(f.shadow).some(block=>block.textContent.includes('21 × 29,7'));
+  clock.advance(1);await controlledFinish(timedPending);
+  check('A local FAQ waits behind only three dots until 320ms and then answers without either endpoint',heldFaq&&lastBubble().includes('21 × 29,7 cm')&&typingAbsent(f.shadow)&&botMessages(f.shadow).length===2&&f.posts().length===0&&f.infoCalls.length===0);
+  const presentationPrice=allFacts.find(fact=>fact.id==='catalogue-a4-16-500');
+  for(const [name,query,visible] of [
+   ['quote',presentationPrice.lookupQuery,shadow=>!!shadow.querySelector('.ta-message-quote')],
+   ['product choices','Xem giá',shadow=>shadow.querySelectorAll('.ta-quote-products .ta-chip').length===13],
+   ['consultation','Liên hệ Zalo',shadow=>shadow.querySelector('.ta-aux-view').dataset.view==='contacts'&&!shadow.querySelector('.ta-aux-view').hidden&&shadow.querySelectorAll('.ta-contact').length===3],
+   ['price menu','Xem bảng giá',shadow=>shadow.querySelector('.ta-aux-view').dataset.view==='prices'&&!shadow.querySelector('.ta-aux-view').hidden&&shadow.querySelectorAll('.ta-price-category').length===13]
+  ]){
+   clock=manualTimers();f=await mount({presentationTimers:clock});f.optIn();timedPending=widget.send(query);await until(()=>pendingDots(f.shadow));clock.advance(319);await microtasks();const held=pendingDots(f.shadow)&&!visible(f.shadow);
+   clock.advance(1);await controlledFinish(timedPending);
+   check('The local '+name+' appears after the same controlled presentation delay without premature content',held&&visible(f.shadow)&&typingAbsent(f.shadow)&&f.posts().length===0&&f.infoCalls.length===0);
+  }
+  clock=manualTimers();f=await mount({presentationTimers:clock,pending:true});f.optIn();timedPending=widget.send(unknown);await until(()=>f.posts().length===1);f.resolve();await microtasks();clock.advance(319);await microtasks();const heldFast=pendingDots(f.shadow)&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue');clock.advance(1);await controlledFinish(timedPending);
+  check('A fast optional response cannot render before the shared presentation deadline',heldFast&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&f.posts().length===1&&clock.pending===0);
+  clock=manualTimers();f=await mount({presentationTimers:clock,pending:true});f.optIn();timedPending=widget.send(unknown);await until(()=>f.posts().length===1);clock.advance(320);await microtasks();const heldSlow=pendingDots(f.shadow)&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue'),slowDeadline=clock.now;f.resolve();await controlledFinish(timedPending);
+  check('A slow lookup keeps its dots after 320ms and renders on completion without another presentation delay',heldSlow&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&clock.now===slowDeadline&&clock.pending===0);
+  const sourcePresentationCases=[];
+  for(const slow of [false,true]){
+   clock=manualTimers();f=await mount({presentationTimers:clock,sourceInfo:true,infoPending:true});timedPending=widget.send('Danh thiếp in offset 12 hộp');await until(()=>pendingDots(f.shadow));clock.advance(320);await controlledFinish(timedPending);
+   timedPending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);
+   if(slow){clock.advance(320);await microtasks();const held=pendingDots(f.shadow)&&!hasMockInfo(),deadline=clock.now;f.resolveInfo();await controlledFinish(timedPending);sourcePresentationCases.push(held&&hasMockInfo()&&typingAbsent(f.shadow)&&clock.now===deadline&&clock.pending===0&&f.posts().length===0);}
+   else{f.resolveInfo();await microtasks();clock.advance(319);await microtasks();const held=pendingDots(f.shadow)&&!hasMockInfo();clock.advance(1);await controlledFinish(timedPending);sourcePresentationCases.push(held&&hasMockInfo()&&typingAbsent(f.shadow)&&clock.pending===0&&f.posts().length===0);}
+  }
+  check('Both fast and slow source replies obey the same minimum delay without adding a second delay after lookup',sourcePresentationCases.length===2&&sourcePresentationCases.every(Boolean));
+  clock=manualTimers();f=await mount({presentationTimers:clock});timedPending=widget.send('kt a4 là bao nhiêu');await until(()=>pendingDots(f.shadow));const duplicatePending=widget.send('kt a4 là bao nhiêu'),deduped=duplicatePending===timedPending&&f.shadow.querySelectorAll('.ta-message-typing').length===1;clock.advance(320);await controlledFinish(Promise.all([timedPending,duplicatePending]));
+  check('Repeating the same pending message deduplicates its request, typing bubble and eventual reply',deduped&&f.shadow.querySelectorAll('.ta-message-user').length===1&&botMessages(f.shadow).length===2&&typingAbsent(f.shadow)&&f.posts().length===0&&f.infoCalls.length===0);
+  clock=manualTimers();f=await mount({presentationTimers:clock});timedPending=widget.send('kt a4 là bao nhiêu');await until(()=>pendingDots(f.shadow));const replacement=widget.send('A5 kích thước');await controlledFinish(timedPending);await until(()=>pendingDots(f.shadow));const oneReplacement=f.shadow.querySelectorAll('.ta-message-typing').length===1;clock.advance(320);await controlledFinish(replacement);
+  check('A different new message cancels the earlier presentation and shows only the replacement answer',oneReplacement&&lastBubble().includes('14,8 × 21 cm')&&!botMessages(f.shadow).some(block=>block.textContent.includes('21 × 29,7'))&&botMessages(f.shadow).length===2&&typingAbsent(f.shadow));
+  clock=manualTimers();f=await mount({presentationTimers:clock});timedPending=widget.send('kt a4 là bao nhiêu');await until(()=>pendingDots(f.shadow));widget.close();const timerClosedLog=f.shadow.querySelector('.ta-log').textContent,timerClosedImmediately=typingAbsent(f.shadow)&&clock.pending===0;clock.advance(1000);await controlledFinish(timedPending);
+  check('Closing cancels an unfinished local presentation so no late answer or dots remain',timerClosedImmediately&&f.shadow.querySelector('.ta-panel').hidden&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===timerClosedLog&&!botMessages(f.shadow).some(block=>block.textContent.includes('21 × 29,7')));
+  clock=manualTimers();f=await mount({presentationTimers:clock});timedPending=widget.send('kt a4 là bao nhiêu');await until(()=>pendingDots(f.shadow));f.shadow.querySelector('.ta-clear').click();await controlledFinish(timedPending);clock.advance(319);await microtasks();const heldReset=pendingDots(f.shadow,false)&&botMessages(f.shadow).length===0;clock.advance(1);await microtasks();await until(()=>typingAbsent(f.shadow)&&botMessages(f.shadow).length===1);
+  check('Reset cancels the old presentation and delays one new welcome with three dots',heldReset&&typingAbsent(f.shadow)&&/^Dạ[,\s]/u.test(lastBubble())&&f.shadow.querySelectorAll('.ta-message').length===1&&f.shadow.querySelectorAll('.ta-message-user').length===0&&clock.pending===0);
+
+  f=await mount();
   check('Optional AI starts unchecked and checks metadata once',!f.consent.checked&&f.calls.length===1&&f.calls[0].method==='GET');
   const privacyTrigger=f.shadow.querySelector('.ta-privacy-open'),label=f.consent.closest('.ta-ai-label'),helper=f.shadow.querySelector('.ta-ai-helper'),aiOptions=f.shadow.querySelector('.ta-ai-options');
   const commonText=[f.shadow.querySelector('.ta-header'),aiOptions,f.shadow.querySelector('.ta-log'),f.shadow.querySelector('.ta-quick')].filter(Boolean).map(element=>element.textContent).join(' ');
@@ -119,30 +178,40 @@ async function tests(){
   const catalogueSession=ThanhAnFAQ.createSession(data);let catalogueQuote;for(const step of ['Catalogue','500','A4','16 trang','Bìa C250 ruột C150'])catalogueQuote=catalogueSession.answer(step);
   check('Confirmed catalogue specifications produce only the two-line local quote with verified payload',compactPrice(lastBubble(),500,'cuốn',exactPrice.priceVnd*500,['A4','16 trang','C250','C150'])&&catalogueQuote.quote.unitPriceVnd===exactPrice.priceVnd&&catalogueQuote.quote.sourceQuantity===500&&catalogueQuote.quote.provenance.kind==='business-owner-policy'&&catalogueQuote.quote.sourceUrl===exactPrice.sourceUrl&&f.posts().length===1&&f.shadow.querySelectorAll('.ta-price-table').length===0,lastBubble());
   const optionalDetails=f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-quote-details'),optionalSource=f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-source');
-  check('Full conditions, source and unit price basis remain in closed optional details',optionalDetails&&!optionalDetails.open&&optionalDetails.textContent.includes('15.000')&&optionalSource?.closest('details')===optionalDetails&&optionalSource.href===exactPrice.sourceUrl&&!lastBubble().includes('15.000')&&!lastBubble().includes('Nguồn'));
+  check('Conditions and unit price basis remain optional while the small source link stays directly accessible',optionalDetails&&!optionalDetails.open&&optionalDetails.textContent.includes('15.000')&&optionalDetails.querySelector('summary').textContent==='Quy cách & lưu ý'&&optionalSource?.closest('details')===null&&optionalSource.textContent==='Xem chi tiết'&&optionalSource.href===ThanhAnFAQ.displayLink(exactPrice.sourceUrl)&&f.shadow.querySelectorAll('.ta-source-details').length===0&&!lastBubble().includes('15.000')&&!lastBubble().includes('Nguồn'));
   const quoteBubble=f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-message-bubble'),totalSpan=quoteBubble.querySelector('.ta-quote-total');
   check('The two-line price uses a safe text node and a readable semibold total span',quoteBubble.parentElement.classList.contains('ta-message-quote')&&quoteBubble.firstChild.nodeType===Node.TEXT_NODE&&quoteBubble.children.length===1&&!!totalSpan&&totalSpan.textContent===lastBubble().split('\n')[1]&&parseFloat(getComputedStyle(totalSpan).fontSize)>=16&&Number(getComputedStyle(totalSpan).fontWeight)>=600&&contrast(totalSpan)>=4.5);
   await widget.send('Xem bảng giá');
   check('Only explicit Xem bảng giá opens the full thirteen-category source menu outside the chat log',f.shadow.querySelectorAll('.ta-price-category').length===13&&f.posts().length===1&&f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-log').querySelectorAll('.ta-price-menu').length===0&&f.shadow.querySelector('.ta-aux-view').dataset.view==='prices'&&f.shadow.querySelector('.ta-aux-view').contains(f.shadow.querySelector('.ta-price-menu')));
-  const catalogueCategory=[...f.shadow.querySelectorAll('.ta-price-category')].find(b=>b.dataset.categoryId==='catalogue');catalogueCategory.click();
+  const categoryConsult=choiceConsult(f.shadow.querySelector('.ta-price-menu'));
+  const catalogueCategory=[...f.shadow.querySelectorAll('.ta-price-category')].find(b=>b.dataset.categoryId==='catalogue');await clickPresented(catalogueCategory,f.shadow);
   check('Explicit table category selection opens specification variants',f.shadow.querySelectorAll('.ta-price-variant').length>0&&f.shadow.querySelectorAll('.ta-price-table').length===0);
-  const variant=[...f.shadow.querySelectorAll('.ta-price-variant')].find(b=>b.dataset.variantId==='table-catalogue-a4-12-200');variant.click();
+  check('Category and specification choices expose all three verified Zalo advisers without requiring a table',categoryConsult&&choiceConsult(f.shadow.querySelector('.ta-price-menu'))&&f.posts().length===1);
+  const variant=[...f.shadow.querySelectorAll('.ta-price-variant')].find(b=>b.dataset.variantId==='table-catalogue-a4-12-200');await clickPresented(variant,f.shadow);
   const rows=[...f.shadow.querySelectorAll('.ta-price-table tr[data-fact-id]')];
   const expected=ThanhAnPriceMenu.buildCatalog(data).categories.find(c=>c.id==='catalogue').variants.find(v=>v.id===variant.dataset.variantId).rows;
   check('The confirmed source table contains all 21 original rows',rows.length===21&&rows.map(r=>r.dataset.factId).join(',')===expected.map(r=>r.id).join(','));
   check('The original bold Zalo footer remains below the table',f.shadow.querySelector('.ta-price-footer strong')?.textContent.includes('hãy nhắn Zalo'));
   let fullMenu=f.shadow.querySelector('.ta-price-menu');fullMenu.querySelector('.ta-price-back').click();
-  const ownerCatalogueId='table-catalogue-a4-cover-c250-offset-12-200';fullMenu.querySelector('[data-variant-id="'+ownerCatalogueId+'"]').click();
+  const ownerCatalogueId='table-catalogue-a4-cover-c250-offset-12-200';await clickPresented(fullMenu.querySelector('[data-variant-id="'+ownerCatalogueId+'"]'),f.shadow);
   const ownerCatalogue=ThanhAnPriceMenu.buildCatalog(data).categories.find(c=>c.id==='catalogue').variants.find(v=>v.id===ownerCatalogueId),ownerCatalogueRows=[...fullMenu.querySelectorAll('tr[data-fact-id]')];
   check('Owner-confirmed C300 offset catalogue keeps all 28 exact updated rows and provenance',ownerCatalogueRows.length===28&&ownerCatalogueRows.every(row=>{const fact=ownerCatalogue.rows.find(f=>f.id===row.dataset.factId);return fact&&fact.specs.material==='cover-c300'&&fact.ownerPriceRevision?.websitePublicationVerified===false&&row.querySelector('.ta-price-amount').textContent===ThanhAnFAQ.money(fact.priceVnd);})&&fullMenu.textContent.includes('C300'));
-  fullMenu.querySelector('.ta-price-back').click();fullMenu.querySelector('.ta-price-back').click();fullMenu.querySelector('[data-category-id="tag"]').click();
+  const mappedCatalogueSources=[...fullMenu.querySelectorAll('.ta-price-source')];
+  const mappedCatalogueDisplay=ThanhAnFAQ.displayLink(CATALOGUE_SOURCE)===CATALOGUE_DISPLAY_SOURCE&&mappedCatalogueSources.length===1&&mappedCatalogueSources[0].href===CATALOGUE_DISPLAY_SOURCE&&mappedCatalogueSources[0].textContent==='Xem chi tiết'&&mappedCatalogueSources[0].target==='_blank'&&mappedCatalogueSources[0].rel.includes('noopener')&&mappedCatalogueSources[0].referrerPolicy==='no-referrer'&&ownerCatalogue.sourceUrls.length===1&&ownerCatalogue.sourceUrls[0]===CATALOGUE_SOURCE&&ownerCatalogue.rows.every(fact=>fact.sourceUrl===CATALOGUE_SOURCE&&fact.provider==='vinh-phat')&&data.products.find(product=>product.id==='catalogue').priceFacts.filter(fact=>fact.specs?.material==='cover-c300').every(fact=>fact.sourceUrl===CATALOGUE_SOURCE);
+  fullMenu.querySelector('.ta-price-back').click();await clickPresented(fullMenu.querySelector('[data-variant-id="estimate-catalogue-a5-all-c150-12-1000-estimate"]'),f.shadow);
+  const a5DisplaySource=fullMenu.querySelector('.ta-price-source')?.href,a5RawSources=ThanhAnPriceMenu.buildCatalog(data).categories.find(category=>category.id==='catalogue').variants.find(variant=>variant.id==='estimate-catalogue-a5-all-c150-12-1000-estimate').sourceUrls;
+  fullMenu.querySelector('.ta-price-back').click();fullMenu.querySelector('.ta-price-back').click();await clickPresented(fullMenu.querySelector('[data-category-id="decal"]'),f.shadow);await clickPresented(fullMenu.querySelector('[data-variant-id="table-vp-decal-9x5.5-1000"]'),f.shadow);
+  const decalDisplaySource=fullMenu.querySelector('.ta-price-source')?.href,decalRawSources=ThanhAnPriceMenu.buildCatalog(data).categories.find(category=>category.id==='decal').variants.find(variant=>variant.id==='table-vp-decal-9x5.5-1000').sourceUrls,earringDisplaySources=[];
+  fullMenu.querySelector('.ta-price-back').click();fullMenu.querySelector('.ta-price-back').click();await clickPresented(fullMenu.querySelector('[data-category-id="tag"]'),f.shadow);
   for(const variantId of ['table-owner-earring-tag-50x40-1000','table-owner-earring-tag-85x50-500']){
-   fullMenu.querySelector('[data-variant-id="'+variantId+'"]').click();
+   await clickPresented(fullMenu.querySelector('[data-variant-id="'+variantId+'"]'),f.shadow);
    const ownerRows=[...fullMenu.querySelectorAll('tr[data-fact-id]')],earring=data.products.find(p=>p.id==='earring-tag-vp').priceFacts.filter(f=>f.id.includes(variantId.includes('50x40')?'50x40':'85x50'));
    const referenceLinks=[...fullMenu.querySelectorAll('.ta-price-source')];
-   check(`${variantId} preserves owner unit amounts and the exact verified secondary reference`,ownerRows.length===3&&earring.every(fact=>ownerRows.some(row=>row.dataset.factId===fact.id&&row.querySelector('.ta-price-amount').textContent===ThanhAnFAQ.money(fact.priceVnd)))&&referenceLinks.length===1&&referenceLinks[0].href===EARRING_SOURCE&&referenceLinks[0].target==='_blank'&&referenceLinks[0].rel.includes('noopener')&&referenceLinks[0].referrerPolicy==='no-referrer'&&fullMenu.querySelectorAll('.ta-price-zalo').length===3&&earring.every(fact=>fact.sourceUrl===null&&fact.secondarySourceUrls?.length===1&&fact.secondarySourceUrls[0]===EARRING_SOURCE&&fact.specs.material==='c300'&&fact.specs.sides===2&&fact.rawSourceFlags.ownerRecipeIncomplete&&fact.specs.finishing===undefined));
+   earringDisplaySources.push(referenceLinks[0]?.href);
+   check(`${variantId} preserves owner unit amounts and the exact verified secondary reference`,ownerRows.length===3&&earring.every(fact=>ownerRows.some(row=>row.dataset.factId===fact.id&&row.querySelector('.ta-price-amount').textContent===ThanhAnFAQ.money(fact.priceVnd)))&&referenceLinks.length===1&&referenceLinks[0].href===ThanhAnFAQ.displayLink(EARRING_SOURCE)&&referenceLinks[0].target==='_blank'&&referenceLinks[0].rel.includes('noopener')&&referenceLinks[0].referrerPolicy==='no-referrer'&&fullMenu.querySelectorAll('.ta-price-zalo').length===3&&earring.every(fact=>fact.sourceUrl===null&&fact.secondarySourceUrls?.length===1&&fact.secondarySourceUrls[0]===EARRING_SOURCE&&fact.specs.material==='c300'&&fact.specs.sides===2&&fact.rawSourceFlags.ownerRecipeIncomplete&&fact.specs.finishing===undefined));
    fullMenu.querySelector('.ta-price-back').click();
   }
+  check('Unmapped A5 catalogue, decal and earring displays preserve their exact original source URLs',a5DisplaySource===A5_SOURCE&&a5RawSources.length===1&&a5RawSources[0]===A5_SOURCE&&decalDisplaySource===DECAL_SOURCE&&decalRawSources.length===1&&decalRawSources[0]===DECAL_SOURCE&&earringDisplaySources.length===2&&earringDisplaySources.every(url=>url===EARRING_SOURCE)&&[A5_SOURCE,DECAL_SOURCE,EARRING_SOURCE].every(raw=>ThanhAnFAQ.displayLink(raw)===raw));
   const returnedMenu=fullMenu;f.shadow.querySelector('.ta-view-back').click();
   const directTableBack=!returnedMenu.isConnected&&f.shadow.querySelectorAll('.ta-price-menu').length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&f.shadow.activeElement===f.shadow.querySelector('.ta-input');
   const quickTable=f.shadow.querySelectorAll('.ta-quick .ta-chip')[1];quickTable.focus();quickTable.click();
@@ -223,7 +292,7 @@ async function tests(){
   check('Pending optional understanding shows only three small gray dots with a static customer status',pendingDots(f.shadow)&&widget.host.dataset.activity==='working');
   f.revoke();f.resolve();await pending;
   check('Revoking consent aborts the pending request and suppresses its late suggestion',f.posts()[0].signal.aborted&&!f.consent.checked&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
-  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);f.shadow.querySelector('.ta-clear').click();const cleared=f.shadow.querySelector('.ta-log').textContent;f.resolve();await pending;
+  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);f.shadow.querySelector('.ta-clear').click();await pending;await resetFinished(f.shadow);const cleared=f.shadow.querySelector('.ta-log').textContent;f.resolve();await frames();
   check('Clear cancels in-flight work and a late reply cannot repopulate the chat',f.posts()[0].signal.aborted&&!f.consent.checked&&f.shadow.querySelector('.ta-log').textContent===cleared&&f.shadow.querySelectorAll('.ta-message').length===1&&typingAbsent(f.shadow));
   f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const oldHost=widget.host;widget.destroy();widget=null;f.resolve();await pending;
   check('Destroy aborts pending work and leaves no orphan host',f.posts()[0].signal.aborted&&!oldHost.isConnected&&!document.getElementById('ta-mam-chat-host')&&typingAbsent(f.shadow));
@@ -237,42 +306,58 @@ async function tests(){
   f=await mount({pending:true});f.optIn();const aiTimeoutStart=performance.now();pending=widget.send(unknown);await until(()=>f.posts().length===1);const timeoutDots=pendingDots(f.shadow);await pending;f.resolve();await frames();
   check('A stalled optional understanding request times out, removes its dots and rejects an ignored-abort late reply',timeoutDots&&f.posts()[0].signal.aborted&&typingAbsent(f.shadow)&&f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle'&&performance.now()-aiTimeoutStart<9000);
 
+  // Basic references must answer locally before optional source or provider
+  // lookups, including when a different product has an active price recipe.
+  f=await mount({sourceInfo:true});f.optIn();const basicFaqSession=ThanhAnFAQ.createSession(data);
+  for(const step of ['catalogue A4 500 cuốn','16 trang','Bìa C250 ruột C150']){await widget.send(step);basicFaqSession.answer(step);}
+  for(const [query,terms,source] of [
+   ['kt a4 là bao nhiêu',['A4','21 × 29,7 cm'],null],
+   ['kích thước của tờ rơi a4',['A4','21 × 29,7 cm'],null],
+   ['A5 kích thước',['A5','14,8 × 21 cm'],null],
+   ['giấyC300làgì',['C300','Couche','300 g/m²'],data.cardPrintingInformation.digital.sourceUrl]
+  ]){
+   await widget.send(query);const localBasic=basicFaqSession.answer(query),basicBlock=f.shadow.querySelector('.ta-log').lastElementChild,basicLink=basicBlock.querySelector('.ta-source');
+   check('Basic FAQ '+query+' answers locally without fetching or changing the active catalogue recipe',terms.every(term=>lastBubble().includes(term))&&/^Dạ[,\s]/u.test(lastBubble())&&localBasic.kind==='faq'&&localBasic.basicInformation===true&&localBasic.informationScope==='common-reference-not-price-condition'&&!localBasic.informationQuery&&!localBasic.quote&&!basicBlock.classList.contains('ta-message-quote')&&typingAbsent(f.shadow)&&f.posts().length===0&&f.infoCalls.length===0&&(!source||(localBasic.sources?.[0].url===source&&basicLink?.href===ThanhAnFAQ.displayLink(source)&&!!data.cardPrintingInformation.digital.verifiedAtUtc)),lastBubble());
+  }
+  await widget.send('tổng tiền');const retainedBasicQuote=basicFaqSession.answer('tổng tiền').quote;
+  check('After A4, flyer, A5 and C300 explanations the saved catalogue remains A4 C250 sixteen pages and five hundred copies',compactPrice(lastBubble(),500,'cuốn',exactPrice.priceVnd*500,['A4','C250','C150','16 trang'])&&retainedBasicQuote.quantity===500&&retainedBasicQuote.totalVnd===exactPrice.priceVnd*500&&retainedBasicQuote.sourceUrl===exactPrice.sourceUrl&&f.posts().length===0&&f.infoCalls.length===0&&typingAbsent(f.shadow),lastBubble());
+
   // Source information is mocked independently. No raw visitor text is sent to
   // this read-only endpoint, and its responses never become price conditions.
-  f=await mount();f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp','kích thước danh thiếp bao nhiêu?'])await widget.send(step);
+  f=await mount();f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp',INFO_QUERY])await widget.send(step);
   check('Without an optional source endpoint a recognized information question remains local with no provider call or dots',f.infoCalls.length===0&&f.posts().length===0&&typingAbsent(f.shadow)&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   f=await mount({sourceInfo:true,infoPending:true});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
-  const localQuoteHadNoDots=typingAbsent(f.shadow)&&f.infoCalls.length===0&&f.posts().length===0;pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);
-  check('Only an actual asynchronous information lookup shows the three dots while local prices bypass both endpoints',localQuoteHadNoDots&&pendingDots(f.shadow)&&f.posts().length===0);
+  const localQuoteHadNoDots=typingAbsent(f.shadow)&&f.infoCalls.length===0&&f.posts().length===0;pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);
+  check('Information lookup keeps the three dots visible while completed local prices bypass both endpoints',localQuoteHadNoDots&&pendingDots(f.shadow)&&f.posts().length===0);
   const infoRequest=f.infoCalls[0],infoUrl=new URL(infoRequest.url);
-  check('The source-information mock receives only the known product and field in a same-origin read-only GET',infoUrl.origin===location.origin&&infoUrl.pathname==='/api/mam-info'&&[...infoUrl.searchParams.keys()].sort().join(',')==='field,productId,version'&&infoUrl.searchParams.get('version')==='1'&&infoUrl.searchParams.get('productId')==='namecard-offset-ta'&&infoUrl.searchParams.get('field')==='size'&&infoRequest.method==='GET'&&infoRequest.body===undefined&&infoRequest.credentials==='omit'&&infoRequest.cache==='no-store'&&infoRequest.referrerPolicy==='no-referrer'&&infoRequest.redirect==='error'&&![...infoUrl.searchParams.values()].includes('12')&&f.posts().length===0);
+  check('The source-information mock receives only the known product and field in a same-origin read-only GET',infoUrl.origin===location.origin&&infoUrl.pathname==='/api/mam-info'&&[...infoUrl.searchParams.keys()].sort().join(',')==='field,productId,version'&&infoUrl.searchParams.get('version')==='1'&&infoUrl.searchParams.get('productId')==='namecard-offset-ta'&&infoUrl.searchParams.get('field')==='lamination'&&infoRequest.method==='GET'&&infoRequest.body===undefined&&infoRequest.credentials==='omit'&&infoRequest.cache==='no-store'&&infoRequest.referrerPolicy==='no-referrer'&&infoRequest.redirect==='error'&&![...infoUrl.searchParams.values()].includes('12')&&f.posts().length===0);
   f.resolveInfo();await pending;const infoBlock=f.shadow.querySelector('.ta-log').lastElementChild,infoLink=infoBlock.querySelector('.ta-source');
-  const successfulInfo=hasMockInfo()&&/^Dạ[,\s]/u.test(lastBubble())&&!infoBlock.classList.contains('ta-message-quote')&&infoLink?.href===INFO_SOURCE&&infoLink.target==='_blank'&&infoLink.rel.includes('noopener')&&infoLink.referrerPolicy==='no-referrer'&&typingAbsent(f.shadow)&&f.posts().length===0;
+  const successfulInfo=hasMockInfo()&&/^Dạ[,\s]/u.test(lastBubble())&&!infoBlock.classList.contains('ta-message-quote')&&infoLink?.href===ThanhAnFAQ.displayLink(INFO_SOURCE)&&infoLink.textContent==='Xem chi tiết'&&infoLink.closest('details')===null&&infoBlock.querySelectorAll('.ta-source-details').length===0&&infoLink.target==='_blank'&&infoLink.rel.includes('noopener')&&infoLink.referrerPolicy==='no-referrer'&&typingAbsent(f.shadow)&&f.posts().length===0;
   await widget.send('tổng tiền');
   check('Validated source information removes dots, keeps its safe reference separate from prices and preserves the offset quote context',successfulInfo&&compactPrice(lastBubble(),12,'hộp',192000,['offset'])&&f.infoCalls.length===1&&f.posts().length===0,lastBubble());
-  const invalidInfo={version:1,kind:'information',productId:'namecard-offset-ta',field:'size',text:INFO_TEXT,sources:[{provider:'thanh-an',url:INFO_SOURCE}],reference:false,checkedAtUtc:'2026-10-13T07:00:00.000Z'};
+  const invalidInfo={version:1,kind:'information',productId:'namecard-offset-ta',field:'lamination',text:INFO_TEXT,sources:[{provider:'thanh-an',url:INFO_SOURCE}],reference:false,checkedAtUtc:'2026-10-13T07:00:00.000Z'};
   for(const [name,reply] of [
    ['a price-bearing response',{...invalidInfo,priceVnd:1}],
    ['HTML and an untrusted reference',{...invalidInfo,text:'<img src=x onerror="window.__geminiHarnessXss=1">',sources:[{provider:'thanh-an',url:'https://example.invalid/fake-source'}]}],
-   ['an unavailable source field',{version:1,kind:'fallback',productId:'namecard-offset-ta',field:'size'}]
+   ['an unavailable source field',{version:1,kind:'fallback',productId:'namecard-offset-ta',field:'lamination'}]
   ]){
    f=await mount({sourceInfo:true,infoPending:true,infoReply:reply});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
-   pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);const beforeFallback=pendingDots(f.shadow);f.resolveInfo();await pending;
+   pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);const beforeFallback=pendingDots(f.shadow);f.resolveInfo();await pending;
    check('Source information rejects '+name+' without replacing the local fallback or quoting',beforeFallback&&f.posts().length===0&&f.infoCalls.length===1&&typingAbsent(f.shadow)&&!hasMockInfo()&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&f.shadow.querySelectorAll('img').length===0&&window.__geminiHarnessXss===0&&![...f.shadow.querySelectorAll('.ta-source')].some(link=>link.href.startsWith('https://example.invalid/')));
   }
-  f=await mount({sourceInfo:true,infoOffline:true});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp','kích thước danh thiếp bao nhiêu?'])await widget.send(step);
+  f=await mount({sourceInfo:true,infoOffline:true});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp',INFO_QUERY])await widget.send(step);
   check('A source-information network error removes dots and uses local information without falling through to Gemini',f.infoCalls.length===1&&f.posts().length===0&&typingAbsent(f.shadow)&&lastBubble().length>0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&widget.host.dataset.activity==='idle');
   f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
-  const infoTimeoutStart=performance.now();pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);const infoTimeoutDots=pendingDots(f.shadow);await pending;const timeoutFallback=f.shadow.querySelector('.ta-log').textContent;f.resolveInfo();await frames();
+  const infoTimeoutStart=performance.now();pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);const infoTimeoutDots=pendingDots(f.shadow);await pending;const timeoutFallback=f.shadow.querySelector('.ta-log').textContent;f.resolveInfo();await frames();
   check('A stalled source lookup times out without consent, removes dots and suppresses a late source reply',infoTimeoutDots&&f.infoCalls[0].signal.aborted&&f.infoCalls.length===1&&f.posts().length===0&&!f.consent.checked&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===timeoutFallback&&!hasMockInfo()&&widget.host.dataset.activity==='idle'&&performance.now()-infoTimeoutStart<7000);
   f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
-  pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);f.shadow.querySelector('.ta-clear').click();const infoClearedLog=f.shadow.querySelector('.ta-log').textContent,infoClearedDots=typingAbsent(f.shadow);f.resolveInfo();await pending;
+  pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);f.shadow.querySelector('.ta-clear').click();await pending;await resetFinished(f.shadow);const infoClearedLog=f.shadow.querySelector('.ta-log').textContent,infoClearedDots=typingAbsent(f.shadow);f.resolveInfo();await frames();
   check('Clear aborts source information immediately and an ignored-abort response cannot restore its dots or content',infoClearedDots&&f.infoCalls[0].signal.aborted&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===infoClearedLog&&f.shadow.querySelectorAll('.ta-message').length===1&&f.posts().length===0);
   f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
-  pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);widget.close();const infoClosedLog=f.shadow.querySelector('.ta-log').textContent,infoClosedDots=typingAbsent(f.shadow);f.resolveInfo();await pending;widget.open();
+  pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);widget.close();const infoClosedLog=f.shadow.querySelector('.ta-log').textContent,infoClosedDots=typingAbsent(f.shadow);f.resolveInfo();await pending;widget.open();
   check('Close aborts source information and reopening never reveals an ignored-abort late reply',infoClosedDots&&f.infoCalls[0].signal.aborted&&typingAbsent(f.shadow)&&!f.shadow.querySelector('.ta-panel').hidden&&f.shadow.querySelector('.ta-log').textContent===infoClosedLog&&!hasMockInfo()&&f.posts().length===0);
   f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
-  pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);const infoDestroyedHost=widget.host;widget.destroy();widget=null;const destroyedInfoDots=typingAbsent(f.shadow);f.resolveInfo();await pending;
+  pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);const infoDestroyedHost=widget.host;widget.destroy();widget=null;const destroyedInfoDots=typingAbsent(f.shadow);f.resolveInfo();await pending;
   check('Destroy aborts source information and removes waiting dots even when the fake fetch ignores abort',destroyedInfoDots&&f.infoCalls[0].signal.aborted&&typingAbsent(f.shadow)&&!infoDestroyedHost.isConnected&&!document.getElementById('ta-mam-chat-host')&&f.posts().length===0);
 
   // Regressions for the real local quote session; provider responses remain fake.
@@ -283,6 +368,8 @@ async function tests(){
   check('A sixteen-page reply continues the existing catalogue and asks only paper',lastBubble().endsWith('?')&&['C250','C150','C300'].every(paper=>lastBubble().includes(paper))&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   await widget.send('Bìa C300 ruột C150');
   check('Choosing C300 quotes the saved A4 300 sixteen-page request without a provider call',compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
+  const c300SourceLink=f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-source'),c300RawQuote=ThanhAnFAQ.answer(owner300.lookupQuery,data).quote;
+  check('Catalogue table and quote source displays point to the exact Thanh An page while original price provenance stays intact',mappedCatalogueDisplay&&c300SourceLink?.href===CATALOGUE_DISPLAY_SOURCE&&c300SourceLink.textContent==='Xem chi tiết'&&c300SourceLink.target==='_blank'&&c300SourceLink.rel.includes('noopener')&&c300SourceLink.referrerPolicy==='no-referrer'&&c300SourceLink.closest('details')===null&&f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-quote-details')&&!f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-quote-details').open&&owner300.sourceUrl===CATALOGUE_SOURCE&&c300RawQuote.sourceUrl===CATALOGUE_SOURCE&&c300RawQuote.provider==='vinh-phat');
   await widget.send('350 cuốn');
   check('Changing quantity to 350 preserves all catalogue specifications and uses the 300 floor tier',compactPrice(lastBubble(),350,'cuốn',owner300.priceVnd*350,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
   await widget.send('500 cuốn');

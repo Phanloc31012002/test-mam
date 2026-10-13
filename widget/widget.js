@@ -9,7 +9,7 @@
   }
   function assetUrl(value) { const u=new URL(value,document.baseURI);if(u.origin!==location.origin||!['http:','https:'].includes(u.protocol))throw new Error('Tài nguyên cần cùng nguồn với trang');return u.href; }
   async function createWidget(config={}) {
-    if(!root.ThanhAnFAQ||!root.ThanhAnMascot||!root.ThanhAnPriceMenu)throw new Error('Thiếu thành phần widget');
+    if(!root.ThanhAnFAQ||!root.ThanhAnMascot||!root.ThanhAnPriceMenu||!root.ThanhAnPresentation)throw new Error('Thiếu thành phần widget');
     let data=config.data;
     if(!data){const r=await fetch(assetUrl(config.dataUrl),{credentials:'omit',cache:'no-cache',referrerPolicy:'no-referrer'});if(!r.ok)throw new Error('Không tải được dữ liệu FAQ');data=await r.json();}
     root.ThanhAnFAQ.validateData(data);
@@ -42,6 +42,7 @@
     data=JSON.parse(JSON.stringify(data));
     function freeze(value){Object.freeze(value);Object.values(value).forEach(v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v))freeze(v);});}freeze(data);
     const conversation=root.ThanhAnFAQ.createSession?root.ThanhAnFAQ.createSession(data):{answer:text=>root.ThanhAnFAQ.answer(text,data),reset(){}};
+    const presentation=root.ThanhAnPresentation.create({delayMs:320});
     function snapshotInformation(query){
       const corpus=config.informationData;
       if(!query||corpus?.schemaVersion!==1||!Array.isArray(corpus.products)||!corpus.fieldNames?.includes(query.field))return null;
@@ -68,6 +69,9 @@
     const subtitle=el('p','ta-subtitle',undefined,titles);el('span','ta-status-dot','',subtitle);const statusLabel=el('span','','Trợ lý thông tin in ấn',subtitle);
     const headerActions=el('div','ta-header-actions ta-footnote',undefined,header);
     const close=el('button','ta-close','×',headerActions);close.type='button';close.setAttribute('aria-label','Đóng trò chuyện');
+    let dragController=null;
+    const dragButton=root.ThanhAnDrag?el('button','ta-window-drag ta-drag-handle','↔',headerActions):null;
+    if(dragButton){dragButton.type='button';dragButton.setAttribute('aria-label','Di chuyển hoặc đặt lại vị trí');dragButton.setAttribute('title','Kéo để di chuyển; bấm để về vị trí ban đầu');headerActions.insertBefore(dragButton,close);dragButton.addEventListener('click',()=>{dragController?.reset();dragController?.reclamp();});}
     const aiClient=config.aiEndpoint&&root.ThanhAnGemini?root.ThanhAnGemini.create({endpoint:assetUrl(config.aiEndpoint),fetchImpl:config.aiFetch}):null;
     const infoClient=config.infoEndpoint&&root.ThanhAnSourceInfo?root.ThanhAnSourceInfo.create({endpoint:assetUrl(config.infoEndpoint),productIds:data.products.map(product=>product.id),fetchImpl:config.infoFetch}):null;
     let aiConsent=null,privacyButton=null,privacyDocument=null;
@@ -104,22 +108,22 @@
     const input=el('input','ta-input',undefined,form);input.id='ta-mam-input';input.type='text';input.placeholder='Bạn đang cần in gì?';input.maxLength=1000;input.autocomplete='off';input.setAttribute('enterkeyhint','send');
     const submit=el('button','ta-send',undefined,form);submit.type='submit';submit.setAttribute('aria-label','Gửi câu hỏi');icon(submit);
     const alert=el('p','ta-alert','',panel);alert.setAttribute('role','status');alert.hidden=true;
-    const clear=el('button','ta-clear','↻',headerActions);clear.type='button';clear.setAttribute('aria-label','Làm mới');clear.setAttribute('title','Làm mới trò chuyện');headerActions.insertBefore(clear,close);clear.addEventListener('click',()=>{if(destroyed)return;generation++;cancelPaint();infoClient?.abort();removeTyping();aiClient?.setConsent(false);if(aiConsent)aiConsent.checked=false;showChat(false);destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();welcome();input.value='';input.focus();});
+    const clear=el('button','ta-clear','↻',headerActions);clear.type='button';clear.setAttribute('aria-label','Làm mới');clear.setAttribute('title','Làm mới trò chuyện');headerActions.insertBefore(clear,close);clear.addEventListener('click',()=>{if(destroyed)return;generation++;pendingText=null;presentation.cancel();cancelPaint();infoClient?.abort();removeTyping();aiClient?.setConsent(false);if(aiConsent)aiConsent.checked=false;showChat(false);destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();greetingShown=false;if(!panel.hidden)welcome();input.value='';input.focus();});
     const launcher=el('button','ta-launcher',undefined,shell);launcher.type='button';launcher.setAttribute('aria-expanded','false');launcher.setAttribute('aria-controls',panel.id);launcher.setAttribute('aria-label','Mở trò chuyện với Mầm');
     const launcherLabel=el('span','ta-launcher-label','Mầm giúp bạn nhé?',launcher);el('small','','Tìm giá & thông tin in ấn',launcherLabel);
     const launcherPlant=el('span','ta-launcher-plant',undefined,launcher);const launcherMascot=root.ThanhAnMascot.create({reducedMotion:config.reducedMotion,attentionDurationMs:config.attentionDurationMs});launcherPlant.appendChild(launcherMascot.element);el('span','ta-collapse-icon','⌄',launcherPlant);
-    let destroyed=false,activityTimer=null,deskTimer=null,generation=0,queue=Promise.resolve();
+    let destroyed=false,activityTimer=null,deskTimer=null,generation=0,queue=Promise.resolve(),pendingText=null,greetingShown=false;
     const activityIdleMs=Number.isFinite(config.activityIdleMs)?Math.max(100,Math.min(60000,config.activityIdleMs)):10000;
     const paintWaits=new Set();
     const priceMenus=new Map();
     const typingBubbles=new Set();
     function removeTyping(){for(const bubble of typingBubbles)bubble.remove();typingBubbles.clear();}
-    function showTyping(){
-      const block=el('div','ta-message ta-message-typing',undefined,log);
+    function showTyping(parent=log){
+      const block=el('div','ta-message ta-message-typing',undefined,parent);
       const bubble=el('div','ta-typing-bubble',undefined,block);
       const dots=el('span','ta-typing-dots',undefined,bubble);dots.setAttribute('aria-hidden','true');
       for(let i=0;i<3;i++)el('span','ta-typing-dot','',dots);
-      el('span','ta-sr-only','Mầm đang trả lời',bubble);typingBubbles.add(block);log.scrollTop=log.scrollHeight;
+      el('span','ta-sr-only','Mầm đang trả lời',bubble);typingBubbles.add(block);if(parent===log)log.scrollTop=log.scrollHeight;
       return()=>{block.remove();typingBubbles.delete(block);};
     }
     function destroyMenus(){for(const menu of priceMenus.values())menu.destroy();priceMenus.clear();}
@@ -171,7 +175,7 @@
       if(state==='greeting')activityTimer=setTimeout(()=>{if(!destroyed)setActivity('idle');},900);
     }
     input.addEventListener('input',()=>{if(input.value.length||host.dataset.mascotState==='working')keepWorking();});
-    function setOpen(value){if(destroyed)return;panel.hidden=!value;panelWrap.hidden=!value;avatarMascot.setPaused(!value);launcherMascot.setPaused(value);launcher.setAttribute('aria-expanded',String(value));launcher.setAttribute('aria-label',value?'Thu gọn trò chuyện với Mầm':'Mở trò chuyện với Mầm');if(value){setActivity('greeting');input.focus({preventScroll:true});}else{generation++;cancelPaint();removeTyping();showChat(false);aiClient?.abort();infoClient?.abort();setActivity('idle');launcher.focus({preventScroll:true});}}
+    function setOpen(value){if(destroyed)return;panel.hidden=!value;panelWrap.hidden=!value;avatarMascot.setPaused(!value);launcherMascot.setPaused(value);launcher.setAttribute('aria-expanded',String(value));launcher.setAttribute('aria-label',value?'Thu gọn trò chuyện với Mầm':'Mở trò chuyện với Mầm');if(value){setActivity('greeting');input.focus({preventScroll:true});if(!greetingShown&&!log.childElementCount)welcome();}else{generation++;pendingText=null;presentation.cancel();cancelPaint();removeTyping();if(!log.childElementCount)greetingShown=false;showChat(false);aiClient?.abort();infoClient?.abort();setActivity('idle');launcher.focus({preventScroll:true});}dragController?.reclamp();}
     launcher.addEventListener('click',()=>setOpen(panel.hidden));close.addEventListener('click',()=>setOpen(false));
     shadow.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){event.preventDefault();if(!auxiliary.hidden)showChat();else setOpen(false);}});
     function addMessage(text,user=false){
@@ -179,7 +183,11 @@
       const polite=user||/^Dạ(?:\s|[,.:!?]|$)/u.test(copy)?copy:'Dạ, '+copy.charAt(0).toLocaleLowerCase('vi-VN')+copy.slice(1);
       const block=el('div','ta-message'+(user?' ta-message-user':''),undefined,log);el('p','ta-message-name',user?'Bạn':'Mầm · Thanh Ấn',block);el('div','ta-message-bubble',polite,block);while(log.childElementCount>50)removeMessage(log.firstElementChild);return block;
     }
-    function addSource(parent,source){const url=root.ThanhAnFAQ.safeLink(source.url);if(!url)return;const a=el('a','ta-source',source.label,parent);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';}
+    function addSource(parent,source){
+      const original=root.ThanhAnFAQ.safeLink(source.url);if(!original)return;
+      const url=root.ThanhAnFAQ.safeLink(root.ThanhAnFAQ.displayLink?root.ThanhAnFAQ.displayLink(original):original);if(!url)return;
+      const a=el('a','ta-source','Xem chi tiết',parent);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';
+    }
     function addContacts(parent){for(const c of data.contacts){const row=el('div','ta-contact',undefined,parent);const name=el('div','ta-contact-person',c.name,row);el('small','',c.phone.replace(/(\d{4})(\d{3})(\d{3})/,'$1 $2 $3'),name);const zalo=el('a','ta-zalo','Zalo ↗',row);zalo.href=c.zalo;zalo.target='_blank';zalo.rel='noopener noreferrer';zalo.referrerPolicy='no-referrer';zalo.setAttribute('aria-label','Mở Zalo của '+c.name);const tel=el('a','ta-tel','Gọi',row);tel.href='tel:'+c.phone;tel.setAttribute('aria-label','Gọi '+c.name);}}
     function render(result,returnFocus){
       if(result.kind==='information'&&result.text.includes('\n• ')){
@@ -192,35 +200,36 @@
         addContacts(auxBody);return;
       }
       const block=addMessage(result.compactText||result.text);
-      let sourceParent=block;
       if(result.quote){
         block.classList.add('ta-message-quote');
         const bubble=block.querySelector('.ta-message-bubble');
         const lines=(result.compactText||result.text).split('\n');
         if(lines.length===2){bubble.replaceChildren(document.createTextNode(lines[0]+'\n'));el('span','ta-quote-total',lines[1],bubble);}
         const details=el('details','ta-quote-details',undefined,block);
-        el('summary','','Quy cách & nguồn giá',details);
+        el('summary','','Quy cách & lưu ý',details);
         const quote=result.quote;
         if(quote.conditions?.length){const list=el('ul','',undefined,details);quote.conditions.forEach(condition=>el('li','',condition,list));}
         if(Number.isSafeInteger(quote.unitPriceVnd))el('p','','Giá làm căn cứ: '+quote.unitPriceVnd.toLocaleString('vi-VN')+' ₫/'+quote.unit+' · Mức số lượng '+quote.sourceQuantity.toLocaleString('vi-VN')+' '+quote.quantityUnit+'.',details);
         if(quote.provenance?.kind==='business-owner-price-update')el('p','','Giá do Thanh Ấn xác nhận ngày '+quote.provenance.approvedOn+'. Nguồn website được giữ để tham chiếu.',details);
         else if(quote.provider==='vinh-phat')el('p','','Giá tham khảo bổ sung; cần xác nhận khi đặt in.',details);
-        sourceParent=details;
       }
-      if(result.sources||result.informationConditions?.length){
-        if(!result.quote){sourceParent=el('details','ta-source-details',undefined,block);el('summary','',result.informationConditions?.length?'Quy cách & lưu ý':'Thông tin nguồn',sourceParent);}
-        if(result.informationConditions?.length){const list=el('ul','',undefined,sourceParent);result.informationConditions.forEach(condition=>el('li','',condition,list));}
-        if(result.sources){const links=el('div','ta-source-links',undefined,sourceParent);result.sources.forEach(s=>addSource(links,s));}
-      }
-      if(result.suggestions){const queries=result.suggestions.filter(query=>!['xem gia','xem bang gia','lien he zalo'].includes(root.ThanhAnFAQ.normalize(query)));if(queries.length){const buttons=el('div','ta-suggestions',undefined,block);queries.forEach(query=>{const b=el('button','ta-chip',query,buttons);b.type='button';b.addEventListener('click',()=>send(query));});}}
+      if(result.informationConditions?.length){const list=el('ul','ta-information-notes',undefined,block);result.informationConditions.forEach(condition=>el('li','',condition,list));}
+      if(result.sources?.length){const links=el('div','ta-source-links',undefined,block);const visible=new Set();result.sources.forEach(source=>{const url=root.ThanhAnFAQ.displayLink?.(source.url)||source.url;if(!visible.has(url)){visible.add(url);addSource(links,source);}});}
+      if(result.suggestions){const queries=result.suggestions.filter(query=>!['xem gia','xem bang gia','lien he zalo'].includes(root.ThanhAnFAQ.normalize(query)));if(queries.length){const buttons=el('div','ta-suggestions',undefined,block);queries.forEach(query=>{const b=el('button','ta-chip',query,buttons);b.type='button';b.addEventListener('click',()=>send(query));});if(result.kind!=='greeting')addConsultChoice(block);}}
       if(result.contacts)addContacts(block);
       if(log.clientHeight&&block.offsetHeight>log.clientHeight){log.scrollTop+=block.getBoundingClientRect().top-log.getBoundingClientRect().top-12;}else log.scrollTop=log.scrollHeight;
     }
     const categoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư', 'red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
+    function addConsultChoice(parent){
+      const area=el('div','ta-consult-choice',undefined,parent);
+      el('p','','Website chưa có đủ mọi mức giá và quy cách. Nếu chưa tìm thấy nhu cầu của bạn, hãy chọn tư vấn qua Zalo.',area);
+      const button=el('button','ta-chip ta-consult-cta','Tư vấn qua Zalo',area);button.type='button';button.addEventListener('click',()=>send('Liên hệ Zalo'));
+    }
     function renderQuoteChoices(){
       conversation.reset();const block=addMessage('Dạ, bạn cần in sản phẩm nào ạ? 🌱');
       const choices=el('div','ta-suggestions ta-quote-products',undefined,block);
       root.ThanhAnPriceMenu.buildCatalog(data).categories.forEach(category=>{const b=el('button','ta-chip',category.name,choices);b.type='button';b.addEventListener('click',()=>send(categoryQueries[category.id]));});
+      addConsultChoice(block);
       if(log.clientHeight&&block.offsetHeight>log.clientHeight)log.scrollTop+=block.getBoundingClientRect().top-log.getBoundingClientRect().top-12;
       else log.scrollTop=log.scrollHeight;
     }
@@ -231,10 +240,22 @@
         auxiliary.scrollTo({top:0,behavior:'instant'});
       }});
       auxBody.appendChild(menu.element);priceMenus.set(menu.element,menu);
+      const bypass=new WeakSet();
+      menu.element.addEventListener('click',event=>{
+        const button=event.target.closest?.('.ta-price-category,.ta-price-variant');
+        if(!button||bypass.has(button)||destroyed)return;
+        event.preventDefault();event.stopImmediatePropagation();generation++;pendingText=null;presentation.cancel();removeTyping();aiClient?.abort();infoClient?.abort();
+        const current=generation,finish=showTyping(auxBody),wait=presentation.begin();auxBody.prepend([...typingBubbles].at(-1));auxiliary.scrollTop=0;setActivity('working');
+        queue=(async()=>{try{await wait;if(destroyed||current!==generation||!menu.element.isConnected)return;finish();bypass.add(button);button.click();}finally{finish();bypass.delete(button);if(!destroyed&&current===generation)setActivity('idle',!panel.hidden);}})();
+      },true);
       if(categoryId)menu.showCategory(categoryId);
       auxBack.focus({preventScroll:true});
     }
-    function welcome(){render({text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?',suggestions:['Danh thiếp C300','Catalogue','Decal giấy','Giờ làm việc']});}
+    function welcome(){
+      greetingShown=true;const current=generation,finish=showTyping(),wait=presentation.begin();
+      queue=(async()=>{await wait;finish();if(!destroyed&&current===generation)render({kind:'greeting',text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?',suggestions:['Danh thiếp C300','Catalogue','Decal giấy','Giờ làm việc']});})();
+      return queue;
+    }
     function renderAiSuggestion(suggestion){
       if(suggestion.intent==='product'){
         const category=root.ThanhAnPriceMenu.buildCatalog(data).categories.find(c=>c.id===suggestion.categoryId);
@@ -242,6 +263,7 @@
         const block=addMessage('Dạ, bạn đang cần '+category.name.toLowerCase()+' phải không ạ? Bạn chọn để xem quy cách nhé.');
         const button=el('button','ta-chip','Xem lựa chọn '+category.name,block);button.type='button';
         button.addEventListener('click',()=>{if(destroyed)return;send(categoryQueries[category.id]);});
+        addConsultChoice(block);
         log.scrollTop=log.scrollHeight;return true;
       }
       const queries={services:'Dịch vụ',hours:'Giờ làm việc',address:'Địa chỉ',contact:'Liên hệ Zalo',greeting:'Hello'};
@@ -252,55 +274,78 @@
       if(destroyed)return Promise.resolve();
       const text=String(value||'').trim();
       if(!text){input.focus();return Promise.resolve();}
-      const requestGeneration=generation;
+      if(pendingText===text)return queue;
+      const requestGeneration=++generation;pendingText=text;greetingShown=true;
+      presentation.cancel();cancelPaint();removeTyping();aiClient?.abort();infoClient?.abort();
       const returnFocus=shadow.activeElement||input;showChat(false);
       input.value='';alert.hidden=true;
       if(!panel.hidden)input.focus({preventScroll:true});
-      queue=queue.then(async()=>{
-        if(destroyed||generation!==requestGeneration)return;
-        addMessage(text,true);setActivity('working');
-        let finishTyping=null;
-        try{
-          if(root.ThanhAnFAQ.normalize(text)==='xem toan bang gia'||(root.ThanhAnPriceMenu.isMenuRequest(text)&&root.ThanhAnFAQ.normalize(text).includes('bang gia')))renderPriceMenu(undefined,returnFocus);
-          else if(root.ThanhAnPriceMenu.isMenuRequest(text))renderQuoteChoices();
-          else{
-            let local=conversation.answer(text);let usedAI=false;
-            if(local.kind==='unknown'&&languageMemory){
-              const mapped=languageMemory.lookup(text);
-              if(mapped?.intent==='product')local=conversation.answer(text,{approvedCategoryId:mapped.categoryId});
-              else if(mapped?.intent==='out_of_scope')local={...local,kind:'out_of_scope'};
-              else if(mapped){const queries={services:'Dịch vụ',hours:'Giờ làm việc',address:'Địa chỉ',contact:'Liên hệ Zalo',greeting:'Hello'};if(queries[mapped.intent])local=conversation.answer(queries[mapped.intent]);}
-            }
-            if(local.informationQuery&&infoClient){
-              finishTyping=showTyping();await nextPaint();
-              if(destroyed||generation!==requestGeneration)return;
-              const info=await infoClient.get(local.informationQuery.productId,local.informationQuery.field);
-              if(destroyed||generation!==requestGeneration)return;
-              finishTyping();finishTyping=null;
-              if(info?.kind==='information')local={kind:'information',text:info.text,sources:info.sources.map(source=>({url:source.url,label:source.provider==='thanh-an'?'Quy cách trên website Thanh Ấn':'Thông tin tham khảo bổ sung'}))};
-            }
-            else if(local.informationQuery){local=snapshotInformation(local.informationQuery)||local;}
-            if(local.kind==='unknown'&&aiClient?.getState().consent){
-              finishTyping=showTyping();await nextPaint();
-              if(destroyed||generation!==requestGeneration)return;
-              const suggestion=await aiClient.suggest(text);
-              if(destroyed||generation!==requestGeneration)return;
-              finishTyping();finishTyping=null;
-              if(suggestion)usedAI=renderAiSuggestion(suggestion);
-            }
-            if(!usedAI)render(local.kind==='greeting'?{...local,text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?'}:local,returnFocus);
+      addMessage(text,true);setActivity('working');
+      const normalized=root.ThanhAnFAQ.normalize(text);
+      const menuRequest=root.ThanhAnPriceMenu.isMenuRequest(text);
+      const wholeTable=normalized==='xem toan bang gia'||(menuRequest&&normalized.includes('bang gia'));
+      // Apply visitor turns in order before any presentation or network wait.
+      // A newer turn can cancel an old render while retaining product context.
+      let local=null,localError=null;
+      try{
+        if(menuRequest||wholeTable)conversation.reset();
+        else{
+          local=conversation.answer(text);
+          if(local.kind==='unknown'&&languageMemory){
+            const mapped=languageMemory.lookup(text);
+            if(mapped?.intent==='product')local=conversation.answer(text,{approvedCategoryId:mapped.categoryId});
+            else if(mapped?.intent==='out_of_scope')local={...local,kind:'out_of_scope'};
+            else if(mapped){const queries={services:'Dịch vụ',hours:'Giờ làm việc',address:'Địa chỉ',contact:'Liên hệ Zalo',greeting:'Hello'};if(queries[mapped.intent])local=conversation.answer(queries[mapped.intent]);}
           }
         }
-        catch(_){if(!destroyed&&generation===requestGeneration)render({text:'Dạ, thông tin này cần kiểm tra thêm. Bạn chọn tư vấn viên qua Zalo để được xác nhận ạ.',contacts:true},returnFocus);}
-        finally{finishTyping?.();if(!destroyed&&generation===requestGeneration)setActivity('idle',!panel.hidden);}
-      });
+      }catch(error){localError=error;}
+      const finishTyping=showTyping(),minimumWait=presentation.begin();
+      queue=(async()=>{
+        try{
+          if(localError)throw localError;
+          let suggestion=null;
+          if(local?.informationQuery&&infoClient){
+              const info=await infoClient.get(local.informationQuery.productId,local.informationQuery.field);
+              if(destroyed||generation!==requestGeneration)return;
+              if(info?.kind==='information')local={kind:'information',text:info.text,sources:info.sources.map(source=>({url:source.url,label:source.provider==='thanh-an'?'Quy cách trên website Thanh Ấn':'Thông tin tham khảo bổ sung'}))};
+          }else if(local?.informationQuery)local=snapshotInformation(local.informationQuery)||local;
+          if(local?.kind==='unknown'&&aiClient?.getState().consent){
+              suggestion=await aiClient.suggest(text);
+              if(destroyed||generation!==requestGeneration)return;
+          }
+          await minimumWait;
+          if(destroyed||generation!==requestGeneration)return;
+          finishTyping();
+          if(wholeTable)renderPriceMenu(undefined,returnFocus);
+          else if(menuRequest)renderQuoteChoices();
+          else if(!suggestion||!renderAiSuggestion(suggestion))render(local.kind==='greeting'?{...local,text:'Dạ, Mầm chào bạn 🌱 Bạn cần in gì để Mầm hỗ trợ ạ?'}:local,returnFocus);
+        }
+        catch(_){await minimumWait;if(!destroyed&&generation===requestGeneration){finishTyping();render({text:'Dạ, thông tin này cần kiểm tra thêm. Bạn chọn tư vấn viên qua Zalo để được xác nhận ạ.',contacts:true},returnFocus);}}
+        finally{finishTyping();if(!destroyed&&generation===requestGeneration){pendingText=null;setActivity('idle',!panel.hidden);}}
+      })();
       return queue;
     }
-    form.addEventListener('submit',event=>{event.preventDefault();send(input.value);});setActivity('idle');welcome();
+    form.addEventListener('submit',event=>{event.preventDefault();send(input.value);});setActivity('idle');
     document.body.appendChild(host);
-    try{await Promise.all([cssReady,launcherMascot.ready,avatarMascot.ready]);}catch(e){destroyed=true;aiClient?.destroy();infoClient?.destroy();host.remove();launcherMascot.destroy();avatarMascot.destroy();throw e;}
+    try{await Promise.all([cssReady,launcherMascot.ready,avatarMascot.ready]);}catch(e){destroyed=true;presentation.destroy();aiClient?.destroy();infoClient?.destroy();host.remove();launcherMascot.destroy();avatarMascot.destroy();throw e;}
     host.style.visibility='visible';
-    mounted={host,shadow,data,open:()=>setOpen(true),close:()=>setOpen(false),send,launcherMascot,avatarMascot,destroy(){if(destroyed)return;destroyed=true;aiClient?.destroy();infoClient?.destroy();removeTyping();cancelPaint();clearTimeout(activityTimer);clearTimeout(deskTimer);destroyMenus();host.remove();launcherMascot.destroy();avatarMascot.destroy();if(typeof config.onStateChange==='function'){try{config.onStateChange('idle');}catch(_){}}if(mounted&&mounted.host===host)mounted=null;}};
+    function updateAvailableHeight(){
+      const viewport=root.visualViewport,height=Math.max(160,Math.round(Math.min(root.innerHeight,viewport?.height||root.innerHeight)));
+      host.style.setProperty('--ta-available-height',height+'px');
+      const keyboard=Boolean(viewport&&viewport.height<root.innerHeight-100);
+      host.dataset.keyboardCompact=String(keyboard);host.dataset.keyboardSmall=String(keyboard&&height<320);
+    }
+    updateAvailableHeight();root.addEventListener('resize',updateAvailableHeight);root.visualViewport?.addEventListener('resize',updateAvailableHeight);
+    if(root.ThanhAnDrag){
+      dragController=root.ThanhAnDrag.create({host,handles:[header,launcherMascot.element,avatarMascot.element],margin:8,getBounds:()=>{
+        const nodes=panel.hidden?[launcher]:[panel,avatar];
+        const rects=nodes.map(node=>node.getBoundingClientRect()).filter(rect=>rect.width>0&&rect.height>0);
+        if(!rects.length)return host.getBoundingClientRect();
+        const left=Math.min(...rects.map(rect=>rect.left)),right=Math.max(...rects.map(rect=>rect.right)),top=Math.min(...rects.map(rect=>rect.top)),bottom=Math.max(...rects.map(rect=>rect.bottom));
+        return{left,right,top,bottom,width:right-left,height:bottom-top};
+      }});dragController.reclamp();
+    }
+    mounted={host,shadow,data,open:()=>setOpen(true),close:()=>setOpen(false),send,launcherMascot,avatarMascot,dragController,destroy(){if(destroyed)return;destroyed=true;pendingText=null;presentation.destroy();dragController?.destroy();root.removeEventListener('resize',updateAvailableHeight);root.visualViewport?.removeEventListener('resize',updateAvailableHeight);aiClient?.destroy();infoClient?.destroy();removeTyping();cancelPaint();clearTimeout(activityTimer);clearTimeout(deskTimer);destroyMenus();host.remove();launcherMascot.destroy();avatarMascot.destroy();if(typeof config.onStateChange==='function'){try{config.onStateChange('idle');}catch(_){}}if(mounted&&mounted.host===host)mounted=null;}};
     return mounted;
   }
   function mount(config={}) {

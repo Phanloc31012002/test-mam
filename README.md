@@ -19,7 +19,7 @@ npm test
 node --test tests/gemini-server.test.mjs tests/gemini-client.test.mjs
 ```
 
-`npm start` mở server static tại `http://127.0.0.1:4173/`, không chạy Vercel Function. `npm test` chạy policy, menu, quote-flow, server/client, owner-revision, continuity, approved-language và source-information; các test API dùng mock, không cần khóa. Lệnh riêng chỉ chạy phần Gemini. **Build mặc định chỉ tạo `public/` và `demo-standalone.html`, không sao chép assets WordPress.**
+`npm start` mở server static tại `http://127.0.0.1:4173/`, không chạy Vercel Function. `npm test` chạy policy, menu, quote-flow, server/client, owner-revision, continuity, approved-language và source-information; các test API dùng mock, không cần khóa. Bộ kiểm tra còn gồm FAQ cơ bản, kéo cửa sổ, thời gian trình bày 320 ms và mô phỏng DOM của widget thật; mô phỏng DOM không thay thế kiểm tra trình duyệt. Lệnh riêng chỉ chạy phần Gemini. **Build mặc định chỉ tạo `public/` và `demo-standalone.html`, không sao chép assets WordPress.**
 
 `node tools/build.mjs --wordpress-assets` là cờ opt-in để chuẩn bị assets plugin trong một công việc riêng được cho phép; không chạy cờ này trong đợt sửa UI. Plugin hiện tại giữ nguyên và chưa cài/kích hoạt website. Source widget mới không có nghĩa plugin đã nhận giao diện mới.
 
@@ -29,7 +29,7 @@ Standalone chứa sẵn JSON giá/quy cách, CSS, JS và sprite, không mount en
 
 Bấm **Báo giá** để chọn cần in gì. Mầm hỏi từng thông tin còn thiếu, ưu tiên số lượng, rồi giữ quy cách trong phiên để khách đổi số lượng/thông số. Đổi sản phẩm xóa thông số không còn áp dụng. Câu báo giá chỉ có **hai dòng chính**: quy cách đã xác minh; số lượng và tổng tiền. Không tự điền quy cách thiếu. Đơn giá, nguồn, căn cứ tính, provenance/ngày chính sách và điều kiện dài nằm trong phần chi tiết tùy chọn hoặc dữ liệu/mã, không thành các đoạn chính của câu trả lời. Chỉ thêm ghi chú nhỏ “chưa VAT” khi nguồn nêu rõ. Chữ trong panel/ô nhập dùng cỡ 16px; kiểm tra đọc và bố cục được ghi ở phần nghiệm thu.
 
-Bấm hoặc gõ **Xem bảng giá** khi muốn xem toàn bảng: chọn sản phẩm, quy cách, rồi xem các dòng nguồn. Không tự mở cả bảng sau mỗi câu hỏi giá. Bảng giữ số lượng, đơn vị, ý nghĩa giá, nguồn/ngày và điều kiện từng dòng; cuối bảng có lời nhắc Zalo in đậm và ba liên hệ đã xác minh. Nếu quy cách cần in không có trong bảng, khách nhắn Zalo để tư vấn.
+Bấm hoặc gõ **Xem bảng giá** khi muốn xem toàn bảng: chọn sản phẩm, quy cách, rồi xem các dòng nguồn. Không tự mở cả bảng sau mỗi câu hỏi giá. Bảng giữ số lượng, đơn vị, ý nghĩa giá, nguồn/ngày và điều kiện từng dòng; màn chọn sản phẩm/quy cách và cuối bảng đều có mục Tư vấn qua Zalo, lời nhắc website chưa có đủ quy cách/giá và ba liên hệ đã xác minh. Nếu quy cách cần in không có trong bảng, khách nhắn Zalo để tư vấn.
 
 Đợt [bố cục mới của khung Mầm](docs/ui-redesign-20261013.md) chỉ sửa widget/demo: một vùng giữa hiển thị chat hoặc bảng giá/quyền riêng tư/tư vấn, không lồng bảng dài vào lịch sử. Nút **← Trò chuyện** quay về chat; Escape từ phần phụ trợ quay về chat trước khi đóng panel. Nguồn của câu trả lời không phải báo giá được thu gọn. **Tư vấn** mở danh sách ba tư vấn viên và nói rõ website chưa có đủ giá/quy cách. Điều khiển **Bật hiểu sâu** dùng helper **Giúp Mầm hiểu câu hỏi rõ hơn**, với thông tin Google/18+/Việt Nam/Free/người rà soát ở phần quyền riêng tư riêng. Handler đồng ý, mascot và ba seed pending giữ nguyên. Không sửa WordPress hoặc SEO.
 
@@ -41,9 +41,9 @@ Kho `widget/information.json` tách biệt hoàn toàn giá: kích thước, gi�
 
 Demo Production dùng `GET /api/mam-info?version=1&productId=…&field=…`: chỉ nhận mã trong danh sách và một trong bảy trường. Không gửi câu chat, lịch sử, file, thông tin khách hoặc URL tùy ý. Server chỉ đọc các trang công khai được kê chính xác trên hai domain, không theo chuyển hướng và chỉ trả lời văn đã rà soát khi bằng chứng còn khớp. Giới hạn 4 giây phía server, 5 giây phía client, cache nguồn trong bộ nhớ 90 giây; không ghi hay phân tích chat. Gemini không viết quy cách hoặc giá.
 
-Câu hỏi thông tin được xử lý trước báo giá, giữ số lượng/quy cách trong phiên cho câu giá tiếp theo. Mầm dùng lời ngắn, lễ phép; nguồn nằm trong phần chi tiết. Chỉ khi có yêu cầu bất đồng bộ thật, chat hiện **bong bóng xám ba chấm**, không có chữ trạng thái đang tra. Reduced motion giữ chấm tĩnh. Hoàn tất, lỗi, làm mới, đóng hoặc hủy widget đều bỏ chấm; kết quả muộn không được ghi vào chat mới.
+Câu hỏi thông tin được xử lý trước báo giá, giữ số lượng/quy cách trong phiên cho câu giá tiếp theo. Mầm dùng lời ngắn, lễ phép; nguồn chỉ hiện bằng link nhỏ “Xem chi tiết” trực tiếp. Mọi phản hồi đều hiện **bong bóng xám ba chấm**, không có chữ trạng thái đang tra. Mầm chờ tối thiểu 320 ms cho phản hồi local; tra cứu chạy song song và giữ chấm đến khi xong, không cộng thêm thời gian chờ. Reduced motion giữ chấm tĩnh. Hoàn tất, lỗi, làm mới, đóng hoặc hủy widget đều bỏ chấm; kết quả muộn không được ghi vào chat mới.
 
-Nguồn bổ sung dùng nhãn **Giá tham khảo**. Tên nhà cung cấp bổ sung được ẩn trong lời chào, lựa chọn và chat; provider, URL, giá và điều kiện gốc vẫn giữ để kiểm tra. Không đổi nguồn bổ sung thành Thanh Ấn. Ưu tiên dòng Thanh Ấn khi khớp cùng sản phẩm/quy cách; không chọn nguồn chỉ vì rẻ hơn.
+Nguồn bổ sung dùng nhãn **Giá tham khảo**. Tên nhà cung cấp bổ sung được ẩn trong lời chào, lựa chọn và chat; provider, URL, giá và điều kiện gốc vẫn giữ để kiểm tra. Không đổi nguồn bổ sung thành Thanh Ấn. Giá bổ sung đã xác minh và giá chủ cơ sở xác nhận được giữ nguyên; đợt đổi backlink không lấy giá Thanh Ấn cũ đè lên dữ liệu đó.
 
 Chính sách `owner-floor-tier-2026-10-13` trong `widget/policy.js`:
 
@@ -86,17 +86,20 @@ Chép `widget/` cùng origin, giữ sprite cạnh `mascot.js`, nạp ở cuối 
 
 ```html
 <script src="/widget/policy.js"></script>
+<script src="/widget/approved-language.js"></script>
 <script src="/widget/mascot.js"></script>
 <script src="/widget/price-menu.js"></script>
+<script src="/widget/drag.js"></script>
+<script src="/widget/presentation.js"></script>
 <script src="/widget/widget.js"></script>
 <script src="/widget/bootstrap.js"></script>
 ```
 
-Hoặc nạp bốn script đầu rồi gọi `ThanhAnChat.mount({dataUrl:'/widget/data.json',stylesheetUrl:'/widget/widget.css'})` khi đã có body. Promise trả instance `open()`, `close()`, `destroy()`; xử lý Promise bị từ chối nếu custom mount. Không trộn bootstrap tự động với custom mount. Mount lặp dùng chung instance kể cả đang tải. Nếu JSON/CSS/sprite lỗi tải/kiểm tra thì widget không hiện.
+Hoặc nạp các script đến widget.js rồi gọi `ThanhAnChat.mount({dataUrl:'/widget/data.json',stylesheetUrl:'/widget/widget.css'})` khi đã có body. Promise trả instance `open()`, `close()`, `destroy()`; xử lý Promise bị từ chối nếu custom mount. Không trộn bootstrap tự động với custom mount. Mount lặp dùng chung instance kể cả đang tải. Nếu JSON/CSS/sprite lỗi tải/kiểm tra thì widget không hiện.
 
 Gemini chỉ dùng khi endpoint cùng origin đã triển khai/cấu hình đúng: nạp `gemini-client.js` trước `widget.js`, custom mount có `aiEndpoint:'/api/mam-assist'`. Bootstrap hiện tại dùng kho quy cách đã rà soát và không tra mạng ngoài; wrapper WordPress cũ vẫn local. Tra nguồn chỉ đọc cần nạp source-info.js trước widget.js, triển khai api/mam-info.js cùng server/source-information.mjs và inventory, rồi custom mount với infoEndpoint cùng origin. Không đưa khóa vào JS, HTML, JSON hay assets WordPress.
 
-Widget không tự mở; panel modeless không khóa cuộn/backdrop. Escape khi focus trong widget đóng và trả focus về launcher. Header có nút ×; khi mở thì launcher ẩn. Ô nhập local tối đa 1.000 ký tự, Gemini tối đa 500. Giữ tối đa 50 khối tin trong bộ nhớ; Làm mới/reload xóa phiên, Làm mới bỏ đồng ý Gemini. Input dùng `textContent`.
+Widget không tự mở; panel modeless không khóa cuộn/backdrop. Escape khi focus trong widget đóng và trả focus về launcher. Header có nút ×; khi mở thì launcher ẩn và Mầm nằm ngoài khung. Ô nhập local tối đa 1.000 ký tự, Gemini tối đa 500. Giữ tối đa 50 khối tin trong bộ nhớ; Làm mới/reload xóa phiên, Làm mới bỏ đồng ý Gemini. Input dùng `textContent`.
 
 Shadow DOM tách CSS selector, không phải ranh giới bảo mật với host script. JSON/CSS phải HTTP(S) cùng origin. Nếu CDN/plugin tối ưu đổi origin/thứ tự nạp cần kiểm tra staging.
 
@@ -120,7 +123,7 @@ Chưa có PHP runtime/WordPress sandbox; chưa PHP lint, enqueue thực tế, t�
 
 Baseline bất biến có 177 dòng web/21 sản phẩm-biến thể, một ước tính A5 riêng, kích thước 353.748 byte. SHA-256 baseline: `408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99`. Runtime hiện có 196 dòng/23 sản phẩm-biến thể: **148 giá mỗi đơn vị, 30 source_total, 18 reference_display**. Hash baseline không phải hash runtime đã sửa. Giữ provenance bản sửa chủ cơ sở tách khỏi bằng chứng giá web lịch sử. Mười hai dòng tag chữ nhật vốn đã là per_unit trong baseline; sáu tổng tag giữ lại khớp đúng số lượng × đơn giá, không coi toàn bộ tag là gói mới chuyển đổi.
 
-SHA-256 dữ liệu runtime cuối: `a72e39615ad3e1a878a6afe995515f695b5610ca3033fc954ac340114f26fa5f`. SHA-256 policy có continuity/category hook hiện tại: `a17f0d2c6a7f21e53877c8949c653f5b8aadd5661a2dbce1363021f3820907a7`. Sprite native vẫn nguyên vẹn với hash ghi ở phần chuyển động.
+SHA-256 dữ liệu runtime cuối: `a72e39615ad3e1a878a6afe995515f695b5610ca3033fc954ac340114f26fa5f`. SHA-256 policy có continuity/category hook hiện tại: `08c750d6130c266d8a24a1792b8934cafbb180957e3d45967002e2a45a7f5ef4`. Sprite native vẫn nguyên vẹn với hash ghi ở phần chuyển động.
 
 Quy cách bông tai đã được xác minh thêm bằng [nguồn tham khảo bông tai](https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/): giấy Couche 300gsm, in offset hai mặt. Nguồn cho chọn cán màng mờ hoặc không cán, nhưng chưa xác định phương án nào đã gồm trong giá. Vì vậy phần cán màng vẫn cần xác nhận; `ownerRecipeIncomplete:true` giữ luồng chuyển tư vấn, không tự báo tổng cho quy cách còn thiếu. Link này là `secondarySourceUrls`; URL nguồn chính trong record giá chủ cơ sở vẫn null, baseline lịch sử được giữ. Bổ sung quy cách này không đổi 193 mức giá/VAT và không tạo đồng bộ live.
 
@@ -130,7 +133,7 @@ Giá từ snapshot không được đọc lại mỗi lượt; endpoint thông t
 
 QA 12/10/2026 là **baseline trước Gemini/bậc mới**: 253 policy, 19 menu, browser 101 ở mỗi viewport 1534×847, 390×844, 320×568, 844×390. 73 ô runtime khớp RGBA gốc. Không dùng số baseline để khẳng định flow giá/Gemini mới đã qua browser.
 
-Bản bộ nhớ cụm từ/continuity trước đợt đổi UI đạt **693/693 Node**, **75/75 Gemini mock** ở cả 1280×720 và 320×568, **107/107 native/widget** ở 1280×720, không lỗi. Report: `evidence/oct13-language-memory-tests.txt`, `evidence/language-browser-desktop.json`, `evidence/language-browser-mobile-320.json`, `evidence/language-browser-native-desktop.json`. Mock không gọi Google. Đợt UI/quy cách hiện tại đạt 814/814 Node, 101/101 mock ở 1280×720 và 320×568, 112/112 native ở 1280×720. Report hiện tại: evidence/ui-redesign-node-tests.txt, evidence/ui-mock-desktop.json, evidence/ui-mock-mobile-320.json và evidence/ui-native-desktop.json trong gói bàn giao.
+Bản bộ nhớ cụm từ/continuity trước đợt đổi UI đạt **693/693 Node**, **75/75 Gemini mock** ở cả 1280×720 và 320×568, **107/107 native/widget** ở 1280×720, không lỗi. Report: `evidence/oct13-language-memory-tests.txt`, `evidence/language-browser-desktop.json`, `evidence/language-browser-mobile-320.json`, `evidence/language-browser-native-desktop.json`. Mock không gọi Google. Trước đợt đổi 10 backlink, UI/quy cách đã đạt 816/816 Node, 101/101 mock ở 1280×720 và 320×568, 112/112 native ở 1280×720. Mã cuối sau đổi backlink đạt 834/834 Node. Hai harness đã bổ sung kiểm tra backlink, nhưng lần chạy browser mới bị chặn do kết nối điều khiển trình duyệt bị ngắt; không nhận số cũ thành kết quả mới. Report hiện tại: evidence/ui-redesign-node-tests.txt, evidence/ui-mock-desktop.json, evidence/ui-mock-mobile-320.json và evidence/ui-native-desktop.json trong gói bàn giao.
 
 Kiểm tra đọc/bố cục thủ công đạt tại 390×844, 640×360 với CSS tương đương phóng 200%, 844×390 và chế độ fallback 390×360: ô nhập/nút đóng thấy được, chữ 16px, không tràn ngang. Trình duyệt không cung cấp thao tác zoom thực tế trong công cụ; đây là kiểm tra tương đương bằng CSS, không phải zoom browser 200%. Mobile là viewport mô phỏng Chrome; WordPress staging chưa kiểm tra.
 
@@ -141,3 +144,15 @@ Kiểm tra Gemini thật riêng ngày 13/10/2026: Production commit `6907`, depl
 Repo [Phanloc31012002/test-mam](https://github.com/Phanloc31012002/test-mam), không chứa khóa/dữ liệu khách/ảnh tài khoản. `vercel.json`: framework Other, build `node tools/build.mjs`, output public, Functions `/api/mam-assist` và `/api/mam-info` giới hạn thời gian 10 giây. Demo local không cần biến môi trường; [Production đã cấu hình server](docs/gemini-free-setup.md) bằng khóa có sẵn do chủ sở hữu tự nhập, không tạo khóa/bật billing.
 
 Git deployment đã bật trong config repo; liên kết project, commit thực tế và Ready cần đối chiếu Vercel, không xem sửa config là đã deploy. [Vercel Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
+
+## Liên kết hiển thị Thanh Ấn
+
+Theo mapping chủ cơ sở, 10 liên kết tham chiếu trong chat/bảng giá được đổi sang đúng trang Thanh Ấn đã kiểm tra đọc được; xem docs/display-backlinks-20261013.md. Dữ liệu 196 giá, provider và URL nguồn lịch sử không được sửa bởi mapping. Catalogue A5, decal giấy và tag bông tai giữ nguyên URL bổ sung. Một số đích mới có phạm vi quy cách khác, vì vậy link đổi dùng nhãn tham chiếu, không nhận là bằng chứng công bố của giá cũ. Kho thông tin vẫn xác minh trang nguồn riêng đã rà soát.
+
+## Các hành vi bổ sung ngày 13/10/2026
+
+Mọi phản hồi có ba chấm xám trước khi hiện, tối thiểu 320 ms; gửi câu mới sẽ hủy phần trả lời cũ và vẫn giữ ngữ cảnh local đã nhận. Đóng/làm mới/hủy widget dọn timer và chặn kết quả muộn. Ba chấm tĩnh khi giảm chuyển động.
+
+FAQ cơ bản A4 (21 × 29,7 cm), A5 (14,8 × 21 cm), danh thiếp thông dụng (9 × 5,4 cm) và giấy Couche C300 (300 g/m²) trả lời local, không gọi mạng hoặc tự áp quy cách vào báo giá. Thông số sản phẩm/biến thể cụ thể vẫn cần kiểm chứng riêng.
+
+Có thể kéo cả Mầm và cửa sổ bằng Mầm hoặc header, với ngưỡng 6 px, giới hạn theo viewport; nút ↔ trả về vị trí ban đầu. Input/link/nút khác giữ thao tác bình thường. Không lưu vị trí kéo hoặc chat khách.

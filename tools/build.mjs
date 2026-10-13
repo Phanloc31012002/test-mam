@@ -3,7 +3,7 @@ const read=name=>fs.readFileSync(new URL('../'+name,import.meta.url),'utf8');
 let html=read('index.html');
 const escapeScript=text=>text.replace(/<\/script/gi,'<\\/script');
 html=html.replace('<link rel="stylesheet" href="demo.css">','<style>'+read('demo.css')+'</style>');
-for(const name of ['widget/policy.js','widget/approved-language.js','widget/mascot.js','widget/price-menu.js','widget/gemini-client.js','widget/source-info.js','widget/widget.js']){
+for(const name of ['widget/policy.js','widget/approved-language.js','widget/mascot.js','widget/price-menu.js','widget/gemini-client.js','widget/source-info.js','widget/drag.js','widget/presentation.js','widget/widget.js']){
   const spriteHook=name==='widget/mascot.js'?'window.ThanhAnMascotSpriteUrl='+JSON.stringify('data:image/webp;base64,'+fs.readFileSync(new URL('../widget/seedy-spritesheet-v10.webp',import.meta.url)).toString('base64'))+';':'';
   html=html.replace('<script defer src="'+name+'"></script>','<script>'+spriteHook+escapeScript(read(name))+'</script>');
 }
@@ -19,7 +19,7 @@ if(process.argv.includes('--wordpress-assets')){
 console.log('Built offline demo-standalone.html; WordPress assets copy is opt-in.');
 // Static hosting output contains only the demo runtime and test harness source.
 const publicRoot=new URL('../public/',import.meta.url);fs.mkdirSync(publicRoot,{recursive:true});
-for(const name of ['index.html','demo.css','demo.js','widget/policy.js','widget/approved-language.js','widget/approved-language.json','widget/mascot.js','widget/price-menu.js','widget/gemini-client.js','widget/source-info.js','widget/information.json','widget/widget.js','widget/bootstrap.js','widget/widget.css','widget/data.json','widget/seedy-spritesheet-v10.webp','tests/mascot-preview.html','tests/browser.html','tests/browser.css','tests/browser.js','tests/gemini-browser.html','tests/gemini-browser.js']){
+for(const name of ['index.html','demo.css','demo.js','widget/policy.js','widget/approved-language.js','widget/approved-language.json','widget/mascot.js','widget/price-menu.js','widget/gemini-client.js','widget/source-info.js','widget/information.json','widget/drag.js','widget/presentation.js','widget/widget.js','widget/bootstrap.js','widget/widget.css','widget/data.json','widget/seedy-spritesheet-v10.webp','tests/mascot-preview.html','tests/browser.html','tests/browser.css','tests/browser.js','tests/gemini-browser.html','tests/gemini-browser.js']){
   const out=new URL(name,publicRoot);fs.mkdirSync(new URL('.',out),{recursive:true});fs.copyFileSync(new URL('../'+name,import.meta.url),out);
 }
 console.log('Static output ready in public/; no hosting deployment performed.');

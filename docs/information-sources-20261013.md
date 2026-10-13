@@ -71,3 +71,5 @@ Nguồn đã rà soát:
 - [Trang sản phẩm](https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/)
 - [Trang sản phẩm](https://invinhphat.com/san-pham/in-tui-giay-gia-re/)
 - [Trang sản phẩm](https://invinhphat.com/san-pham/phieu-thu-cac-loai/)
+
+Rà soát bổ sung lúc 08:22:13 UTC ngày 13/10/2026: ba trường fileRequirements của namecard-c300, namecard-vp và namecard-offset-ta dùng cùng nguồn danh thiếp gốc. Mỗi định dạng AI, Corel, PDF, Photoshop, PNG và JPG, cùng độ phân giải và bước kiểm tra file, đều có chuỗi bằng chứng riêng. Trang chỉ còn dòng 300 ppi không đủ để trả lời danh sách định dạng. Đây là kiểm tra bằng chứng, không đổi URL nguồn sang liên kết hiển thị mới.

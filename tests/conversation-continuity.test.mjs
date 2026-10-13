@@ -150,7 +150,8 @@ test('offset unsafe multiplication and prompt injection cannot fall back to10-bo
 });
 test('a repeated-product size question answers only a common reference and preserves fast-print quantity',()=>{
   const s=session();quote(s.answer('Danh thiếp in nhanh C300 5 hộp'),400000,5);
-  const r=s.answer('Danh thiếp kích thước bao nhiêu');assert.equal(r.kind,'faq');noQuote(r);assert.match(r.text,/thông dụng.*90 × 54 mm/);assert.doesNotMatch(r.text,/₫|400\.000/);
+  const r=s.answer('Danh thiếp kích thước bao nhiêu');assert.equal(r.kind,'faq');noQuote(r);assert.equal(r.text,'Dạ, kích thước danh thiếp thông dụng là 9 × 5,4 cm ạ.');assert.doesNotMatch(r.text,/₫|400\.000/);
+  assert.equal(r.basicInformation,true);assert.equal(r.informationQuery,undefined);
   assert.equal(r.informationScope,'common-reference-not-price-condition');assert.equal(r.sources[0].url,'https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re');
   quote(s.answer('tổng tiền'),400000,5);
 });
@@ -160,10 +161,11 @@ test('material, lamination and timing questions cannot replay a fast-print total
   for(const questionText of ['Danh thiếp có cán màng không?','Danh thiếp thời gian in bao lâu?']){const r=s.answer(questionText);noQuote(r);assert.equal(r.handoff,true);assert.doesNotMatch(r.compactText||r.text,/400\.000|₫/);}
   quote(s.answer('tổng tiền'),400000,5);
 });
-test('offset information questions never borrow digital paper or common dimensions and keep the selected quantity',()=>{
+test('offset common dimensions remain an informational reference while unverified paper and film stay unquoted',()=>{
   const s=session();quote(s.answer('Danh thiếp offset Thanh Ấn 12 hộp'),192000,12);
-  for(const text of ['Kích thước danh thiếp bao nhiêu?','Danh thiếp giấy gì?','Danh thiếp có cán màng không?']){const r=s.answer(text);assert.equal(r.kind,'handoff');noQuote(r);assert.doesNotMatch(r.compactText||r.text,/C300|90.*54|₫/);}
-  quote(s.answer('tổng tiền'),192000,12);
+  const size=s.answer('Kích thước danh thiếp bao nhiêu?');assert.equal(size.kind,'faq');noQuote(size);assert.equal(size.text,'Dạ, kích thước danh thiếp thông dụng là 9 × 5,4 cm ạ.');assert.equal(size.basicInformation,true);assert.equal(size.informationQuery,undefined);assert.equal(size.informationScope,'common-reference-not-price-condition');
+  for(const text of ['Danh thiếp giấy gì?','Danh thiếp có cán màng không?']){const r=s.answer(text);assert.equal(r.kind,'handoff');noQuote(r);assert.doesNotMatch(r.compactText||r.text,/C300|90.*54|₫/);}
+  const q=quote(s.answer('tổng tiền'),192000,12);assert.ok(!q.conditions.some(c=>/90\s*×\s*54|9\s*×\s*5,4/.test(c)));
 });
 test('information without prior context asks the needed variant locally and does not choose price slots',()=>{
   const fresh=session(),size=fresh.answer('Danh thiếp kích thước bao nhiêu?');assert.equal(size.kind,'faq');noQuote(size);assert.match(size.text,/thông dụng/);
@@ -174,10 +176,11 @@ test('C300 spec answers and explicit paper selections remain price-slot input ra
   const s=session();question(s.answer('Danh thiếp in nhanh 5 hộp'),'material');quote(s.answer('C300'),400000,5);
   quote(session().answer('Danh thiếp in nhanh loại giấy C300 5 hộp'),400000,5);
 });
-test('common-size metadata cannot bind quote size or supply an unverified future reference',()=>{
-  const early=faq.createSession(data,()=>Date.parse('2026-10-13T07:16:00Z')).answer('Danh thiếp kích thước bao nhiêu?');noQuote(early);assert.doesNotMatch(early.text,/90.*54/);
+test('owner-confirmed basic dimensions are static while source scope and price freshness stay guarded',()=>{
+  const early=faq.createSession(data,()=>Date.parse('2026-10-13T07:16:00Z')).answer('Danh thiếp kích thước bao nhiêu?');noQuote(early);assert.equal(early.text,'Dạ, kích thước danh thiếp thông dụng là 9 × 5,4 cm ạ.');assert.equal(early.basicInformation,true);assert.equal(early.informationQuery,undefined);
   const bad=structuredClone(data);bad.cardPrintingInformation.standardSizeReference.scope='included-in-price';assert.throws(()=>faq.validateData(bad));
-  const s=session();quote(s.answer('Danh thiếp in nhanh C300 5 hộp'),400000,5);s.answer('Danh thiếp kích thước bao nhiêu?');const q=quote(s.answer('tổng tiền'),400000,5);assert.ok(!q.conditions.some(c=>c.includes('90 × 54')));
+  const s=session();quote(s.answer('Danh thiếp in nhanh C300 5 hộp'),400000,5);s.answer('Danh thiếp kích thước bao nhiêu?');const q=quote(s.answer('tổng tiền'),400000,5);assert.ok(!q.conditions.some(c=>/90\s*×\s*54|9\s*×\s*5,4/.test(c)));
+  const stale=faq.createSession(data,()=>Date.parse('2026-11-11T00:00:00Z'));assert.equal(stale.answer('Danh thiếp kích thước bao nhiêu?').basicInformation,true);const expired=stale.answer('Danh thiếp in nhanh C300 5 hộp');assert.equal(expired.kind,'stale');noQuote(expired);
 });
 
 const informationPatterns=Object.freeze({size:'Kích thước bao nhiêu?',material:'Giấy gì?',sides:'In mấy mặt?',lamination:'Có cán màng không?',finishing:'Gia công như nào?',leadTime:'Thời gian in bao lâu?',fileRequirements:'Gửi file gì?'});

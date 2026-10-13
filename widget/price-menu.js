@@ -30,6 +30,7 @@
   const ownerUpdated = f => f.ownerPriceRevision?.kind === 'business-owner-price-update';
   const hasSourceTotal = f => Number.isSafeInteger(f.sourceTotalVnd) && f.sourceTotalVnd >= 0 && factKind(f) !== 'source_total' && (!ownerUpdated(f) || f.sourceTotalVnd === f.quantity * f.priceVnd);
   const safeSource = url => root.ThanhAnFAQ.safeLink(url);
+  const displaySource = url => root.ThanhAnFAQ.safeLink(root.ThanhAnFAQ.displayLink(url));
   function isMenuRequest(text) {
     const raw = String(text || '').trim();
     if (!raw || raw.length > 1000 || /[^\p{L}\p{M}\s?.!,]/u.test(raw)) return false;
@@ -159,18 +160,24 @@
       if(subtitle)make('p','ta-price-intro',subtitle,element);
       if(focus)heading.focus({preventScroll:true});
     }
-    function sourceLinks(parent, urls, ownerPrices = false) {
-      if (!urls.some(safeSource)) return;
+    function sourceLinks(parent, urls) {
+      const visible = new Set();
+      for (const raw of [...new Set(urls)]) {
+        const safe = displaySource(raw);
+        if (safe) visible.add(safe);
+      }
+      if (!visible.size) return;
       const links = make('div','ta-price-sources',undefined,parent);
-      for(const url of [...new Set(urls)]) {
-        const safe=safeSource(url);if(!safe)continue;
-        const a=make('a','ta-price-source',ownerPrices ? 'Xem trang sản phẩm tham chiếu' : 'Xem bảng giá gốc',links);
+      for(const safe of visible) {
+        const a=make('a','ta-price-source','Xem chi tiết',links);
         a.href=safe;a.target='_blank';a.rel='noopener noreferrer';a.referrerPolicy='no-referrer';
       }
     }
     function footer() {
       const foot=make('div','ta-price-footer',undefined,element);
-      make('strong','','Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.',foot);
+      make('h4','ta-price-consult-title','Tư vấn qua Zalo',foot);
+      make('p','ta-price-consult-note','Website chưa có đủ giá và quy cách. Bạn nhắn Zalo để được tư vấn nhé.',foot);
+      make('strong','ta-price-consult-notice','Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.',foot);
       const contacts=make('div','ta-price-contacts',undefined,foot);
       for(const contact of data.contacts) {
         if(!CONTACT_URLS.has(contact.zalo))continue;
@@ -182,7 +189,7 @@
     function metadata(variant) {
       if (variant.ownerUpdated) make('p','ta-price-date','Giá do chủ nhà in xác nhận ngày 13/10/2026.' + (variant.sourceUrls.some(safeSource) ? ' Trang sản phẩm bên dưới là nguồn tham chiếu.' : ''),element);
       else make('p','ta-price-date','Nguồn: '+providerName(variant.provider)+' · Dữ liệu website ngày '+(variant.sourceSnapshotDate ? variant.sourceSnapshotDate.split('-').reverse().join('/') : catalog.snapshotLabel)+'. Cần nhà in xác nhận đơn thực tế.',element);
-      sourceLinks(element,variant.sourceUrls,variant.ownerUpdated);
+      sourceLinks(element,variant.sourceUrls);
     }
     function showCategories(options = {}) {
       if(destroyed)return;refresh();state={screen:'categories', categoryId:null, variantId:null};
@@ -192,6 +199,7 @@
         const b=action(category.name,'ta-price-category',list,()=>showCategory(category.id));b.dataset.categoryId=category.id;
       }
       make('p','ta-price-note',catalog.ownerPriceRevision ? 'Các bảng được cập nhật theo giá chủ nhà in xác nhận ngày 13/10/2026. Ngày nguồn website được ghi riêng ở từng bảng.' : 'Giá là dữ liệu website ngày '+catalog.snapshotLabel+'. Ưu tiên bảng Thanh Ấn cho đúng quy cách; giá tham khảo bổ sung các phương án còn thiếu và cần tư vấn viên xác nhận.',element);
+      footer();
     }
     function showCategory(id) {
       if(destroyed)return;refresh();const category=catalog.categories.find(c=>c.id===id);if(!category)return;
@@ -203,6 +211,7 @@
         make('span','ta-price-variant-label',variant.label,b);
         make('small','ta-price-variant-meta',variant.ownerUpdated ? 'Giá chủ nhà in xác nhận' : providerName(variant.provider)+' · '+(variant.kind==='table' ? variant.referenceOnly ? 'Bảng tham khảo' : 'Bảng giá website' : variant.kind==='estimate' ? 'Chỉ có ước tính' : variant.kind==='conflict' ? 'Cần tư vấn xác nhận' : 'Chưa có bảng đủ quy cách'),b);
       }
+      footer();
     }
     function renderTable(variant) {
       const rows=variant.rows;
@@ -242,7 +251,7 @@
     function showVariant(id) {
       if(destroyed)return;refresh();const category=catalog.categories.find(c=>c.variants.some(v=>v.id===id));const variant=category?.variants.find(v=>v.id===id);if(!variant)return;
       state={screen:'table',categoryId:category.id,variantId:id};
-      header(variant.label,variant.kind==='table' ? variant.ownerUpdated ? 'Bảng giá chủ nhà in xác nhận cho quy cách này' : variant.referenceOnly ? 'Bảng tham khảo từ website · Điều kiện cần xác nhận' : 'Bảng giá đã công bố cho đúng phương án này' : 'Thông tin nguồn cần tư vấn xác nhận',()=>showCategory(category.id),true);
+      header(variant.label,variant.kind==='table' ? variant.ownerUpdated ? 'Bảng giá chủ nhà in xác nhận cho quy cách này' : variant.referenceOnly ? 'Bảng tham khảo từ website · Điều kiện cần xác nhận' : 'Bảng giá đã công bố cho đúng phương án này' : 'Quy cách này cần được tư vấn xác nhận.',()=>showCategory(category.id),true);
       metadata(variant);
       if(!catalog.fresh || variant.fresh === false)make('p','ta-price-warning','Snapshot đã đến hạn kiểm tra hoặc chưa thể dùng ở thời điểm này. Mầm tạm ngừng hiển thị giá; hãy nhắn Zalo để xác nhận.',element);
       else if(variant.kind==='table')renderTable(variant);

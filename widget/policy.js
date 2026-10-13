@@ -3,6 +3,20 @@
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const contains = (text, phrase) => (' ' + text + ' ').includes(' ' + normalize(phrase) + ' ');
   const money = value => new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+  // Owner-provided navigation only. Historical source URLs and prices stay raw.
+  const DISPLAY_LINKS=Object.freeze({
+    'https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/':'https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re',
+    'https://invinhphat.com/san-pham/in-name-card-gia-re/':'https://innhanhtphcm.com/san-pham/dia-chi-in-combo-10-hop-card',
+    'https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/':'https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re',
+    'https://invinhphat.com/san-pham/in-catalouge/':'https://innhanhtphcm.com/san-pham/in-catalogue-gia-re-lay-lien-tai-tphcm',
+    'https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/':'https://innhanhtphcm.com/san-pham/in-to-roi-lay-ngay',
+    'https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/':'https://innhanhtphcm.com/san-pham/in-bao-thu-a5-in-nhanh-gia-re',
+    'https://invinhphat.com/san-pham/phieu-thu-cac-loai/':'https://innhanhtphcm.com/san-pham/in-bien-nhan-gia-re',
+    'https://invinhphat.com/san-pham/in-tui-giay-gia-re/':'https://innhanhtphcm.com/san-pham/in-tui-giay-uy-tin',
+    'https://invinhphat.com/san-pham/in-folder-kep-file/':'https://innhanhtphcm.com/san-pham/in-bia-kep-ho-so-tphcm',
+    'https://invinhphat.com/san-pham/in-tag-treo-the-bai/':'https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay'
+  });
+  const displayLink=value=>typeof value==='string'&&Object.hasOwn(DISPLAY_LINKS,value)?DISPLAY_LINKS[value]:value;
   // Presentation only: provider ids, row selectors, source URLs and data stay unchanged.
   const displayText = value => String(value ?? '').replace(/\bhttps?:\/\/(?:www\.)?invinhphat\.com(?:\/[^\s]*)?/giu, 'nguồn tham khảo').replace(/\binvinhphat\.com\b/giu, 'nguồn tham khảo').replace(/\bV[ĩi]nh[\s-]*Ph[áa]t\b/giu, 'Giá tham khảo');
   const safeLink = value => {
@@ -289,6 +303,36 @@
     const approvedCategoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư','red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
     const clarify = (p, text, suggestions = []) => response('clarify', text, {productId:p.id,compactText:displayText((text.match(/^[^?]*\?/)||[text])[0]),pendingField:state?.pending, sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], suggestions});
     const handoff = (p, text) => response('handoff', text, {productId:p.id,compactText:'Quy cách hoặc số lượng này cần báo giá riêng. Bạn nhắn Zalo để được tư vấn nhé.', sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], handoff:true});
+    function basicInformation(raw) {
+      if (!raw || raw.length > 1000) return null;
+      const text=normalize(raw).replace(/\b(?:giay\s*)?c\s*300\s*la\s*(?:gi|j)\b/g,'c300 la gi').replace(/\b([ac])\s+(\d{1,3})\b/g,'$1$2').replace(/\bkt(?=a[45]\b)/g,'kich thuoc ').replace(/\b(?:kt|k t|kthuoc|kth)\b/g,'kich thuoc').replace(/\bbn\b/g,'bao nhieu').replace(/\bla j\b/g,'la gi');
+      // Basic references cannot bypass input guards or absorb a price/order request.
+      if (/[<>]|javascript\s*:|system\s*:|developer\s*:|ignore.*(instruction|rule)|bo qua.*(quy tac|huong dan|tat ca)|doi.*(quy tac|chinh sach)|api\s*key|prompt|hack|script/i.test(text+' '+raw)) return null;
+      if (hasAny(text,['gia','bao gia','bang gia','tien','tinh tong','tong cong','vat','thue','giam gia','chiet khau','mien phi','free','zalo','lien he','thoi tiet','bitcoin','viet code','lap trinh','y te'])) return null;
+      const reference=text=>response('faq',text,{compactText:text,basicInformation:true,informationScope:'common-reference-not-price-condition'});
+      const sizeQuestion=hasAny(text,['kich thuoc','kho giay','kho','size','may cm','may mm']);
+      const explicitQuestion=/\?/.test(raw)||hasAny(text,['bao nhieu','la gi','la j','the nao','nhu nao','nhu the nao']);
+      if (!explicitQuestion && /\b\d+\s*(?:hop|cuon|quyen|cai|con|to|tam|tem|tag|bo|tui|thiep)\b/.test(text)) return null;
+      const formats=[...new Set([...text.matchAll(/\b(a[45])\b/g)].map(m=>m[1]))];
+      const namedEnvelope=hasAny(text,['bao thu','bi thu','phong bi','envelope']);
+      if (formats.length===1 && (sizeQuestion||explicitQuestion) && !/^a[45]$/.test(text) && (!namedEnvelope||contains(text,'kho giay'))) {
+        const dimensions={a4:'21 × 29,7',a5:'14,8 × 21'};
+        return reference('Dạ, khổ '+formats[0].toUpperCase()+' có kích thước '+dimensions[formats[0]]+' cm ạ.');
+      }
+      const card=hasAny(text,['danh thiep','card visit','name card','namecard','card']);
+      const customCard=hasAny(text,['kho rieng','kich thuoc rieng','kho lon','loai lon','mau lon','lon hon','to hon','ngoai kho','tuy chinh','custom','theo yeu cau']);
+      const cardSizeAlias=hasAny(text,['lon bao nhieu','to co nao'])&&!/\b\d+\s*(?:hop|cuon|quyen|cai|con|to|tam|tem|tag|bo|tui|thiep|k|dong|vnd|nghin|ngan|trieu)\b/.test(text)&&!raw.includes('₫');
+      if(card&&(sizeQuestion||cardSizeAlias)&&!customCard&&formats.length===0&&!contains(text,'vinh phat')&&!/\d+(?:[.,]\d+)?\s*[x×]\s*\d/i.test(raw)&&matchingProducts(normalize(raw),data).length<=1) {
+        const ref=data.cardPrintingInformation?.standardSizeReference;
+        const result=reference('Dạ, kích thước danh thiếp thông dụng là 9 × 5,4 cm ạ.');
+        return ref?{...result,sources:[{label:'Xem chi tiết',url:ref.sourceUrl}]}:result;
+      }
+      if(/\bc300\b/.test(text)&&hasAny(text,['la gi','giay gi','loai gi','loai giay gi','dinh luong','bao nhieu gsm'])) {
+        const info=data.cardPrintingInformation?.digital;
+        if(info?.material==='c300'&&websiteSource(info.sourceUrl))return {...reference('Dạ, C300 là giấy Couche có định lượng 300 g/m² ạ.'),sources:[{label:'Xem chi tiết',url:info.sourceUrl}]};
+      }
+      return null;
+    }
     function informationField(text,raw) {
       if(hasAny(text,['thoi gian','bao lau','khi nao','may ngay','mat may ngay']))return 'leadTime';
       const question=/\?/.test(raw)||hasAny(text,['bao nhieu','the nao','nhu nao','nhu the nao','la gi','giay gi','giay nao','loai nao','loai giay nao','loai giay gi','chat lieu gi','chat lieu nao','kich thuoc nao','kho nao','co can mang khong','can mang gi','can mang nao','may mat','so mat','in 1 mat khong','in 2 mat khong','in mot mat khong','in hai mat khong','gui file gi','can file gi','dinh dang file','file dinh dang']);
@@ -391,6 +435,8 @@
     }
     function sessionAnswer(input, options) {
       const raw = String(input || '').trim();
+      const basic=basicInformation(raw);
+      if(basic)return basic;
       // Compact Vietnamese replies and thousands separators remain deterministic.
       const text = normalize(raw.replace(/×/g, 'x').replace(/(\d)[.,](?=\d{3}(?:\D|$))/g, '$1').replace(/([a-zA-ZÀ-ỹ]{2,})(\d)/g, '$1 $2')).replace(/\b(\d{2,3})\s*gsm\b/g, '$1');
       const base = answer(raw, data, time());
@@ -573,5 +619,5 @@
     }
     return Object.freeze({answer:sessionAnswer, reset});
   }
-  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText,OWNER_TIER_POLICY,CARD_PRINTING_POLICY,INFORMATION_FIELDS});
+  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText,displayLink,DISPLAY_LINKS,OWNER_TIER_POLICY,CARD_PRINTING_POLICY,INFORMATION_FIELDS});
 })(typeof window !== 'undefined' ? window : globalThis);

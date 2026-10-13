@@ -13,7 +13,7 @@
     "thanh-an",
     "vinh-phat"
   ],
-  "verifiedAtUtc": "2026-10-13T07:35:47Z",
+  "verifiedAtUtc": "2026-10-13T08:22:13Z",
   "products": [
     {
       "productId": "namecard-c300",
@@ -86,13 +86,20 @@
               "text": "Dạ, bạn có thể tham khảo file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG nên từ 300 ppi ạ.",
               "provider": "vinh-phat",
               "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
-              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "verifiedAtUtc": "2026-10-13T08:22:13Z",
               "scope": "common-reference",
               "conditions": [
                 "Yêu cầu file tham khảo bổ sung; nhà in cần kiểm tra lại file cho mẫu và cách in bạn chọn."
               ],
               "evidence": [
-                "300 Pixels/Inch."
+                "phần mềm in ấn: AI,",
+                "AI, Corel,",
+                "Corel, PDF,",
+                "PDF, Photoshop,",
+                "File ảnh PNG,",
+                "PNG, JPG,",
+                "tối thiểu từ 300 Pixels/Inch.",
+                "kiểm tra kích thước, hệ màu thiết kế và chất lượng file in."
               ]
             }
           ]
@@ -1330,13 +1337,20 @@
               "text": "Dạ, bạn có thể chuẩn bị file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG cần từ 300 ppi ạ.",
               "provider": "vinh-phat",
               "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
-              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "verifiedAtUtc": "2026-10-13T08:22:13Z",
               "scope": "product",
               "conditions": [
                 "Nhà in cần kiểm tra khổ, hệ màu và chất lượng file trước khi in."
               ],
               "evidence": [
-                "300 Pixels/Inch."
+                "phần mềm in ấn: AI,",
+                "AI, Corel,",
+                "Corel, PDF,",
+                "PDF, Photoshop,",
+                "File ảnh PNG,",
+                "PNG, JPG,",
+                "tối thiểu từ 300 Pixels/Inch.",
+                "kiểm tra kích thước, hệ màu thiết kế và chất lượng file in."
               ]
             }
           ]
@@ -2414,13 +2428,20 @@
               "text": "Dạ, bạn có thể tham khảo file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG nên từ 300 ppi ạ.",
               "provider": "vinh-phat",
               "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
-              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "verifiedAtUtc": "2026-10-13T08:22:13Z",
               "scope": "common-reference",
               "conditions": [
                 "Yêu cầu file tham khảo bổ sung; nhà in cần kiểm tra lại file cho mẫu và cách in bạn chọn."
               ],
               "evidence": [
-                "300 Pixels/Inch."
+                "phần mềm in ấn: AI,",
+                "AI, Corel,",
+                "Corel, PDF,",
+                "PDF, Photoshop,",
+                "File ảnh PNG,",
+                "PNG, JPG,",
+                "tối thiểu từ 300 Pixels/Inch.",
+                "kiểm tra kích thước, hệ màu thiết kế và chất lượng file in."
               ]
             }
           ]

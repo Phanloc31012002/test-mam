@@ -1,6 +1,6 @@
 # Bố cục khung Mầm — 13/10/2026
 
-Widget/build đã có giao diện bên dưới. Node đạt 814/814; mock đạt 101/101 ở desktop và mobile; native/widget đạt 112/112. Deployment cuối được ghi trong bằng chứng bàn giao. Không thiết kế lại trang Thanh Ấn, không sửa WordPress hoặc SEO.
+Widget/build đã có giao diện bên dưới. Mã cuối đạt 945/945 Node. Trước đợt đổi backlink, mock đạt 101/101 ở desktop và mobile; native/widget đạt 112/112. Harness cuối dự kiến 122 ca mock (desktop/mobile) và 134 ca native; chưa chạy lại vì kết nối trình duyệt bị ngắt. Deployment cuối được ghi trong bằng chứng bàn giao. Không thiết kế lại trang Thanh Ấn, không sửa WordPress hoặc SEO.
 
 ## Một vùng nội dung đang hiển thị
 
@@ -14,7 +14,7 @@ Panel chỉ hiển thị chat **hoặc** phần phụ trợ bảng giá/quyền 
 - Escape từ phần phụ trợ quay về chat; Escape tiếp ở chat đóng panel và trả focus về launcher. Nút × vẫn đóng panel.
 - Làm mới ở header xóa phiên/đồng ý theo handler hiện có và trả focus về ô nhập.
 
-Nguồn của phản hồi không phải báo giá nằm trong mục thu gọn. Điều kiện/nguồn của báo giá vẫn mở riêng khi cần. Không lặp một khối Zalo lớn bên cạnh nội dung đã hướng dẫn liên hệ; lối đi tới liên hệ vẫn có và chỉ mở link khi khách bấm.
+Nguồn của phản hồi chỉ hiện bằng link nhỏ “Xem chi tiết” trực tiếp; không có khối hoặc accordion “Thông tin nguồn”. Điều kiện báo giá vẫn mở riêng khi cần. Màn chọn sản phẩm/quy cách/bảng giá có mục Tư vấn qua Zalo với ba link trực tiếp; các lựa chọn trong chat có nút Tư vấn qua Zalo mở danh sách tư vấn. Website chưa có đủ mọi quy cách và mức giá; link chỉ mở khi khách bấm.
 
 ## Điều khiển hiểu câu hỏi
 
@@ -28,7 +28,7 @@ Local tiếp tục xử lý trước, rồi bộ nhớ cụm từ đã duyệt, 
 
 Đợt này bổ sung ba dòng offset 2/5/10 hộp và chính sách chủ cơ sở từ 10 hộp là 16.000 ₫/hộp; dữ liệu 193 dòng trước giữ nguyên. Không tự chọn quy cách còn thiếu. Câu hỏi thông tin ưu tiên trước báo giá và giữ ngữ cảnh số lượng. Mascot, sprite và lịch hoạt động không đổi; tên gọi điều khiển mới không biến Mầm thành trợ lý AI tổng quát.
 
-Bong bóng `.ta-message-typing` chỉ hiện cho yêu cầu bất đồng bộ thật. Nó có nền xám và ba `.ta-typing-dot`; nhãn cho trình đọc màn hình được ẩn bằng `.ta-sr-only`. Không hiện chữ đang tra trong trạng thái chung. Reduced motion tắt nhún chấm. Hoàn tất/lỗi/timeout/làm mới/đóng/destroy bỏ bong bóng và kết quả muộn bị chặn.
+Bong bóng `.ta-message-typing` hiện trước mọi phản hồi trong ít nhất 320 ms, kể cả FAQ local, báo giá và lựa chọn. Tra cứu chạy song song, giữ chấm đến khi xong và không cộng thêm 320 ms sau tra cứu. Nó có nền xám và ba `.ta-typing-dot`; nhãn cho trình đọc màn hình được ẩn bằng `.ta-sr-only`. Không hiện chữ đang tra trong trạng thái chung. Reduced motion tắt nhún chấm. Hoàn tất/lỗi/timeout/làm mới/đóng/destroy bỏ bong bóng và kết quả muộn bị chặn.
 
 Build mặc định được đổi để chỉ tạo demo độc lập/public runtime, không sao chép assets WordPress. Cờ `--wordpress-assets` dành cho công việc riêng đã được cho phép chuẩn bị assets plugin; không chạy cờ này trong đợt sửa UI. Plugin cũ giữ nguyên, mặc định tắt và chưa cài/kích hoạt website. Source widget mới không đồng nghĩa plugin đã nhận UI mới.
 
@@ -38,10 +38,16 @@ npm run build
 
 Lệnh trên tạo `demo-standalone.html` và `public/`, không vào nhánh sao chép WordPress. Chỉ công việc riêng đã cho phép mới dùng `node tools/build.mjs --wordpress-assets`. Build không tự cài plugin, sửa website/SEO hoặc triển khai Vercel.
 
-Selector cho QA: `.ta-content` chứa `.ta-log` và `.ta-aux-view`; aux có `data-view="prices"`, `"privacy"` hoặc `"contacts"`, nút `.ta-view-back`, nội dung `.ta-aux-body`. Nguồn không phải quote dùng `.ta-source-details`. Đồng ý vẫn qua checkbox `.ta-ai-consent`; nút thông tin có `aria-controls` tới aux và `aria-expanded` theo trạng thái.
+Selector cho QA: `.ta-content` chứa `.ta-log` và `.ta-aux-view`; aux có `data-view="prices"`, `"privacy"` hoặc `"contacts"`, nút `.ta-view-back`, nội dung `.ta-aux-body`. Nguồn dùng `.ta-source-links` / `.ta-source` trực tiếp, nhãn Xem chi tiết; không có source accordion. Đồng ý vẫn qua checkbox `.ta-ai-consent`; nút thông tin có `aria-controls` tới aux và `aria-expanded` theo trạng thái.
 
 ## Điều kiện nghiệm thu
 
-Đối chiếu code cuối và kiểm tra desktop/mobile trước khi ghi kết quả: chỉ một vùng cuộn hiển thị; bảng/quyền riêng tư/back/Escape; focus/clear/close; input ở màn hình thấp; không tràn ngang; checkbox/đồng ý không đổi; nguồn thu gọn; không khối Zalo trùng; dữ liệu/mascot/seeds và assets WordPress giữ nguyên. Các report 693/75/107 của bản trước không chứng nhận bố cục mới.
+Đối chiếu code cuối và kiểm tra desktop/mobile trước khi ghi kết quả: chỉ một vùng cuộn hiển thị; bảng/quyền riêng tư/back/Escape; focus/clear/close; input ở màn hình thấp; không tràn ngang; checkbox/đồng ý không đổi; nguồn chỉ link trực tiếp; lựa chọn có lối tư vấn Zalo; dữ liệu/mascot/seeds và assets WordPress giữ nguyên. Các report 693/75/107 của bản trước không chứng nhận bố cục mới.
 
-Root đã chạy build, kiểm thử browser và kiểm tra thủ công bản độc lập ở 390×844. Lời trả lời kích thước C300 ngắn 9 × 5,4 cm, nguồn/điều kiện thu gọn, ngữ cảnh 5 hộp được giữ. Báo cáo mới không sử dụng lại số QA cũ.
+Bản UI trước đã chạy browser và kiểm tra thủ công bản độc lập ở 390×844. Các ảnh consult/information lưu trong evidence là ảnh của bản đó. Sau các sửa đổi cuối (kéo, FAQ cơ bản, trình bày 320 ms, nguồn link trực tiếp và CTA tư vấn), kết nối điều khiển trình duyệt bị ngắt; harness đã cập nhật nhưng chưa chạy lại. Kiểm thử Node hiện tại và đối chiếu asset/API công khai được ghi riêng, không xem số browser cũ là nghiệm thu các sửa đổi cuối.
+
+## Kéo và FAQ cơ bản
+
+Kéo bằng Mầm hoặc header sẽ di chuyển cả nhóm, ngưỡng 6 px và giới hạn theo viewport; input/link/nút khác giữ thao tác thường, nút ↔ đặt lại vị trí. Resize/visual viewport được reclamp; không lưu vị trí.
+
+A4/A5, kích thước danh thiếp thông dụng và C300 trả lời local trước khi hỏi quy cách báo giá, không gọi nguồn/API và giữ ngữ cảnh đã chọn. Biến thể sản phẩm cụ thể, kích thước tùy chỉnh và xung đột vẫn cần xác nhận; FAQ không tự áp vào bảng giá.

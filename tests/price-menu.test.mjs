@@ -16,6 +16,20 @@ const baselineBytes=fs.readFileSync(new URL('../docs/published-price-baseline-20
 const baselineData=JSON.parse(baselineBytes.toString('utf8'));
 const originalFactIds=new Set(baselineData.products.flatMap(p=>p.priceFacts||[]).map(f=>f.id));
 const originalFacts=facts.filter(f=>originalFactIds.has(f.id)).map(f=>f.originalSourceRecord||f);
+const DISPLAY_LINK_FIXTURE=Object.freeze({
+  'https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/':'https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re',
+  'https://invinhphat.com/san-pham/in-name-card-gia-re/':'https://innhanhtphcm.com/san-pham/dia-chi-in-combo-10-hop-card',
+  'https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/':'https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re',
+  'https://invinhphat.com/san-pham/in-catalouge/':'https://innhanhtphcm.com/san-pham/in-catalogue-gia-re-lay-lien-tai-tphcm',
+  'https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/':'https://innhanhtphcm.com/san-pham/in-to-roi-lay-ngay',
+  'https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/':'https://innhanhtphcm.com/san-pham/in-bao-thu-a5-in-nhanh-gia-re',
+  'https://invinhphat.com/san-pham/phieu-thu-cac-loai/':'https://innhanhtphcm.com/san-pham/in-bien-nhan-gia-re',
+  'https://invinhphat.com/san-pham/in-tui-giay-gia-re/':'https://innhanhtphcm.com/san-pham/in-tui-giay-uy-tin',
+  'https://invinhphat.com/san-pham/in-folder-kep-file/':'https://innhanhtphcm.com/san-pham/in-bia-kep-ho-so-tphcm',
+  'https://invinhphat.com/san-pham/in-tag-treo-the-bai/':'https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay'
+});
+const visibleSources=urls=>[...new Set(urls.map(raw=>DISPLAY_LINK_FIXTURE[raw]||raw))];
+const all196FactsHash='c90340dd41b2aea6565129e92194da055fef279d73e9100175733703da1e8a9f';
 
 class Element {
   constructor(tag,doc){this.tagName=tag.toUpperCase();this.ownerDocument=doc;this.children=[];this.attributes={};this.dataset={};this.listeners={};this._text='';}
@@ -96,7 +110,7 @@ test('DOM category → variant → full table has all 21 rows and a bold Zalo fo
   const rows=descendants(table,e=>e.tagName==='TR'&&e.dataset.factId);
   assert.equal(rows.length,21);assert.deepEqual(rows.map(r=>r.dataset.factId),variants(catalog()).find(v=>v.id==='table-catalogue-a4-12-200').rows.map(f=>f.id));
   assert.match(view.element.textContent,/8% GTGT/);assert.match(view.element.textContent,/chưa xác định rõ đã gồm bìa/);
-  const foot=byClass(view.element,'ta-price-footer')[0];assert.equal(foot.children[0].tagName,'STRONG');assert.equal(foot.children[0].textContent,'Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.');
+  const foot=byClass(view.element,'ta-price-footer')[0];const notice=byClass(foot,'ta-price-consult-notice')[0];assert.equal(notice.tagName,'STRONG');assert.equal(notice.textContent,'Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.');
   assert.deepEqual(byClass(view.element,'ta-price-zalo').map(a=>a.href),data.contacts.map(c=>c.zalo));
   assert.ok(byClass(view.element,'ta-price-zalo').every(a=>a.target==='_blank'&&a.rel==='noopener noreferrer'));
   byClass(view.element,'ta-price-back')[0].click();assert.equal(view.getState().screen,'variants');
@@ -174,11 +188,11 @@ test('supplemental variants keep all current prices while visible labels hide so
   }
   assert.equal(variants(catalog()).flatMap(v=>v.rows).length,facts.length);assert.equal(JSON.stringify(data),before);view.destroy();
 });
-test('generic source link labels retain exact original URLs and source conditions',()=>{
+test('remapped source links use generic reference labels while price and source conditions stay unchanged',()=>{
   const view=build();view.showVariant('table-namecard-vp-2');
   const variant=variants(catalog()).find(v=>v.id==='table-namecard-vp-2');
-  assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),variant.sourceUrls);
-  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem bảng giá gốc'));
+  assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),visibleSources(variant.sourceUrls));
+  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem chi tiết'));
   assert.match(view.element.textContent,/120\.000 ₫/);assert.match(view.element.textContent,/Tổng gói \/ đơn theo bảng/);
   assert.match(view.element.textContent,/100 tấm\/hộp/);assert.match(view.element.textContent,/10% VAT/);
   assert.equal(variant.provider,'vinh-phat');assert.equal(variant.rows.find(f=>f.quantity===5).priceVnd,120000);view.destroy();
@@ -271,7 +285,7 @@ test('earring tag table combines owner prices with the verified printing recipe 
     assert.ok(table.rows.every(f=>JSON.stringify(f.secondarySourceUrls)===JSON.stringify([verifiedUrl])));
     view.showVariant(table.id);assert.ok(byClass(view.element,'ta-price-table')[0].textContent.includes('Giá mỗi cái'));
     assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[verifiedUrl]);
-    assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem trang sản phẩm tham chiếu'));
+    assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem chi tiết'));
     assert.match(byClass(view.element,'ta-price-date')[0].textContent,/Trang sản phẩm bên dưới là nguồn tham chiếu/);
     assert.ok(byClass(view.element,'ta-price-zalo').length===3);
   }
@@ -283,10 +297,10 @@ test('owner price metadata identifies owner approval and original URL only as a 
   assert.match(view.element.textContent,/Giá do chủ nhà in xác nhận ngày 13\/10\/2026/);
   assert.match(view.element.textContent,/Trang sản phẩm bên dưới là nguồn tham chiếu/);
   assert.doesNotMatch(byClass(view.element,'ta-price-intro')[0].textContent,/đã công bố/);
-  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem trang sản phẩm tham chiếu'));
-  assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),table.sourceUrls);
+  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem chi tiết'));
+  assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),visibleSources(table.sourceUrls));
   assert.doesNotMatch(view.element.textContent,/Vĩnh\s*Phát|vinh[\s-]*phat|invinhphat\.com/i);
-  const foot=byClass(view.element,'ta-price-footer')[0];assert.equal(foot.children[0].tagName,'STRONG');view.destroy();
+  const foot=byClass(view.element,'ta-price-footer')[0];assert.equal(byClass(foot,'ta-price-consult-notice')[0].tagName,'STRONG');view.destroy();
 });
 
 test('owner-amended prices are hidden before the business owner approval date',()=>{
@@ -345,7 +359,7 @@ test('new offset table shows its October 13 source date and exact safe source li
     'https://innhanhtphcm.com/san-pham/in-card-visit-offset',
     'https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re'
   ]);
-  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem bảng giá gốc'&&a.target==='_blank'&&a.rel==='noopener noreferrer'));
+  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem chi tiết'&&a.target==='_blank'&&a.rel==='noopener noreferrer'));
   assert.match(view.element.textContent,/chưa gồm VAT 8% và chi phí thiết kế/);
   assert.doesNotMatch(view.element.textContent,/thiết kế miễn phí|miễn phí thiết kế|giao trong \d|cán màng miễn phí/i);
   assert.equal(byClass(view.element,'ta-price-totals').length,0);view.destroy();
@@ -364,4 +378,69 @@ test('all existing 193 product records remain byte-for-byte equivalent after add
   assert.equal(originalProducts.length,22);
   assert.equal(originalProducts.flatMap(p=>p.priceFacts||[]).length,193);
   assert.equal(createHash('sha256').update(JSON.stringify(originalProducts)).digest('hex'),'77d3d1db78174e9145663f1cd11e03f9fe477c1c04bba10d31d4ae7c018bfb7e');
+});
+
+test('all ten approved display links render exact targets while all 196 raw fact objects stay unchanged',()=>{
+  const before=JSON.stringify(data),view=build();assert.equal(Object.keys(DISPLAY_LINK_FIXTURE).length,10);
+  for(const [raw,target] of Object.entries(DISPLAY_LINK_FIXTURE)){
+    const matching=variants(catalog()).filter(v=>v.sourceUrls.includes(raw));assert.ok(matching.length,raw);
+    for(const variant of matching){
+      view.showVariant(variant.id);
+      const links=byClass(view.element,'ta-price-source');assert.ok(links.some(a=>a.href===target),raw);
+      assert.ok(variant.sourceUrls.includes(raw),raw);assert.ok(!links.some(a=>a.href===raw),raw);
+      assert.ok(links.filter(a=>a.href===target).every(a=>a.textContent==='Xem chi tiết'));
+      assert.deepEqual(links.map(a=>a.href),visibleSources(variant.sourceUrls));
+    }
+  }
+  assert.equal(JSON.stringify(data),before);
+  const afterFacts=data.products.flatMap(p=>p.priceFacts||[]).sort((a,b)=>a.id.localeCompare(b.id));assert.equal(afterFacts.length,196);
+  assert.equal(createHash('sha256').update(JSON.stringify(afterFacts)).digest('hex'),all196FactsHash);view.destroy();
+});
+
+test('unmapped A5, paper decal and earring backlinks stay exact instead of borrowing an ordinary tag page',()=>{
+  const view=build();
+  for(const [id,url] of [
+    ['estimate-catalogue-a5-all-c150-12-1000-estimate','https://invinhphat.com/san-pham/in-catalogue-a5/'],
+    ['table-vp-decal-9x5.5-1000','https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/'],
+    ['table-owner-earring-tag-50x40-1000','https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/']
+  ]){
+    view.showVariant(id);assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[url]);
+  }
+  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.href!=='https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay'));view.destroy();
+});
+
+test('only displayed duplicate destinations merge while original source URLs remain separate',()=>{
+  const d=structuredClone(data),p=d.products.find(p=>p.id==='paper-bag-vp'),target='https://innhanhtphcm.com/san-pham/in-tui-giay-uy-tin';
+  for(const f of p.priceFacts)f.secondarySourceUrls=[target];
+  const model=menu.buildCatalog(d,fresh),variant=variants(model).find(v=>v.id==='table-vp-bag-20x14x6-300');
+  assert.deepEqual(variant.sourceUrls,['https://invinhphat.com/san-pham/in-tui-giay-gia-re/',target]);
+  const before=JSON.stringify(d),view=build({data:d});view.showVariant(variant.id);
+  assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[target]);assert.equal(JSON.stringify(d),before);view.destroy();
+});
+
+test('product, specification and table screens each provide one clear consultation section with three exact Zalo links',()=>{
+  const view=build();
+  for(const navigate of [()=>view.showCategories(),()=>view.showCategory('catalogue'),()=>view.showVariant('table-catalogue-a4-12-200')]){
+    navigate();const sections=byClass(view.element,'ta-price-footer');assert.equal(sections.length,1);
+    const section=sections[0];assert.equal(byClass(section,'ta-price-consult-title')[0].textContent,'Tư vấn qua Zalo');
+    assert.match(byClass(section,'ta-price-consult-note')[0].textContent,/Website chưa có đủ giá và quy cách/);
+    const notice=byClass(section,'ta-price-consult-notice')[0];assert.equal(notice.tagName,'STRONG');assert.match(notice.textContent,/quy cách bạn cần.*Zalo/);
+    const links=byClass(section,'ta-price-zalo');assert.deepEqual(links.map(a=>a.href),['https://zalo.me/0898739868','https://zalo.me/0898113688','https://zalo.me/0934559479']);
+    assert.deepEqual(links.map(a=>a.textContent),data.contacts.map(c=>c.name+' · Zalo'));
+    assert.ok(links.every(a=>a.target==='_blank'&&a.rel==='noopener noreferrer'&&a.referrerPolicy==='no-referrer'));
+  }
+  view.destroy();
+});
+
+test('source navigation is only a short detail link while mappings and original price provenance remain unchanged',()=>{
+  const before=JSON.stringify(data),view=build();
+  for(const variant of variants(catalog())){
+    view.showVariant(variant.id);
+    const links=byClass(view.element,'ta-price-source');assert.ok(links.every(a=>a.tagName==='A'&&a.textContent==='Xem chi tiết'));
+    assert.deepEqual(links.map(a=>a.href),visibleSources(variant.sourceUrls));
+    assert.doesNotMatch(view.element.textContent,/Thông tin nguồn|Xem trang sản phẩm tham chiếu|Xem bảng giá gốc/);
+    assert.equal(byClass(view.element,'ta-price-footer').length,1);
+  }
+  assert.equal(JSON.stringify(data),before);
+  assert.equal(createHash('sha256').update(JSON.stringify(data.products.flatMap(p=>p.priceFacts||[]).sort((a,b)=>a.id.localeCompare(b.id)))).digest('hex'),all196FactsHash);view.destroy();
 });

@@ -42,7 +42,7 @@ export const SOURCE_URLS = Object.freeze([
 ]);
 export const INFO_LIMITS = Object.freeze({
   timeoutMs:4000,cacheMs:90000,cacheEntries:32,pageBytes:1048576,pageChunks:2048,
-  visibleCharacters:262144,tagCharacters:4096,htmlDepth:128,
+  visibleCharacters:262144,tagCharacters:32768,htmlDepth:128,
   outputCharacters:2000,requestsPerMinute:30,concurrent:2
 });
 const DEFAULT_ORIGIN='https://test-mam.vercel.app';
@@ -114,7 +114,7 @@ export function visiblePageText(html){
       const end=html.indexOf('-->',opening+4);if(end<0)throw Error('Incomplete comment');position=end+3;continue;
     }
     let end=opening+1,quote='';
-    while(end<html.length){const character=html[end];if(quote){if(character===quote)quote='';}else if(character==='"'||character==="'")quote=character;else if(character==='>')break;if(end-opening>INFO_LIMITS.tagCharacters)throw Error('Oversized HTML tag');end++;}
+    while(end<html.length){if(end-opening+1>INFO_LIMITS.tagCharacters)throw Error('Oversized HTML tag');const character=html[end];if(quote){if(character===quote)quote='';}else if(character==='"'||character==="'")quote=character;else if(character==='>')break;end++;}
     if(end>=html.length)throw Error('Incomplete HTML tag');
     const tag=html.slice(opening+1,end),match=tag.match(/^\s*(\/?)\s*([a-z][a-z\d:-]*)\b/iu);position=end+1;
     if(!match)continue;
