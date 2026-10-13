@@ -6,11 +6,15 @@ import crypto from 'node:crypto';
 const root=new URL('../',import.meta.url);
 const data=JSON.parse(fs.readFileSync(new URL('widget/data.json',root),'utf8'));
 const revision=JSON.parse(fs.readFileSync(new URL('docs/owner-price-revision-20261013.json',root),'utf8'));
+const cardSource=JSON.parse(fs.readFileSync(new URL('docs/card-printing-source-20261013.json',root),'utf8'));
+const cardInformationSource=JSON.parse(fs.readFileSync(new URL('docs/card-information-source-20261013.json',root),'utf8'));
 const backupBytes=fs.readFileSync(new URL('docs/published-price-baseline-20261012.json',root));
 const baseline=JSON.parse(backupBytes);
 const sha='408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99';
 const facts=d=>d.products.flatMap(p=>(p.priceFacts||[]).map(f=>({productId:p.id,fact:f})));
 const currentFacts=facts(data),baseFacts=facts(baseline);
+const prior193Products=data.products.filter(p=>p.id!=='namecard-offset-ta');
+const prior193Facts=facts({products:prior193Products});
 const sourceMap=new Map(baseFacts.map(x=>[x.fact.id,x]));
 const allMap=new Map(currentFacts.map(x=>[x.fact.id,x]));
 const ownerFacts=currentFacts.filter(x=>x.fact.ownerPriceRevision);
@@ -23,9 +27,22 @@ test('Immutable historical baseline has exact 177-fact SHA and existing metadata
   assert.equal(baseFacts.length,177);assert.equal(data.snapshotDate,baseline.snapshotDate);assert.equal(data.verifiedAtUtc,baseline.verifiedAtUtc);assert.equal(data.snapshotLabel,baseline.snapshotLabel);
   assert.equal(data.ownerPriceRevision.baselineSha256,sha);assert.equal(data.ownerPriceRevision.historicalWebsiteSnapshotDate,'2026-10-12');
 });
-test('Complete local revision has 193 unique facts with 46 amendments and 16 new rows',()=>{
-  assert.equal(currentFacts.length,193);assert.equal(allMap.size,193);assert.equal(originalOwnerFacts.length,46);assert.equal(addedOwnerFacts.length,16);assert.equal(ownerFacts.length,62);
+test('Additive supplement has 196 unique facts while the owner revision retains its 193 rows and 62 owner facts',()=>{
+  assert.equal(currentFacts.length,196);assert.equal(allMap.size,196);assert.equal(data.products.length,23);assert.equal(prior193Facts.length,193);assert.equal(originalOwnerFacts.length,46);assert.equal(addedOwnerFacts.length,16);assert.equal(ownerFacts.length,62);
   assert.equal(revision.currentPriceFactCount,193);assert.deepEqual(revision.pendingCells,[]);assert.equal(data.ownerPriceRevision.approvedAllCells,true);
+});
+test('All prior 193 product records stay exact and the 177 published facts reconstruct independently of new packages',()=>{
+  const expected='77d3d1db78174e9145663f1cd11e03f9fe477c1c04bba10d31d4ae7c018bfb7e';assert.equal(crypto.createHash('sha256').update(JSON.stringify(prior193Products)).digest('hex'),expected);assert.equal(cardSource.existing193RecordsSha256,expected);
+  const reconstructed=prior193Facts.filter(x=>!x.fact.ownerPriceRevision?.isNewRecord&&!x.fact.ownerPriceRevision?.isNewTier).map(x=>({productId:x.productId,fact:x.fact.originalSourceRecord||x.fact}));assert.deepEqual(reconstructed,baseFacts);assert.equal(reconstructed.length,177);
+});
+test('Official TA offset supplement records exact source chronology separately from the historical and owner dates',()=>{
+  const update=data.cardPrintingSourceUpdate;assert.equal(update.productId,'namecard-offset-ta');assert.equal(update.sourceSnapshotDate,'2026-10-13');assert.equal(update.verifiedAtUtc,'2026-10-13T06:47:00Z');assert.deepEqual(update.sourceUrls,['https://innhanhtphcm.com/san-pham/in-card-visit-offset','https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re']);assert.deepEqual(update.addedFactIds,['ta-namecard-offset-2','ta-namecard-offset-5','ta-namecard-offset-10']);assert.equal(data.snapshotDate,'2026-10-12');assert.equal(data.ownerPriceRevision.approvedOn,'2026-10-13');assert.equal(data.ownerPriceRevision.currentPriceFactCount,193);assert.equal(cardSource.currentFactCount,196);assert.equal(cardSource.existingFactsChanged,false);
+});
+test('Card information separates a common size reference from price conditions and preserves every product record',()=>{
+  const information=data.cardPrintingInformation;assert.deepEqual(information.digital,{material:'c300',printing:'digital',sourceUrl:'https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re',verifiedAtUtc:'2026-10-13T07:16:01Z'});assert.deepEqual(information.standardSizeReference,{size:'90x54',dimensionsUnit:'mm',scope:'common-reference-not-price-condition',sourceUrl:'https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re',verifiedAtUtc:'2026-10-13T07:16:01Z'});assert.deepEqual(information,cardInformationSource.cardPrintingInformation);assert.equal(crypto.createHash('sha256').update(JSON.stringify(data.products)).digest('hex'),'d5c390a39b9bc3c1bb0197229d5333a7d37d2b481bd5fede0326395d78157e14');assert.equal(cardInformationSource.all196ProductRecordsSha256,'d5c390a39b9bc3c1bb0197229d5333a7d37d2b481bd5fede0326395d78157e14');assert.equal(cardInformationSource.priceAndRecipeBoundaries.quoteSizeSlotMayBeFilledFromCommonReference,false);assert.equal(cardInformationSource.priceAndRecipeBoundaries.noProductionOrDeliveryTimeFactsAdded,true);for(const key of ['size','sides','finishing','cardsPerBox','productionTime','deliveryTime'])assert.ok(!Object.hasOwn(information.digital,key));assert.equal(product('namecard-c300').specifications.size,null);assert.ok(product('namecard-offset-ta').priceFacts.every(f=>!Object.hasOwn(f.specs,'size')&&!Object.hasOwn(f.specs,'material')&&!Object.hasOwn(f.specs,'finishing')));
+});
+for(const [quantity,total] of [[2,90000],[5,120000],[10,160000]])test(`TA offset source total ${quantity} boxes is ${total} VND with no invented per-box unit or recipe`,()=>{
+  const f=allMap.get(`ta-namecard-offset-${quantity}`).fact;assert.equal(f.priceKind,'source_total');assert.equal(f.priceBasis,'source-total');assert.equal(f.quantity,quantity);assert.equal(f.quantityUnit,'hộp');assert.equal(f.unit,`gói ${quantity} hộp / ${quantity*100} tấm`);assert.equal(f.priceVnd,total);assert.equal(f.sourceTotalVnd,total);assert.deepEqual(f.specs,{printing:'offset',cardsPerBox:100});assert.equal(f.provider,'thanh-an');assert.equal(f.sourceUrl,data.cardPrintingSourceUpdate.sourceUrls[0]);assert.equal(f.verifiedAtUtc,data.cardPrintingSourceUpdate.verifiedAtUtc);assert.equal(f.sourceSnapshotDate,data.cardPrintingSourceUpdate.sourceSnapshotDate);assert.ok(!f.ownerPriceRevision);assert.ok(!f.originalSourceRecord);assert.equal(f.rawSourceFlags.vatExcluded,true);assert.equal(f.rawSourceFlags.vatRatePercent,8);assert.equal(f.rawSourceFlags.designExcluded,true);for(const key of ['material','size','sides','finishing'])assert.ok(!Object.hasOwn(f.specs,key));
 });
 test('Owner provenance records both businesses without pretending the website was updated',()=>{
   assert.equal(data.ownerPriceRevision.revisionId,'owner-price-revision-2026-10-13');assert.equal(data.ownerPriceRevision.kind,'business-owner-price-update');assert.equal(data.ownerPriceRevision.approvedOn,'2026-10-13');assert.deepEqual(data.ownerPriceRevision.appliesToProviders,['thanh-an','vinh-phat']);assert.equal(data.ownerPriceRevision.websitePublicationVerified,false);
@@ -90,7 +107,7 @@ test('Verified earring secondary source adds C300 and offset two sides while lam
   for(const f of p.priceFacts){assert.equal(f.sourceUrl,null);assert.equal(f.verifiedAtUtc,null);assert.deepEqual(f.secondarySourceUrls,[url]);assert.equal(f.rawSourceFlags.ownerRecipeIncomplete,true);assert.equal(f.rawSourceFlags.websiteSourceUnverified,true);assert.equal(f.rawSourceFlags.laminationAmbiguous,true);assert.deepEqual(f.rawSourceFlags.missingConditions,p.missingConditions);assert.equal(f.specs.material,'c300');assert.equal(f.specs.sides,2);assert.equal(f.specs.printing,'offset-multicolor');assert.ok(!Object.hasOwn(f.specs,'finishing'));assert.ok(!Object.hasOwn(f.specs,'lamination'));assert.deepEqual(f.specs.shapesAllowed,['ellipse','round','flower','heart']);assert.equal(f.specs.holeCountAllowed,'one-or-many');assert.deepEqual(f.specs.holeDiameterRangeMm,[1,5]);const e=f.sourceOwnerRecipe.currentWebsiteEvidence;assert.equal(e.url,url);assert.equal(e.readAtUtc,revision.currentWebsiteEvidence.readAtUtc);assert.match(e.readAtUtc,/^2026-10-13T/);assert.deepEqual(e.verifiedFields,{material:'c300',sides:2,printing:'offset-multicolor'});assert.equal(e.laminationInPriceUnspecified,true);assert.deepEqual(e.availableLaminationOptions,['matte','none']);assert.equal(e.publishedSourceTotalsVnd[f.id],f.quantity*f.priceVnd);assert.deepEqual(f.sourceOwnerRecipe.unresolvedFields,['laminationChoice','laminationIncludedInPrice']);for(const key of ['vatRatePercent','vatExcluded','designExcluded','designIncluded'])assert.ok(!Object.hasOwn(f.rawSourceFlags,key));}
 });
 test('Metadata refinement preserves every price, total, unit, primary source and owner approval across all 193 facts',()=>{
-  const fields=data.products.flatMap(p=>(p.priceFacts||[]).map(f=>({id:f.id,priceVnd:f.priceVnd,sourceTotalVnd:f.sourceTotalVnd,quantity:f.quantity,quantityUnit:f.quantityUnit,unit:f.unit,priceKind:f.priceKind,priceBasis:f.priceBasis,sourceUrl:f.sourceUrl,verifiedAtUtc:f.verifiedAtUtc,ownerPriceRevision:f.ownerPriceRevision})));
+  const fields=prior193Products.flatMap(p=>(p.priceFacts||[]).map(f=>({id:f.id,priceVnd:f.priceVnd,sourceTotalVnd:f.sourceTotalVnd,quantity:f.quantity,quantityUnit:f.quantityUnit,unit:f.unit,priceKind:f.priceKind,priceBasis:f.priceBasis,sourceUrl:f.sourceUrl,verifiedAtUtc:f.verifiedAtUtc,ownerPriceRevision:f.ownerPriceRevision})));
   const expected='37f040218fa97365900ebd993906095f7820a7728740ae8cdb297f0982e25de0';assert.equal(crypto.createHash('sha256').update(JSON.stringify(fields)).digest('hex'),expected);assert.equal(revision.metadataRefinement.unchanged193PriceAndPrimarySourceFingerprintSha256,expected);
 });
 test('All approved owner unit-price tier groups are non-increasing with quantity',()=>{

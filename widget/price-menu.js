@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   const CATEGORY_DEFINITIONS = [
-    ['namecard', 'Danh thiếp', ['namecard-c300', 'namecard-vp', 'namecard-digital-vp']],
+    ['namecard', 'Danh thiếp', ['namecard-c300', 'namecard-offset-ta', 'namecard-vp', 'namecard-digital-vp']],
     ['catalogue', 'Catalogue', ['catalogue']],
     ['decal', 'Tem nhãn & decal', ['decal-paper', 'decal-plastic', 'decal-paper-vp']],
     ['flyer', 'Tờ rơi & tờ gấp', ['flyer', 'flyer-vp']],
@@ -105,10 +105,13 @@
         let variant = tables.get(key);
         if (!variant) {
           variant = {id:'table-' + fact.id, categoryId:id, kind:'table', label:variantLabel(id, product, fact), provider:fact.provider,
-            sourceUrl:fact.sourceUrl, productId:product.id, rows:[], missingConditions:[], sourceUrls:[], sourceNotes:[]};
+            sourceUrl:fact.sourceUrl, sourceSnapshotDate:fact.sourceSnapshotDate || product.sourceSnapshotDate || data.snapshotDate,
+            productId:product.id, rows:[], missingConditions:[], sourceUrls:[], sourceNotes:[], fresh};
           tables.set(key, variant); variants.push(variant);
         }
         variant.rows.push(fact);
+        const verifiedAt = Date.parse(fact.verifiedAtUtc || product.verifiedAtUtc);
+        if (Number.isFinite(verifiedAt) && now < verifiedAt) variant.fresh = false;
         for (const url of [fact.sourceUrl, ...(fact.secondarySourceUrls || [])]) if (safeSource(url) && !variant.sourceUrls.includes(url)) variant.sourceUrls.push(url);
         if (!variant.sourceNotes.includes(fact.sourceNote)) variant.sourceNotes.push(fact.sourceNote);
         for (const condition of fact.rawSourceFlags?.missingConditions || []) if (!variant.missingConditions.includes(condition)) variant.missingConditions.push(condition);
@@ -178,7 +181,7 @@
     }
     function metadata(variant) {
       if (variant.ownerUpdated) make('p','ta-price-date','Giá do chủ nhà in xác nhận ngày 13/10/2026.' + (variant.sourceUrls.some(safeSource) ? ' Trang sản phẩm bên dưới là nguồn tham chiếu.' : ''),element);
-      else make('p','ta-price-date','Nguồn: '+providerName(variant.provider)+' · Dữ liệu website ngày '+catalog.snapshotLabel+'. Cần nhà in xác nhận đơn thực tế.',element);
+      else make('p','ta-price-date','Nguồn: '+providerName(variant.provider)+' · Dữ liệu website ngày '+(variant.sourceSnapshotDate ? variant.sourceSnapshotDate.split('-').reverse().join('/') : catalog.snapshotLabel)+'. Cần nhà in xác nhận đơn thực tế.',element);
       sourceLinks(element,variant.sourceUrls,variant.ownerUpdated);
     }
     function showCategories(options = {}) {
@@ -188,7 +191,7 @@
       for(const category of catalog.categories) {
         const b=action(category.name,'ta-price-category',list,()=>showCategory(category.id));b.dataset.categoryId=category.id;
       }
-      make('p','ta-price-note',catalog.ownerPriceRevision ? 'Các bảng được cập nhật theo giá chủ nhà in xác nhận ngày 13/10/2026; những bảng khác giữ dữ liệu website ngày '+catalog.snapshotLabel+'.' : 'Giá là dữ liệu website ngày '+catalog.snapshotLabel+'. Ưu tiên bảng Thanh Ấn cho đúng quy cách; giá tham khảo bổ sung các phương án còn thiếu và cần tư vấn viên xác nhận.',element);
+      make('p','ta-price-note',catalog.ownerPriceRevision ? 'Các bảng được cập nhật theo giá chủ nhà in xác nhận ngày 13/10/2026. Ngày nguồn website được ghi riêng ở từng bảng.' : 'Giá là dữ liệu website ngày '+catalog.snapshotLabel+'. Ưu tiên bảng Thanh Ấn cho đúng quy cách; giá tham khảo bổ sung các phương án còn thiếu và cần tư vấn viên xác nhận.',element);
     }
     function showCategory(id) {
       if(destroyed)return;refresh();const category=catalog.categories.find(c=>c.id===id);if(!category)return;
@@ -241,7 +244,7 @@
       state={screen:'table',categoryId:category.id,variantId:id};
       header(variant.label,variant.kind==='table' ? variant.ownerUpdated ? 'Bảng giá chủ nhà in xác nhận cho quy cách này' : variant.referenceOnly ? 'Bảng tham khảo từ website · Điều kiện cần xác nhận' : 'Bảng giá đã công bố cho đúng phương án này' : 'Thông tin nguồn cần tư vấn xác nhận',()=>showCategory(category.id),true);
       metadata(variant);
-      if(!catalog.fresh)make('p','ta-price-warning','Snapshot đã đến hạn kiểm tra hoặc chưa thể dùng ở thời điểm này. Mầm tạm ngừng hiển thị giá; hãy nhắn Zalo để xác nhận.',element);
+      if(!catalog.fresh || variant.fresh === false)make('p','ta-price-warning','Snapshot đã đến hạn kiểm tra hoặc chưa thể dùng ở thời điểm này. Mầm tạm ngừng hiển thị giá; hãy nhắn Zalo để xác nhận.',element);
       else if(variant.kind==='table')renderTable(variant);
       else if(variant.kind==='estimate') {
         make('p','ta-price-warning','Chỉ là ước tính tham khảo, không phải bảng giá cố định. Không áp dụng cho số lượng hoặc quy cách khác.',element);

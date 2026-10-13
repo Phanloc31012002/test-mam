@@ -1,0 +1,2431 @@
+{
+  "schemaVersion": 1,
+  "fieldNames": [
+    "size",
+    "material",
+    "sides",
+    "lamination",
+    "finishing",
+    "leadTime",
+    "fileRequirements"
+  ],
+  "sourcePriority": [
+    "thanh-an",
+    "vinh-phat"
+  ],
+  "verifiedAtUtc": "2026-10-13T07:35:47Z",
+  "products": [
+    {
+      "productId": "namecard-c300",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-c300-size-49",
+              "field": "size",
+              "text": "Dạ, kích thước danh thiếp thông dụng là 9 × 5,4 cm ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re",
+              "verifiedAtUtc": "2026-10-13T07:16:01Z",
+              "scope": "common-reference",
+              "conditions": [
+                "Thông tin tham khảo, không tự gắn vào quy cách hay giá của đơn đang trao đổi."
+              ],
+              "evidence": [
+                "90 × 54 mm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-namecard-c300-material-50",
+              "field": "material",
+              "text": "Dạ, danh thiếp này dùng giấy Couche 300gsm, thường gọi là C300 ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re",
+              "verifiedAtUtc": "2026-10-13T07:35:47Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "giấy Couche",
+                "300 gsm"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "leadTime": {
+          "status": "conflict",
+          "facts": [],
+          "reason": "Dạ, thời gian chưa thống nhất; bạn nhắn Zalo để xác nhận lịch theo đơn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-c300-fileRequirements-96",
+              "field": "fileRequirements",
+              "text": "Dạ, bạn có thể tham khảo file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG nên từ 300 ppi ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "common-reference",
+              "conditions": [
+                "Yêu cầu file tham khảo bổ sung; nhà in cần kiểm tra lại file cho mẫu và cách in bạn chọn."
+              ],
+              "evidence": [
+                "300 Pixels/Inch."
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "productId": "decal-paper",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-decal-paper-size-98",
+              "field": "size",
+              "text": "Dạ, có thể tham khảo các khổ decal giấy 9 × 5,5 cm, 10 × 15 cm hoặc 21 × 29,7 cm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Các khổ này là tham khảo bổ sung; khổ của đơn đang trao đổi cần xác nhận riêng."
+              ],
+              "evidence": [
+                "9×5.5cm",
+                "10 x 15cm",
+                "21 x 29.7cm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-decal-paper-material-53",
+              "field": "material",
+              "text": "Dạ, decal giấy có lớp mặt AL bóng hoặc AL thường để chọn ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-decal-giay-re-dep",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Cần chọn loại giấy cụ thể; không tự áp cho mọi loại decal."
+              ],
+              "evidence": [
+                "AL bóng",
+                "AL thường"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-decal-paper-finishing-54",
+              "field": "finishing",
+              "text": "Dạ, decal có thể bế thành phẩm theo hình bạn cần ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-decal-giay-re-dep",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Bế thành phẩm"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "decal-plastic",
+      "fields": {
+        "size": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-decal-plastic-material-55",
+              "field": "material",
+              "text": "Dạ, nhóm sản phẩm này là decal nhựa bóng ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-decal-nhua",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "IN DECAL NHỰA BÓNG"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-decal-plastic-finishing-56",
+              "field": "finishing",
+              "text": "Dạ, decal có thể bế thành phẩm theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-decal-nhua",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Bế thành phẩm"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "flyer",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-size-57",
+              "field": "size",
+              "text": "Dạ, nhóm A4 ghi 21 × 29 cm, A5 ghi 14,5 × 21 cm; khổ khác cần chọn riêng ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-to-roi-to-gap",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Giữ khổ thành phẩm đúng mẫu đã chọn, không tự đổi sang số đo khổ giấy khác."
+              ],
+              "evidence": [
+                "21 X 29cm",
+                "14.5 x 21cm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-material-58",
+              "field": "material",
+              "text": "Dạ, tờ rơi có giấy Couche C100, C150 hoặc C200 để chọn ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-to-roi-to-gap",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Định lượng khác cần xác nhận theo mẫu."
+              ],
+              "evidence": [
+                "C100",
+                "C150",
+                "C200"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-sides-59",
+              "field": "sides",
+              "text": "Dạ, bạn có thể chọn in 1 mặt hoặc 2 mặt ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-to-roi-to-gap",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "in 1 mặt hoặc 2 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-finishing-60",
+              "field": "finishing",
+              "text": "Dạ, tờ rơi có thể cắt, cấn hoặc bế theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-to-roi-to-gap",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Cắt, cấn, bế"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-leadTime-61",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho tờ rơi khoảng 1 ngày ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-to-roi-to-gap",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "1 ngày có hàng"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "catalogue",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-catalogue-size-62",
+              "field": "size",
+              "text": "Dạ, nhóm catalogue offset này có khổ A4 ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Chỉ nhóm A4 offset; khổ hoặc cách in khác cần xác nhận."
+              ],
+              "evidence": [
+                "KÍCH THƯỚC A4"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-catalogue-material-63",
+              "field": "material",
+              "text": "Dạ, nhóm catalogue A4 offset dùng bìa C300 và ruột C150 ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Không áp thông tin này cho mọi catalogue hoặc nhóm in kỹ thuật số."
+              ],
+              "evidence": [
+                "BÌA C300",
+                "RUỘT C150"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-catalogue-lamination-64",
+              "field": "lamination",
+              "text": "Dạ, nhóm catalogue A4 offset có cán màng mặt ngoài bìa; loại màng cần chọn riêng ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Cần xác nhận màng mờ hay bóng theo mẫu; không tự chọn."
+              ],
+              "evidence": [
+                "CÁN MÀNG NGOÀI"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-catalogue-finishing-65",
+              "field": "finishing",
+              "text": "Dạ, nhóm catalogue A4 offset này đóng kim ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Cách đóng gáy khác cần xác nhận riêng."
+              ],
+              "evidence": [
+                "ĐÓNG KIM"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-catalogue-leadTime-66",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho nhóm catalogue này khoảng 2–3 ngày ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-catalogue-so-luong-it",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "2 – 3 ngày có hàng"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "kraft-bag",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-kraft-bag-size-67",
+              "field": "size",
+              "text": "Dạ, túi Kraft làm theo kích thước bạn cần ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/thanh-an-in-tui-giay-kraft",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Cần chốt đủ bộ kích thước của túi."
+              ],
+              "evidence": [
+                "Kích thước",
+                "Theo yêu cầu."
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-kraft-bag-material-68",
+              "field": "material",
+              "text": "Dạ, túi dùng giấy Kraft, độ dày chọn theo nhu cầu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/thanh-an-in-tui-giay-kraft",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Định lượng cụ thể cần xác nhận."
+              ],
+              "evidence": [
+                "Giấy Kraft độ dày theo yêu cầu."
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-kraft-bag-sides-69",
+              "field": "sides",
+              "text": "Dạ, mẫu túi Kraft này in 1 mặt ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/thanh-an-in-tui-giay-kraft",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Mẫu hai mặt cần xác nhận riêng."
+              ],
+              "evidence": [
+                "In 1 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-kraft-bag-finishing-70",
+              "field": "finishing",
+              "text": "Dạ, túi có thể bế, dán và xỏ dây quai theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/thanh-an-in-tui-giay-kraft",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Bế, dán thành phẩm",
+                "xỏ dây quai."
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-kraft-bag-leadTime-71",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho túi Kraft khoảng 3–5 ngày ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/thanh-an-in-tui-giay-kraft",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "3 – 5 ngày."
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "paper-box",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-box-size-72",
+              "field": "size",
+              "text": "Dạ, hộp giấy làm theo kích thước sản phẩm của bạn ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-hop-giay-tphcm",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Cần chốt mẫu hộp và đủ kích thước."
+              ],
+              "evidence": [
+                "Kích thước",
+                "Theo yêu cầu."
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-box-material-73",
+              "field": "material",
+              "text": "Dạ, hộp có thể dùng Couche, Ivory, Duplex, Kraft hoặc giấy mỹ thuật ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-hop-giay-tphcm",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Cần chọn loại giấy và định lượng theo mẫu hộp."
+              ],
+              "evidence": [
+                "Couches, Ivory, Duplex, Kraft"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-box-sides-74",
+              "field": "sides",
+              "text": "Dạ, quy cách hộp được nêu là in 1 mặt ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-hop-giay-tphcm",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Mẫu hoặc cách in khác cần xác nhận."
+              ],
+              "evidence": [
+                "In 1 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-box-lamination-75",
+              "field": "lamination",
+              "text": "Dạ, hộp có thể cán mặt ngoài bằng màng mờ hoặc bóng ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-hop-giay-tphcm",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "màng mờ hoặc màng bóng theo yêu cầu"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-box-finishing-76",
+              "field": "finishing",
+              "text": "Dạ, hộp được bế và dán thành phẩm theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-hop-giay-tphcm",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Bế, dán thành phẩm"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-box-leadTime-77",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho hộp giấy khoảng 3 ngày ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-hop-giay-tphcm",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "3 ngày."
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "envelope-a5",
+      "fields": {
+        "size": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-envelope-a5-size-94",
+              "field": "size",
+              "text": "Dạ, nhóm bao thư A5 này có kích thước 17 × 23 cm ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-thu-a5-in-nhanh-gia-re",
+              "verifiedAtUtc": "2026-10-13T07:35:47Z",
+              "scope": "variant",
+              "conditions": [
+                "Chỉ nhóm A5; không lấy khổ A6 12 × 22 cm cho sản phẩm này."
+              ],
+              "evidence": [
+                "BAO THƯ A5 17X23 CM"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-envelope-a5-material-95",
+              "field": "material",
+              "text": "Dạ, nhóm bao thư A5 trong bảng dùng giấy F120gsm ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-thu-a5-in-nhanh-gia-re",
+              "verifiedAtUtc": "2026-10-13T07:35:47Z",
+              "scope": "variant",
+              "conditions": [
+                "Phạm vi nhóm bảng F120; giấy khác cần xác nhận riêng."
+              ],
+              "evidence": [
+                "Giấy F120GSM"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "red-envelope",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-red-envelope-size-78",
+              "field": "size",
+              "text": "Dạ, bao lớn có 16 × 7,4 cm với nắp 2 cm; bao nhỏ có 10 × 7,4 cm với nắp 2 cm ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Cần chọn bao lớn hoặc bao nhỏ đúng mẫu."
+              ],
+              "evidence": [
+                "16 x 7.4cm, nắp 2cm",
+                "10 x 7.4, nắp 2cm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-red-envelope-material-79",
+              "field": "material",
+              "text": "Dạ, nhóm bao lì xì trong bảng dùng giấy Couche 150gsm ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Kraft hoặc giấy mỹ thuật là lựa chọn khác, cần xác nhận riêng."
+              ],
+              "evidence": [
+                "Coucher 150gsm"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-red-envelope-lamination-80",
+              "field": "lamination",
+              "text": "Dạ, bạn có thể chọn cán màng bóng hoặc mờ cho bao lì xì ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Cán màng bóng/mờ"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-red-envelope-finishing-81",
+              "field": "finishing",
+              "text": "Dạ, bao lì xì có thể bế, dán hoặc ép kim theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Bế dán",
+                "Ép kim"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-red-envelope-leadTime-82",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho bao lì xì khoảng 3–4 ngày ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-bao-li-xi",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "3 – 4 Ngày có hàng"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "menu-paper",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-menu-paper-size-83",
+              "field": "size",
+              "text": "Dạ, menu có thể làm khổ A4, A5 hoặc kích thước riêng ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-menu-giay",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Khổ thành phẩm cần chốt theo mẫu menu."
+              ],
+              "evidence": [
+                "A4 (21×29.7cm)",
+                "A5 (14.8x21cm)"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-menu-paper-material-84",
+              "field": "material",
+              "text": "Dạ, nhóm menu này dùng giấy Couche, thường chọn 200–300gsm ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-menu-giay",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Định lượng cụ thể cần chọn theo mẫu."
+              ],
+              "evidence": [
+                "Giấy Couche",
+                "200gsm – 300gsm"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-menu-paper-lamination-85",
+              "field": "lamination",
+              "text": "Dạ, menu có thể cán màng bóng hoặc mờ ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-menu-giay",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "cán màng bóng",
+                "cán màng mờ"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-menu-paper-finishing-86",
+              "field": "finishing",
+              "text": "Dạ, nhóm menu này có thể đóng cuốn lò xo ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-menu-giay",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Kiểu lò xo, cạnh đóng và số trang cần chọn theo mẫu."
+              ],
+              "evidence": [
+                "Đóng cuốn lò xo"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "receipt",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-receipt-size-87",
+              "field": "size",
+              "text": "Dạ, phiếu thu có khổ A6, A5, A4 hoặc 10 × 20 cm để chọn ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-phieu-thu-2-lien-tai-phuong-cho-lon-q5",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Chọn đúng khổ biểu mẫu, không tự đổi sang khổ khác."
+              ],
+              "evidence": [
+                "10x20cm",
+                "A6, A5, A4"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-receipt-material-88",
+              "field": "material",
+              "text": "Dạ, phiếu một liên dùng Fort; phiếu nhiều liên dùng Carbonless theo số liên đã chọn ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-phieu-thu-2-lien-tai-phuong-cho-lon-q5",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Không gộp giấy Fort với Carbonless; cần chọn đúng số liên."
+              ],
+              "evidence": [
+                "Giấy Fort",
+                "Giấy carbonless 2 liên"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-receipt-sides-89",
+              "field": "sides",
+              "text": "Dạ, quy cách phiếu thu này in 1 mặt ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-phieu-thu-2-lien-tai-phuong-cho-lon-q5",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "variant",
+              "conditions": [
+                "Cần xác nhận nếu mẫu yêu cầu in mặt khác."
+              ],
+              "evidence": [
+                "1 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-receipt-finishing-90",
+              "field": "finishing",
+              "text": "Dạ, phiếu thu có thể cấn răng cưa và đóng cuốn; số nhảy cần chọn riêng ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-phieu-thu-2-lien-tai-phuong-cho-lon-q5",
+              "verifiedAtUtc": "2026-10-13T07:30:34Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "Cấn răng cưa, đóng cuốn",
+                "Đóng số nhảy"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "wedding",
+      "fields": {
+        "size": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-wedding-material-91",
+              "field": "material",
+              "text": "Dạ, thiệp cưới có thể chọn giấy mỹ thuật, Couche hoặc Kraft theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-thiep-cuoi-gia-re-tai-thanh-an",
+              "verifiedAtUtc": "2026-10-13T07:35:47Z",
+              "scope": "product",
+              "conditions": [
+                "Chưa chọn giấy và định lượng cho một mẫu thiệp cụ thể.",
+                "Thông tin lựa chọn trên trang; không tự gắn vào một dòng giá."
+              ],
+              "evidence": [
+                "giấy mỹ thuật, giấy couche, giấy kraft"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-wedding-lamination-92",
+              "field": "lamination",
+              "text": "Dạ, thiệp cưới có thể chọn cán màng; loại màng cần xác nhận theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-thiep-cuoi-gia-re-tai-thanh-an",
+              "verifiedAtUtc": "2026-10-13T07:35:47Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "cán màng"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-wedding-finishing-93",
+              "field": "finishing",
+              "text": "Dạ, thiệp cưới có thể ép kim, bo góc hoặc bế hình theo mẫu ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-thiep-cuoi-gia-re-tai-thanh-an",
+              "verifiedAtUtc": "2026-10-13T07:35:47Z",
+              "scope": "product",
+              "conditions": [
+                "Bạn cần chọn đúng quy cách; thông tin này chưa xác nhận phần gia công đã nằm trong giá."
+              ],
+              "evidence": [
+                "ép kim",
+                "bo góc, bế hình"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "namecard-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-vp-size-1",
+              "field": "size",
+              "text": "Dạ, danh thiếp theo quy cách này có khổ 9 × 5,4 cm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "90 x 54 mm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-namecard-vp-material-2",
+              "field": "material",
+              "text": "Dạ, danh thiếp này dùng giấy Couche 300gsm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "Giấy Couche 300gsm"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-vp-sides-3",
+              "field": "sides",
+              "text": "Dạ, bạn có thể chọn in offset 1 mặt hoặc 2 mặt ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "1 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-vp-lamination-4",
+              "field": "lamination",
+              "text": "Dạ, bạn có thể chọn cán màng hoặc không cán màng ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Lựa chọn cán màng và việc đã gồm trong dòng giá phải được xác nhận riêng."
+              ],
+              "evidence": [
+                "theo yêu cầu"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-namecard-vp-finishing-5",
+              "field": "finishing",
+              "text": "Dạ, có thể cắt, cấn, bế theo mẫu và đóng hộp nhựa ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "vô hộp nhựa"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conflict",
+          "facts": [],
+          "reason": "Dạ, thời gian chưa thống nhất; bạn nhắn Zalo để xác nhận lịch giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-vp-fileRequirements-6",
+              "field": "fileRequirements",
+              "text": "Dạ, bạn có thể chuẩn bị file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG cần từ 300 ppi ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Nhà in cần kiểm tra khổ, hệ màu và chất lượng file trước khi in."
+              ],
+              "evidence": [
+                "300 Pixels/Inch."
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "productId": "namecard-digital-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-digital-vp-size-7",
+              "field": "size",
+              "text": "Dạ, khổ danh thiếp thông dụng là 9 × 5,4 cm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "common-reference",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "90 x 54 mm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-namecard-digital-vp-material-8",
+              "field": "material",
+              "text": "Dạ, có giấy Briston 300/350gsm, Fort, Kraft, giấy gân và giấy mỹ thuật để chọn ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "Briston 300gsm, 350gsm"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-digital-vp-sides-9",
+              "field": "sides",
+              "text": "Dạ, bạn có thể chọn in 1 mặt hoặc 2 mặt ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "1 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-digital-vp-lamination-10",
+              "field": "lamination",
+              "text": "Dạ, nhóm Briston 300/350 có cán màng; nhóm Fort, Kraft, giấy gân và mỹ thuật không cán, theo quy cách đã chọn ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Phải chọn đúng dòng giấy; không dùng lựa chọn của dòng khác."
+              ],
+              "evidence": [
+                "CÁN MÀNG",
+                "Giấy Briston 300gsm",
+                "Giấy Briston 350gsm"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-digital-vp-leadTime-11",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo khoảng 1–2 giờ; lịch thực tế cần xác nhận theo đơn ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/cong-ty-in-danh-thiep-nhanh-gia-re-tphcm/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "1 – 2 giờ"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "decal-paper-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-decal-paper-vp-size-12",
+              "field": "size",
+              "text": "Dạ, có các khổ tham khảo 9 × 5,5 cm, 10 × 15 cm và 21 × 29,7 cm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Giữ đúng kích thước của từng nhóm; không đổi sang kích thước A6 chuẩn."
+              ],
+              "evidence": [
+                "9×5.5cm",
+                "10 x 15cm",
+                "21 x 29.7cm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-decal-paper-vp-material-13",
+              "field": "material",
+              "text": "Dạ, decal giấy có lớp keo ở mặt sau ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "Decal giấy",
+                "lớp keo ở mặt sau"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-decal-paper-vp-finishing-14",
+              "field": "finishing",
+              "text": "Dạ, nhóm decal trong bảng được cắt thành phẩm hình chữ nhật ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Quy cách cắt/bế khác cần tư vấn riêng."
+              ],
+              "evidence": [
+                "Cắt thành phẩm HCN"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-decal-paper-vp-leadTime-15",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho nhóm decal này khoảng 2–3 ngày ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "2 – 3 Ngày"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "flyer-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-vp-size-16",
+              "field": "size",
+              "text": "Dạ, có A3, A4, A5, A6, 10 × 20 cm và 20 × 20 cm; nhóm A4 ghi 21 × 29 cm, A5 ghi 14,5 × 21 cm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Dùng khổ ghi trên nguồn, không tự thay bằng kích thước chuẩn khác."
+              ],
+              "evidence": [
+                "A3, A4, A5, A6",
+                "21 X 29cm",
+                "14.5 x 21cm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-vp-material-17",
+              "field": "material",
+              "text": "Dạ, có giấy Couche 80–300gsm; nhóm bảng tách C100, C150 và C200 ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "80gsm – 300gsm"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-vp-sides-18",
+              "field": "sides",
+              "text": "Dạ, bạn có thể chọn in 1 mặt hoặc 2 mặt ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "1 mặt hoặc 2 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-vp-finishing-19",
+              "field": "finishing",
+              "text": "Dạ, có thể cắt, cấn hoặc bế theo mẫu ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Không khẳng định gia công đã gồm trong giá."
+              ],
+              "evidence": [
+                "Cắt, cấn, bế"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-flyer-vp-leadTime-20",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho tờ rơi khoảng 1 ngày ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-to-roi-to-gap-brochure-leaflets-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "1 ngày"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "envelope-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-envelope-vp-size-21",
+              "field": "size",
+              "text": "Dạ, các khổ bao thư thông dụng được nêu là 12 × 22 cm, 18 × 25 cm và 25 × 35 cm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "common-reference",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "12×22 cm, 18×25 cm, 25×35 cm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-envelope-vp-material-22",
+              "field": "material",
+              "text": "Dạ, có giấy Fort 80–120gsm và một lựa chọn được ghi tên Graft ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Không tự sửa tên giấy thành một loại khác."
+              ],
+              "evidence": [
+                "Fort 80 – 120gsm",
+                "Graft"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-envelope-vp-sides-23",
+              "field": "sides",
+              "text": "Dạ, quy cách bao thư này in 1 mặt ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "In 1 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-envelope-vp-finishing-24",
+              "field": "finishing",
+              "text": "Dạ, có thể làm keo nắp, cửa sổ và bế bao thư theo mẫu ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Cửa sổ và quy cách khác phải xác nhận theo mẫu."
+              ],
+              "evidence": [
+                "keo nấp, cửa sổ kính",
+                "Bế thành phẩm"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-envelope-vp-leadTime-25",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho bao thư khoảng 2 ngày ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-bao-thu-bi-thu-phong-bi-gia-re-2/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "2 ngày"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "receipt-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-receipt-vp-size-26",
+              "field": "size",
+              "text": "Dạ, có khổ 10 × 20 cm, A6, A5, A4 hoặc khổ riêng theo mẫu ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/phieu-thu-cac-loai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thông tin quy cách, không tự gắn vào một dòng báo giá chưa chọn."
+              ],
+              "evidence": [
+                "10x20cm",
+                "A6, A5, A4"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-receipt-vp-material-27",
+              "field": "material",
+              "text": "Dạ, có giấy Fort và Carbonless 2 hoặc 3 liên; bạn cần chọn đúng loại ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/phieu-thu-cac-loai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Chọn đúng loại và số liên; không gộp các dòng."
+              ],
+              "evidence": [
+                "Giấy Fort",
+                "Giấy carbonless 2 liên"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-receipt-vp-sides-28",
+              "field": "sides",
+              "text": "Dạ, quy cách phiếu thu này in 1 mặt ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/phieu-thu-cac-loai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "1 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-receipt-vp-finishing-29",
+              "field": "finishing",
+              "text": "Dạ, có thể đóng cuốn bấm kim hoặc dán keo đầu, cấn răng cưa; số nhảy cần chọn riêng ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/phieu-thu-cac-loai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Các dòng bảng có cấn răng cưa; không suy số nhảy là đã gồm."
+              ],
+              "evidence": [
+                "Bấm kim hoặc dán keo đầu",
+                "Đóng số nhảy"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "paper-bag-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-bag-vp-size-30",
+              "field": "size",
+              "text": "Dạ, nhóm túi đứng có 20 × 14 × 6, 25 × 18 × 8, 31 × 21 × 10 và 37 × 27 × 10 cm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tui-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Chỉ áp dụng nhóm túi đứng trong bảng."
+              ],
+              "evidence": [
+                "20x14x6cm",
+                "25x18x8cm",
+                "31x21x10cm",
+                "37x27x10cm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-bag-vp-material-31",
+              "field": "material",
+              "text": "Dạ, nhóm túi đứng này dùng giấy C300gsm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tui-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Chỉ nhóm túi đứng C300; loại giấy khác cần xác nhận."
+              ],
+              "evidence": [
+                "GIẤY C300gsm"
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-bag-vp-sides-32",
+              "field": "sides",
+              "text": "Dạ, nhóm túi đứng này in 1 mặt ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tui-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Chỉ nhóm túi đứng trong bảng; mẫu khác cần xác nhận, không tự gắn vào điều kiện giá."
+              ],
+              "evidence": [
+                "IN 1 MẶT"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-bag-vp-lamination-33",
+              "field": "lamination",
+              "text": "Dạ, túi có cán màng; bạn cần chọn màng mờ hoặc bóng ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tui-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Loại màng mờ/bóng cần xác nhận."
+              ],
+              "evidence": [
+                "CÁN MÀNG",
+                "màng mờ hoặc màng bóng"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-bag-vp-finishing-34",
+              "field": "finishing",
+              "text": "Dạ, nhóm túi này dùng dây dù thường, bế và dán thành phẩm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tui-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Không tự khẳng định ép kim hoặc mắt ngỗng đã gồm trong bảng."
+              ],
+              "evidence": [
+                "DÂY DÙ THƯỜNG",
+                "Bế, dán"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-paper-bag-vp-leadTime-35",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho túi giấy khoảng 3 ngày ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tui-giay-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "3 ngày."
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "folder-vp",
+      "fields": {
+        "size": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "material": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-folder-vp-finishing-36",
+              "field": "finishing",
+              "text": "Dạ, nhóm folder này có tay gấp 7 cm; mẫu hai tay hoặc tay lớn cần chọn riêng ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-folder-kep-file/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Không dùng 7cm làm kích thước toàn tấm hoặc suy chất liệu."
+              ],
+              "evidence": [
+                "TAY GẤP07cm",
+                "Folder 2 tay gấp"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "tag-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-tag-vp-size-37",
+              "field": "size",
+              "text": "Dạ, nhóm tag vuông/chữ nhật có 50 × 30, 45 × 45, 90 × 27 và 90 × 54 mm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-the-bai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Các khổ khác không tự nhận điều kiện của bảng này."
+              ],
+              "evidence": [
+                "50 x 30mm",
+                "45 x 45mm",
+                "90 x 27mm",
+                "90 x 54mm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-tag-vp-material-38",
+              "field": "material",
+              "text": "Dạ, tag này dùng giấy Couche 300gsm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-the-bai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "Giấy Coucher 300gsm."
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-tag-vp-sides-39",
+              "field": "sides",
+              "text": "Dạ, tag này in offset 2 mặt, nhiều màu ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-the-bai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "In offset 2 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-tag-vp-lamination-40",
+              "field": "lamination",
+              "text": "Dạ, bạn có thể chọn cán màng mờ hoặc không cán ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-the-bai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Lựa chọn cán màng và việc đã gồm trong dòng giá phải được xác nhận riêng."
+              ],
+              "evidence": [
+                "Cán màng mờ"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-tag-vp-finishing-41",
+              "field": "finishing",
+              "text": "Dạ, nhóm tag vuông/chữ nhật có một lỗ tròn 3 mm; hình bế khác cần chọn riêng ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-the-bai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Hình khác cần tư vấn riêng; không gộp bảng hình chữ nhật với bế hình."
+              ],
+              "evidence": [
+                "3mm"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-tag-vp-leadTime-42",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho tag khoảng 2 ngày ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-the-bai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "2 Ngày"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "earring-tag-vp",
+      "fields": {
+        "size": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-earring-tag-vp-size-43",
+              "field": "size",
+              "text": "Dạ, nhóm tag bông tai bế hình có 50 × 40 mm hoặc 85 × 50 mm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Chỉ bảng bế hình; không gộp với bảng cắt vuông/chữ nhật cùng trang."
+              ],
+              "evidence": [
+                "50 x 40mm",
+                "85 x 50mm"
+              ]
+            }
+          ]
+        },
+        "material": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-earring-tag-vp-material-44",
+              "field": "material",
+              "text": "Dạ, tag bông tai này dùng giấy Couche 300gsm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "Giấy Coucher 300gsm."
+              ]
+            }
+          ]
+        },
+        "sides": {
+          "status": "verified",
+          "facts": [
+            {
+              "id": "info-earring-tag-vp-sides-45",
+              "field": "sides",
+              "text": "Dạ, tag bông tai này in offset 2 mặt, nhiều màu ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [],
+              "evidence": [
+                "In offset 2 mặt"
+              ]
+            }
+          ]
+        },
+        "lamination": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-earring-tag-vp-lamination-46",
+              "field": "lamination",
+              "text": "Dạ, bạn có thể chọn cán màng mờ hoặc không cán ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Lựa chọn cán màng và việc đã gồm trong dòng giá phải được xác nhận riêng."
+              ],
+              "evidence": [
+                "Cán màng mờ"
+              ]
+            }
+          ]
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-earring-tag-vp-finishing-47",
+              "field": "finishing",
+              "text": "Dạ, có thể bế elip, tròn, hoa hoặc tim, với một hay nhiều lỗ 1–5 mm ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "variant",
+              "conditions": [
+                "Phải chọn mẫu bế và số lỗ; không suy lựa chọn của khách."
+              ],
+              "evidence": [
+                "1 – 5mm tùy ý."
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-earring-tag-vp-leadTime-48",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho tag bông tai khoảng 2 ngày ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "product",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng."
+              ],
+              "evidence": [
+                "2 Ngày"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        }
+      }
+    },
+    {
+      "productId": "namecard-offset-ta",
+      "fields": {
+        "size": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "material": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "sides": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "lamination": {
+          "status": "unknown",
+          "facts": [],
+          "reason": "Dạ, thông tin này chưa được xác minh đầy đủ; bạn nhắn Zalo để tư vấn giúp mình nhé ạ."
+        },
+        "finishing": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-offset-ta-finishing-51",
+              "field": "finishing",
+              "text": "Dạ, nhóm danh thiếp offset này được đóng hộp nhựa ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-card-visit-offset",
+              "verifiedAtUtc": "2026-10-13T06:49:56Z",
+              "scope": "variant",
+              "conditions": [
+                "Theo nhóm gói offset; các gia công khác cần xác nhận riêng."
+              ],
+              "evidence": [
+                "VÔ HỘP NHỰA"
+              ]
+            }
+          ]
+        },
+        "leadTime": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-offset-ta-leadTime-52",
+              "field": "leadTime",
+              "text": "Dạ, thời gian tham khảo cho nhóm gói offset khoảng 1 ngày ạ.",
+              "provider": "thanh-an",
+              "sourceUrl": "https://innhanhtphcm.com/san-pham/in-card-visit-offset",
+              "verifiedAtUtc": "2026-10-13T06:49:56Z",
+              "scope": "variant",
+              "conditions": [
+                "Thời gian tham khảo, cần xác nhận sau khi kiểm tra file, số lượng và quy cách; không cam kết ngày nhận hàng.",
+                "Chỉ tham khảo nhóm gói offset; không hứa thời hạn cho số lượng hoặc quy cách khác."
+              ],
+              "evidence": [
+                "1 NGÀY"
+              ]
+            }
+          ]
+        },
+        "fileRequirements": {
+          "status": "conditional",
+          "facts": [
+            {
+              "id": "info-namecard-offset-ta-fileRequirements-97",
+              "field": "fileRequirements",
+              "text": "Dạ, bạn có thể tham khảo file AI, Corel, PDF hoặc Photoshop; ảnh PNG/JPG nên từ 300 ppi ạ.",
+              "provider": "vinh-phat",
+              "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+              "verifiedAtUtc": "2026-10-13T07:30:01Z",
+              "scope": "common-reference",
+              "conditions": [
+                "Yêu cầu file tham khảo bổ sung; nhà in cần kiểm tra lại file cho mẫu và cách in bạn chọn."
+              ],
+              "evidence": [
+                "300 Pixels/Inch."
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

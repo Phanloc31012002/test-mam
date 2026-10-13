@@ -11,10 +11,11 @@ const fresh=Date.parse('2026-10-13T12:00:00Z');
 const catalog=()=>menu.buildCatalog(data,fresh);
 const variants=model=>model.categories.flatMap(c=>c.variants);
 const facts=data.products.flatMap(p=>p.priceFacts||[]);
-const originalFacts=facts.filter(f=>!f.ownerPriceRevision?.isNewRecord&&!f.ownerPriceRevision?.isNewTier).map(f=>f.originalSourceRecord||f);
 const originalFactsHash='ce9c1fdc7c9088966e42dfd5fc7d9205ded5cfb21116c8eefe228676004a1ba5';
 const baselineBytes=fs.readFileSync(new URL('../docs/published-price-baseline-20261012.json',import.meta.url));
 const baselineData=JSON.parse(baselineBytes.toString('utf8'));
+const originalFactIds=new Set(baselineData.products.flatMap(p=>p.priceFacts||[]).map(f=>f.id));
+const originalFacts=facts.filter(f=>originalFactIds.has(f.id)).map(f=>f.originalSourceRecord||f);
 
 class Element {
   constructor(tag,doc){this.tagName=tag.toUpperCase();this.ownerDocument=doc;this.children=[];this.attributes={};this.dataset={};this.listeners={};this._text='';}
@@ -184,7 +185,7 @@ test('generic source link labels retain exact original URLs and source condition
 });
 
 test('all 177 historical source rows remain recoverable with their exact original content',()=>{
-  assert.equal(facts.length,193);
+  assert.equal(facts.length,196);
   assert.equal(createHash('sha256').update(baselineBytes).digest('hex'),'408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99');
   assert.equal(originalFacts.length,177);
   const hash=createHash('sha256').update(JSON.stringify(originalFacts.slice().sort((a,b)=>a.id.localeCompare(b.id)))).digest('hex');
@@ -314,4 +315,53 @@ test('same-source duplicate tiers with different prices or conditions are reject
     copy.id='same-source-conflict';copy.lookupQuery='Dòng trùng cùng nguồn cần xác nhận';change(copy);product.priceFacts.push(copy);
     assert.throws(()=>menu.buildCatalog(d,fresh),/trùng quy cách.*khác nhau/);
   }
+});
+
+test('new Thanh Ấn offset variant keeps three exact published package totals separate from digital prices',()=>{
+  const view=build();view.showCategory('namecard');
+  const selected=variants(catalog()).filter(v=>v.productId==='namecard-offset-ta');assert.equal(selected.length,1);
+  const table=selected[0];assert.equal(table.id,'table-ta-namecard-offset-2');
+  assert.equal(table.provider,'thanh-an');assert.equal(table.label,'In offset · 100 tấm/hộp');
+  assert.equal(table.sourceSnapshotDate,'2026-10-13');
+  assert.deepEqual(table.rows.map(f=>[f.quantity,f.priceVnd,f.sourceTotalVnd]),[[2,90000,90000],[5,120000,120000],[10,160000,160000]]);
+  assert.ok(table.rows.every(f=>f.priceKind==='source_total'&&f.quantityUnit==='hộp'&&f.specs.printing==='offset'&&f.specs.cardsPerBox===100));
+  assert.ok(table.rows.every(f=>f.specs.material===undefined&&f.specs.size===undefined&&f.specs.sides===undefined&&f.specs.variant===undefined));
+  const button=byClass(view.element,'ta-price-variant').find(b=>b.dataset.variantId===table.id);assert.ok(button);button.click();
+  const rows=descendants(byClass(view.element,'ta-price-table')[0],e=>e.tagName==='TR'&&e.dataset.factId);
+  assert.equal(rows.length,3);
+  assert.ok(rows.every(r=>r.textContent.includes('Tổng gói / đơn theo bảng')));
+  assert.doesNotMatch(byClass(view.element,'ta-price-table')[0].textContent,/Giá mỗi hộp|20 hộp|30 hộp/);
+  assert.doesNotMatch(table.label,/C300|90|54|cán màng/i);
+  assert.deepEqual(variants(catalog()).find(v=>v.id==='table-namecard-c300-1').rows.map(f=>[f.quantity,f.priceVnd]),[[1,90000],[5,80000],[10,70000]]);
+  assert.deepEqual(variants(catalog()).find(v=>v.id==='table-namecard-vp-2').rows.map(f=>[f.quantity,f.priceVnd]),[[2,90000],[5,120000],[10,160000]]);
+  view.destroy();
+});
+
+test('new offset table shows its October 13 source date and exact safe source links without extra promises',()=>{
+  const view=build();assert.match(byClass(view.element,'ta-price-note')[0].textContent,/Ngày nguồn website được ghi riêng ở từng bảng/);view.showVariant('table-ta-namecard-offset-2');
+  const date=byClass(view.element,'ta-price-date')[0].textContent;
+  assert.match(date,/Thanh Ấn.*13\/10\/2026/);assert.doesNotMatch(date,/12\/10\/2026/);
+  assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[
+    'https://innhanhtphcm.com/san-pham/in-card-visit-offset',
+    'https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re'
+  ]);
+  assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem bảng giá gốc'&&a.target==='_blank'&&a.rel==='noopener noreferrer'));
+  assert.match(view.element.textContent,/chưa gồm VAT 8% và chi phí thiết kế/);
+  assert.doesNotMatch(view.element.textContent,/thiết kế miễn phí|miễn phí thiết kế|giao trong \d|cán màng miễn phí/i);
+  assert.equal(byClass(view.element,'ta-price-totals').length,0);view.destroy();
+});
+
+test('supplemental offset verification time blocks only the new table before 06:47 UTC',()=>{
+  const view=build({now:()=>Date.parse('2026-10-13T06:46:59Z')});
+  view.showVariant('table-ta-namecard-offset-2');assert.equal(byClass(view.element,'ta-price-table').length,0);
+  assert.match(view.element.textContent,/tạm ngừng hiển thị giá/);
+  view.showVariant('table-namecard-c300-1');assert.equal(byClass(view.element,'ta-price-table').length,1);view.destroy();
+  const ready=build({now:()=>Date.parse('2026-10-13T06:47:00Z')});ready.showVariant('table-ta-namecard-offset-2');assert.equal(byClass(ready.element,'ta-price-table').length,1);ready.destroy();
+});
+
+test('all existing 193 product records remain byte-for-byte equivalent after adding the offset table',()=>{
+  const originalProducts=data.products.filter(p=>p.id!=='namecard-offset-ta');
+  assert.equal(originalProducts.length,22);
+  assert.equal(originalProducts.flatMap(p=>p.priceFacts||[]).length,193);
+  assert.equal(createHash('sha256').update(JSON.stringify(originalProducts)).digest('hex'),'77d3d1db78174e9145663f1cd11e03f9fe477c1c04bba10d31d4ae7c018bfb7e');
 });

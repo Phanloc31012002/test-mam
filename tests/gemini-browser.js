@@ -6,10 +6,14 @@ const metadata={version:1,enabled:true,privacyVersion:'google-free-v1'};
 const suggestion={version:1,kind:'suggestion',intent:'product',categoryId:'catalogue'};
 const unknown='zz_mock_gemini_unknown';
 const EARRING_SOURCE='https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/';
+const INFO_SOURCE='https://innhanhtphcm.com/san-pham/in-card-visit-offset';
+const INFO_TEXT='MOCK: Kích thước thông dụng là 90 × 54 mm; kích thước riêng cần xác nhận.';
 const fakeResponse=(value,status=200)=>({ok:status>=200&&status<300,text:async()=>JSON.stringify(value)});
 function rgb(value){const match=value.match(/^rgba?\(([^)]+)\)$/);if(!match)return null;const values=match[1].split(/[\s,\/]+/).filter(Boolean).map(Number);return {r:values[0]/255,g:values[1]/255,b:values[2]/255,a:values[3]??1};}
 function composite(top,bottom){const a=top.a+bottom.a*(1-top.a);return {r:(top.r*top.a+bottom.r*bottom.a*(1-top.a))/a,g:(top.g*top.a+bottom.g*bottom.a*(1-top.a))/a,b:(top.b*top.a+bottom.b*bottom.a*(1-top.a))/a,a};}
 function contrast(element){const chain=[];for(let node=element;node;node=node.parentElement)chain.push(node);let background={r:1,g:1,b:1,a:1};for(const node of chain.reverse()){const color=rgb(getComputedStyle(node).backgroundColor);if(color)background=composite(color,background);}const foreground=rgb(getComputedStyle(element).color);if(!foreground)return 0;const luminance=color=>[color.r,color.g,color.b].map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4).reduce((sum,c,i)=>sum+c*[.2126,.7152,.0722][i],0);const a=luminance(composite(foreground,background)),b=luminance(background);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);}
+function visibleContentViews(content){return [...content.children].filter(element=>!element.hidden&&getComputedStyle(element).display!=='none'&&element.getBoundingClientRect().height>0);}
+function verticalScrollOwners(content){return [content,...content.querySelectorAll('*')].filter(element=>element.clientHeight>0&&element.getBoundingClientRect().height>0&&['auto','scroll'].includes(getComputedStyle(element).overflowY)&&element.scrollHeight>element.clientHeight+1);}
 let widget=null;
 async function until(predicate,ms=2000){const start=performance.now();while(!predicate()){if(performance.now()-start>ms)throw new Error('Mock harness condition timed out');await sleep(10);}}
 async function tests(){
@@ -18,43 +22,73 @@ async function tests(){
  const began=new Date().toISOString(),results=[];
  const check=(name,pass,detail='')=>{const record={name,pass:!!pass,detail};results.push(record);const row=document.createElement('li');row.className=pass?'pass':'fail';row.textContent=(pass?'PASS · ':'FAIL · ')+name+(detail?' — '+detail:'');list.appendChild(row);};
  const lastBubble=()=>widget.shadow.querySelector('.ta-log').lastElementChild?.querySelector('.ta-message-bubble')?.textContent||'';
+ const plainReply=()=>{const text=lastBubble().replace(/^Dạ,\s*/u,'');return text.charAt(0).toLocaleUpperCase('vi-VN')+text.slice(1);};
+ const hasMockInfo=()=>lastBubble().toLocaleLowerCase('vi-VN').includes(INFO_TEXT.toLocaleLowerCase('vi-VN'));
  const compactPrice=(text,quantity,unit,total,specs=[])=>{const lines=text.split('\n'),amount=quantity.toLocaleString('vi-VN')+' '+unit+': '+total.toLocaleString('vi-VN')+' ₫';return lines.length===2&&specs.every(spec=>lines[0].includes(spec))&&(lines[1]===amount||lines[1]===amount+' (chưa VAT)')&&!/Tổng tham khảo|Nguồn giá|mức nguồn|quy tắc chủ|đơn thực tế|cần tư vấn viên/i.test(text);};
  try{
   const [data,styles,languageData]=await Promise.all([fetch('../widget/data.json',{credentials:'omit'}).then(r=>r.json()),fetch('../widget/widget.css',{credentials:'omit'}).then(r=>r.text()),fetch('../widget/approved-language.json',{credentials:'omit'}).then(r=>r.json())]);
   const languageSnapshot=JSON.stringify(languageData);
   check('Mock classification input reaches only the local unknown branch',ThanhAnFAQ.answer(unknown,data).kind==='unknown');
   const allFacts=data.products.flatMap(p=>p.priceFacts||[]);
-  check('The reviewed dataset contains 193 facts and 62 distinct owner-confirmed records',allFacts.length===193&&data.products.length===22&&allFacts.filter(f=>f.ownerPriceRevision?.kind==='business-owner-price-update').length===62&&allFacts.filter(f=>f.originalSourceRecord).length===46);
+  check('The reviewed dataset contains 196 facts and preserves its 62 owner-confirmed records',allFacts.length===196&&data.products.length===23&&allFacts.filter(f=>f.ownerPriceRevision?.kind==='business-owner-price-update').length===62&&allFacts.filter(f=>f.originalSourceRecord).length===46);
   async function mount(options={}){
-   if(widget)widget.destroy();const calls=[];let resolvePost=null,metadataRead=false;
+   if(widget)widget.destroy();const calls=[],infoCalls=[];let resolvePost=null,resolveInfo=null,metadataRead=false;
    const aiFetch=async(url,init)=>{
     if(new URL(url,location.href).origin!==location.origin||new URL(url,location.href).pathname!=='/api/mam-assist')throw new Error('Unexpected mock endpoint');
     calls.push({method:init.method,body:init.body,signal:init.signal});
     if(init.method==='GET')return {ok:true,text:async()=>{metadataRead=true;return JSON.stringify(options.metadata||metadata);}};
-    if(options.pending)return new Promise(resolve=>{resolvePost=()=>resolve(fakeResponse(options.reply||suggestion));});
+    if(options.pending)return new Promise(resolve=>{resolvePost=()=>resolve(fakeResponse(options.reply||suggestion,options.status||200));});
     if(options.offline)throw new Error('Mock offline');
     return fakeResponse(options.reply||suggestion,options.status||200);
    };
+   const infoFetch=async(url,init)=>{
+    const parsed=new URL(url,location.href);
+    if(parsed.origin!==location.origin||parsed.pathname!=='/api/mam-info'||[...parsed.searchParams.keys()].sort().join(',')!=='field,productId,version'||parsed.searchParams.get('version')!=='1'||!data.products.some(product=>product.id===parsed.searchParams.get('productId'))||!ThanhAnSourceInfo.fields.includes(parsed.searchParams.get('field'))||init.method!=='GET'||init.body!==undefined)throw new Error('Unexpected source-information mock request');
+    infoCalls.push({url:parsed.href,...init});
+    const reply=options.infoReply??{version:1,kind:'information',productId:parsed.searchParams.get('productId'),field:parsed.searchParams.get('field'),text:INFO_TEXT,sources:[{provider:'thanh-an',url:INFO_SOURCE}],reference:false,checkedAtUtc:'2026-10-13T07:00:00.000Z'};
+    if(options.infoPending)return new Promise(resolve=>{resolveInfo=()=>resolve(fakeResponse(reply,options.infoStatus||200));});
+    if(options.infoOffline)throw new Error('Mock source-information offline');
+    return fakeResponse(reply,options.infoStatus||200);
+   };
    const languageConfig=options.approvedLanguageUrl?{approvedLanguageUrl:options.approvedLanguageUrl,approvedLanguageFetch:options.approvedLanguageFetch}:{approvedLanguageData:options.approvedLanguageData??languageData};
-   widget=await ThanhAnChat.mount({data,styles,reducedMotion:true,aiEndpoint:'/api/mam-assist',aiFetch,...languageConfig});widget.open();
+   const infoConfig=options.sourceInfo?{infoEndpoint:'/api/mam-info',infoFetch}:{};
+   widget=await ThanhAnChat.mount({data,styles,reducedMotion:true,aiEndpoint:'/api/mam-assist',aiFetch,...languageConfig,...infoConfig});widget.open();
    const shadow=widget.shadow,consent=shadow.querySelector('.ta-ai-consent');
    await until(()=>metadataRead);for(let n=0;n<8;n++)await Promise.resolve();
    const optIn=()=>{consent.checked=true;consent.dispatchEvent(new Event('change',{bubbles:true}));};
    const revoke=()=>{consent.checked=false;consent.dispatchEvent(new Event('change',{bubbles:true}));};
    const posts=()=>calls.filter(c=>c.method==='POST');
-   return {shadow,consent,optIn,revoke,posts,calls,resolve:()=>resolvePost?.()};
+   return {shadow,consent,optIn,revoke,posts,calls,infoCalls,resolve:()=>resolvePost?.(),resolveInfo:()=>resolveInfo?.()};
+  }
+  const typingAbsent=shadow=>shadow.querySelectorAll('.ta-message-typing').length===0;
+  function pendingDots(shadow){
+   const rows=[...shadow.querySelectorAll('.ta-message-typing')],dots=[...shadow.querySelectorAll('.ta-typing-dot')],subtitle=shadow.querySelector('.ta-subtitle').textContent,bubble=rows[0]?.querySelector('.ta-typing-bubble'),visibleCopy=bubble?.cloneNode(true);
+   visibleCopy?.querySelectorAll('.ta-sr-only').forEach(element=>element.remove());
+   const hiddenLabels=[...rows[0]?.querySelectorAll('.ta-sr-only')||[]].every(element=>{const style=getComputedStyle(element);return style.position==='absolute'&&style.overflow==='hidden'&&style.clip==='rect(0px, 0px, 0px, 0px)'&&element.getBoundingClientRect().width<=1&&element.getBoundingClientRect().height<=1;});
+   return rows.length===1&&!!bubble&&!!rows[0].querySelector('.ta-typing-dots')&&visibleCopy.textContent.trim()===''&&hiddenLabels&&rows[0].getBoundingClientRect().height>0&&dots.length===3&&dots.every(dot=>{const style=getComputedStyle(dot),color=rgb(style.backgroundColor),rect=dot.getBoundingClientRect();return color&&color.a>0&&Math.max(color.r,color.g,color.b)-Math.min(color.r,color.g,color.b)<.14&&rect.width>0&&rect.width<=10&&rect.height>0&&rect.height<=10&&style.animationName==='none';})&&subtitle.includes('Trợ lý thông tin in ấn')&&!/đang|tìm giúp|xử lý|processing|loading|Google|Gemini|Flash|backend|provider|API/i.test(subtitle);
   }
   let f=await mount();
   check('Optional AI starts unchecked and checks metadata once',!f.consent.checked&&f.calls.length===1&&f.calls[0].method==='GET');
-  const notice=[...f.shadow.querySelectorAll('.ta-ai-notice')].map(p=>p.textContent).join(' '),label=f.consent.parentElement.textContent;
+  const privacyTrigger=f.shadow.querySelector('.ta-privacy-open'),label=f.consent.closest('.ta-ai-label'),helper=f.shadow.querySelector('.ta-ai-helper'),aiOptions=f.shadow.querySelector('.ta-ai-options');
+  const commonText=[f.shadow.querySelector('.ta-header'),aiOptions,f.shadow.querySelector('.ta-log'),f.shadow.querySelector('.ta-quick')].filter(Boolean).map(element=>element.textContent).join(' ');
+  privacyTrigger.click();
+  const privacyView=f.shadow.querySelector('.ta-aux-view[data-view="privacy"]'),content=f.shadow.querySelector('.ta-content'),chatLog=f.shadow.querySelector('.ta-log'),notice=privacyView.textContent;
   check('Google processing, human review and free-tier product improvement are disclosed',notice.includes('Google')&&notice.includes('miễn phí')&&notice.includes('cải thiện')&&notice.includes('người xét duyệt')&&notice.includes('thông tin cá nhân'));
-  check('Opt-in explicitly covers adults and Vietnam',label.includes('18 tuổi')&&label.includes('Việt Nam'));
-  check('Customer privacy controls use a generic label without model or backend names',f.shadow.querySelector('.ta-ai-options summary').textContent==='Thông tin & quyền riêng tư'&&!/Gemini|Flash|API\s*key|backend|provider|generativelanguage/i.test(f.shadow.textContent));
-  const initialBubble=f.shadow.querySelector('.ta-message-bubble'),inputElement=f.shadow.querySelector('.ta-input'),clearButton=f.shadow.querySelector('.ta-clear'),privacySummary=f.shadow.querySelector('.ta-ai-options summary');
-  const readable={bubble:parseFloat(getComputedStyle(initialBubble).fontSize),input:parseFloat(getComputedStyle(inputElement).fontSize),clear:parseFloat(getComputedStyle(clearButton).fontSize),privacy:parseFloat(getComputedStyle(privacySummary).fontSize)};
-  check('Customer messages and input are 16px with readable secondary controls',readable.bubble>=16&&readable.input>=16&&readable.clear>=14&&readable.privacy>=13&&clearButton.style.fontSize!=='10px',JSON.stringify(readable));
-  check('Quick, clear and privacy controls have at least 44px touch targets',clearButton.getBoundingClientRect().height>=44&&privacySummary.getBoundingClientRect().height>=44&&[...f.shadow.querySelectorAll('.ta-quick .ta-chip')].every(button=>button.getBoundingClientRect().height>=44));
-  const contrasts={bubble:contrast(initialBubble),input:contrast(inputElement),clear:contrast(clearButton),privacy:contrast(privacySummary)};
+  check('Opt-in explicitly covers adults and Vietnam in accessible privacy information',notice.includes('18 tuổi')&&notice.includes('Việt Nam')&&notice.includes('đồng ý')&&!f.consent.checked);
+  check('The compact deep-understanding label and helper avoid provider or backend text in the main chat',label.querySelector('.ta-ai-title')?.textContent==='Bật hiểu sâu'&&helper.textContent==='Giúp Mầm hiểu câu hỏi rõ hơn'&&privacyTrigger.getAttribute('aria-label')==='Thông tin & quyền riêng tư'&&!/Google|Gemini|Flash|API\s*key|backend|provider|generativelanguage/i.test(commonText));
+  check('Privacy opens as the sole content view with keyboard focus and one vertical scroll owner',chatLog.hidden&&!privacyView.hidden&&visibleContentViews(content).length===1&&visibleContentViews(content)[0]===privacyView&&privacyView.contains(f.shadow.activeElement)&&verticalScrollOwners(content).every(element=>element===privacyView)&&aiOptions.tagName==='DIV'&&!['auto','scroll'].includes(getComputedStyle(aiOptions).overflowY));
+  privacyView.querySelector('.ta-view-back').click();
+  check('Returning from privacy restores chat and keyboard focus without changing consent',!chatLog.hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&visibleContentViews(content).length===1&&visibleContentViews(content)[0]===chatLog&&f.shadow.activeElement===privacyTrigger&&!f.consent.checked);
+  privacyTrigger.click();f.shadow.querySelector('.ta-view-back').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,composed:true,cancelable:true}));
+  const escapeReturned=!chatLog.hidden&&!f.shadow.querySelector('.ta-panel').hidden&&f.shadow.activeElement===privacyTrigger;
+  privacyTrigger.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,composed:true,cancelable:true}));
+  check('Escape first returns from the auxiliary view and only then closes the panel',escapeReturned&&f.shadow.querySelector('.ta-panel').hidden&&f.shadow.activeElement===f.shadow.querySelector('.ta-launcher'));
+  widget.open();
+  const initialBubble=f.shadow.querySelector('.ta-message-bubble'),inputElement=f.shadow.querySelector('.ta-input'),clearButton=f.shadow.querySelector('.ta-clear');
+  const readable={bubble:parseFloat(getComputedStyle(initialBubble).fontSize),input:parseFloat(getComputedStyle(inputElement).fontSize),clear:parseFloat(getComputedStyle(clearButton).fontSize),privacy:parseFloat(getComputedStyle(privacyTrigger).fontSize),label:parseFloat(getComputedStyle(label).fontSize)};
+  check('Customer messages, input and controls keep readable 16px text',Object.values(readable).every(value=>value>=16)&&clearButton.style.fontSize!=='10px',JSON.stringify(readable));
+  check('Quick, clear and privacy controls have at least 44px touch targets',clearButton.getBoundingClientRect().height>=44&&privacyTrigger.getBoundingClientRect().height>=44&&[...f.shadow.querySelectorAll('.ta-quick .ta-chip')].every(button=>button.getBoundingClientRect().height>=44));
+  const contrasts={bubble:contrast(initialBubble),input:contrast(inputElement),clear:contrast(clearButton),privacy:contrast(privacyTrigger)};
   check('Actual customer text colors meet a 4.5 to 1 contrast target',Object.values(contrasts).every(value=>value>=4.5),JSON.stringify(contrasts));
   await widget.send(unknown);check('Unknown text remains local before opt-in',f.posts().length===0);
   f.optIn();check('An explicit checkbox action enables consent',f.consent.checked);
@@ -64,20 +98,21 @@ async function tests(){
   check('An exact local price bypasses Gemini and shows a compact total after opt-in',f.posts().length===0&&compactPrice(lastBubble(),500,'cuốn',exactPrice.priceVnd*500,['A4','16 trang','C250','C150'])&&exactLocal.quote.unitPriceVnd===exactPrice.priceVnd&&exactLocal.quote.provider==='thanh-an'&&exactLocal.quote.sourceUrl===exactPrice.sourceUrl);
   await widget.send('Xem giá');
   check('Xem giá offers thirteen local products without automatically opening tables',f.posts().length===0&&f.shadow.querySelectorAll('.ta-quote-products .ta-chip').length===13&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
-  f.shadow.querySelector('.ta-footnote button').click();
-  check('Clear chat revokes consent and removes prior price menus',!f.consent.checked&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
+  await widget.send('Xem bảng giá');const clearedMenu=f.shadow.querySelector('.ta-price-menu');
+  f.shadow.querySelector('.ta-clear').click();
+  check('Clear chat revokes consent and removes a mounted price view',!!clearedMenu&&!clearedMenu.isConnected&&!f.consent.checked&&f.shadow.querySelectorAll('.ta-price-menu').length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden);
   f.optIn();await widget.send(unknown);
   const productButton=[...f.shadow.querySelectorAll('.ta-chip')].find(b=>b.textContent==='Xem lựa chọn Catalogue');
   check('A model product suggestion requires a user confirmation button',f.posts().length===1&&!!productButton&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
   const body=JSON.parse(f.posts()[0].body);
   check('The mock POST sends only the current message, version and explicit consent',Object.keys(body).sort().join(',')==='adult,consent,message,version'&&body.message===unknown&&body.adult===true&&body.consent==='google-free-v1'&&!f.posts()[0].body.includes('15.000'));
   productButton.click();
-  await until(()=>lastBubble().includes('Bạn cần in bao nhiêu cuốn?')&&widget.host.dataset.activity==='idle');
-  check('Confirming the Gemini product asks only quantity first, without opening a table',f.posts().length===1&&lastBubble()==='Bạn cần in bao nhiêu cuốn?'&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
+  await until(()=>plainReply()==='Bạn cần in bao nhiêu cuốn?'&&widget.host.dataset.activity==='idle');
+  check('Confirming the Gemini product asks only quantity first, without opening a table',f.posts().length===1&&plainReply()==='Bạn cần in bao nhiêu cuốn?'&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
   await widget.send('500');
-  check('Catalogue quantity reply asks the next single question about size',lastBubble().startsWith('Bạn cần khổ nào?')&&f.posts().length===1&&f.shadow.querySelectorAll('.ta-price-table').length===0);
+  check('Catalogue quantity reply asks the next single question about size',plainReply()==='Bạn cần khổ nào?'&&f.posts().length===1&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   await widget.send('A4');
-  check('Catalogue size reply asks the next single question about page count',lastBubble()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===1);
+  check('Catalogue size reply asks the next single question about page count',plainReply()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===1);
   await widget.send('16 trang');
   check('Catalogue page count offers the three distinct paper choices without choosing for the customer',lastBubble().endsWith('?')&&['C250','C150','C300'].every(paper=>lastBubble().includes(paper))&&!lastBubble().includes('₫')&&f.posts().length===1);
   await widget.send('Bìa C250 ruột C150');
@@ -88,7 +123,7 @@ async function tests(){
   const quoteBubble=f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-message-bubble'),totalSpan=quoteBubble.querySelector('.ta-quote-total');
   check('The two-line price uses a safe text node and a readable semibold total span',quoteBubble.parentElement.classList.contains('ta-message-quote')&&quoteBubble.firstChild.nodeType===Node.TEXT_NODE&&quoteBubble.children.length===1&&!!totalSpan&&totalSpan.textContent===lastBubble().split('\n')[1]&&parseFloat(getComputedStyle(totalSpan).fontSize)>=16&&Number(getComputedStyle(totalSpan).fontWeight)>=600&&contrast(totalSpan)>=4.5);
   await widget.send('Xem bảng giá');
-  check('Only explicit Xem bảng giá opens the full thirteen-category source menu',f.shadow.querySelectorAll('.ta-price-category').length===13&&f.posts().length===1);
+  check('Only explicit Xem bảng giá opens the full thirteen-category source menu outside the chat log',f.shadow.querySelectorAll('.ta-price-category').length===13&&f.posts().length===1&&f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-log').querySelectorAll('.ta-price-menu').length===0&&f.shadow.querySelector('.ta-aux-view').dataset.view==='prices'&&f.shadow.querySelector('.ta-aux-view').contains(f.shadow.querySelector('.ta-price-menu')));
   const catalogueCategory=[...f.shadow.querySelectorAll('.ta-price-category')].find(b=>b.dataset.categoryId==='catalogue');catalogueCategory.click();
   check('Explicit table category selection opens specification variants',f.shadow.querySelectorAll('.ta-price-variant').length>0&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   const variant=[...f.shadow.querySelectorAll('.ta-price-variant')].find(b=>b.dataset.variantId==='table-catalogue-a4-12-200');variant.click();
@@ -108,22 +143,39 @@ async function tests(){
    check(`${variantId} preserves owner unit amounts and the exact verified secondary reference`,ownerRows.length===3&&earring.every(fact=>ownerRows.some(row=>row.dataset.factId===fact.id&&row.querySelector('.ta-price-amount').textContent===ThanhAnFAQ.money(fact.priceVnd)))&&referenceLinks.length===1&&referenceLinks[0].href===EARRING_SOURCE&&referenceLinks[0].target==='_blank'&&referenceLinks[0].rel.includes('noopener')&&referenceLinks[0].referrerPolicy==='no-referrer'&&fullMenu.querySelectorAll('.ta-price-zalo').length===3&&earring.every(fact=>fact.sourceUrl===null&&fact.secondarySourceUrls?.length===1&&fact.secondarySourceUrls[0]===EARRING_SOURCE&&fact.specs.material==='c300'&&fact.specs.sides===2&&fact.rawSourceFlags.ownerRecipeIncomplete&&fact.specs.finishing===undefined));
    fullMenu.querySelector('.ta-price-back').click();
   }
+  const returnedMenu=fullMenu;f.shadow.querySelector('.ta-view-back').click();
+  const directTableBack=!returnedMenu.isConnected&&f.shadow.querySelectorAll('.ta-price-menu').length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&f.shadow.activeElement===f.shadow.querySelector('.ta-input');
+  const quickTable=f.shadow.querySelectorAll('.ta-quick .ta-chip')[1];quickTable.focus();quickTable.click();
+  await until(()=>!f.shadow.querySelector('.ta-aux-view').hidden&&!!f.shadow.querySelector('.ta-price-menu'));
+  const quickMenu=f.shadow.querySelector('.ta-price-menu');f.shadow.querySelector('.ta-view-back').click();
+  check('Back destroys the full price menu and restores the direct-input or quick-button trigger',directTableBack&&!quickMenu.isConnected&&f.shadow.querySelectorAll('.ta-price-menu').length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&f.shadow.activeElement===quickTable&&quickTable.textContent.includes('Bảng giá'));
   check('Supplementary provider branding remains hidden in customer text',!f.shadow.textContent.includes('Vĩnh Phát')&&!f.shadow.textContent.includes('Vinh Phát'));
   const avatar=f.shadow.querySelector('.ta-avatar'),canvas=avatar.querySelector('canvas');await frames();
   const panelRect=f.shadow.querySelector('.ta-panel').getBoundingClientRect(),avatarRect=canvas.getBoundingClientRect(),viewport=document.documentElement.clientWidth;
   check('Open mascot keeps the 96 by 104 pixel displayed size',Math.abs(avatarRect.width-96)<0.2&&Math.abs(avatarRect.height-104)<0.2,JSON.stringify({width:avatarRect.width,height:avatarRect.height}));
   check('Panel and external mascot fit the viewport at the current width',panelRect.left>=0&&panelRect.right<=viewport+1&&avatarRect.left>=0&&avatarRect.right<=viewport+1,JSON.stringify({viewport,panelLeft:panelRect.left,panelRight:panelRect.right,avatarLeft:avatarRect.left,avatarRight:avatarRect.right}));
-  f.shadow.querySelector('.ta-ai-options').open=true;await frames();const optionsRect=f.shadow.querySelector('.ta-ai-options').getBoundingClientRect();
-  check('Expanded consent options fit the dialog without horizontal overflow',optionsRect.left>=panelRect.left&&optionsRect.right<=panelRect.right+1&&f.shadow.querySelector('.ta-ai-options').scrollWidth<=optionsRect.width+1);
+  f.shadow.querySelector('.ta-privacy-open').click();await frames();const optionsView=f.shadow.querySelector('.ta-aux-view'),optionsRect=optionsView.getBoundingClientRect();
+  check('The auxiliary privacy view fits the dialog without horizontal or nested vertical overflow',optionsRect.left>=panelRect.left&&optionsRect.right<=panelRect.right+1&&optionsView.scrollWidth<=optionsRect.width+1&&verticalScrollOwners(f.shadow.querySelector('.ta-content')).every(element=>element===optionsView));
+  optionsView.querySelector('.ta-view-back').click();
+  f=await mount();f.optIn();const consultButton=f.shadow.querySelectorAll('.ta-quick .ta-chip')[2],nativeOpen=window.open;let automaticOpens=0;
+  window.open=()=>{automaticOpens++;return null;};
+  try{consultButton.focus();consultButton.click();await until(()=>f.shadow.querySelector('.ta-aux-view').dataset.view==='contacts'&&!f.shadow.querySelector('.ta-aux-view').hidden);}finally{window.open=nativeOpen;}
+  const contactView=f.shadow.querySelector('.ta-aux-view'),contactRows=[...contactView.querySelectorAll('.ta-contact')],contactLinks=[...contactView.querySelectorAll('.ta-contact a')],contactCopy=contactView.textContent.toLowerCase();
+  const exactContactLinks=contactRows.length===3&&contactLinks.length===6&&data.contacts.every(person=>contactLinks.some(link=>link.getAttribute('href')===person.zalo&&link.target==='_blank'&&link.rel.includes('noopener')&&link.referrerPolicy==='no-referrer')&&contactLinks.some(link=>link.getAttribute('href')==='tel:'+person.phone));
+  const consultOpened=consultButton.textContent==='Tư vấn'&&consultButton.getAttribute('aria-label')==='Tư vấn qua Zalo'&&contactView.querySelector('.ta-aux-title').textContent==='Tư vấn qua Zalo'&&((contactCopy.includes('website')||contactCopy.includes('trang web'))&&contactCopy.includes('giá')&&contactCopy.includes('quy cách'))&&f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-log').querySelectorAll('.ta-contact').length===0&&visibleContentViews(f.shadow.querySelector('.ta-content')).length===1&&contactView.scrollWidth<=contactView.clientWidth+1;
+  contactView.querySelector('.ta-view-back').click();
+  check('Consult opens the three verified advisers in one auxiliary view and returns to its trigger without opening a contact link',consultOpened&&exactContactLinks&&automaticOpens===0&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&f.shadow.activeElement===consultButton);
   f=await mount();f.optIn();await widget.send('Xem giá');
   const cardChoice=[...f.shadow.querySelectorAll('.ta-quote-products .ta-chip')].find(b=>b.textContent.includes('Danh thiếp'));cardChoice.click();
-  await until(()=>lastBubble()==='Bạn cần in bao nhiêu hộp?'&&widget.host.dataset.activity==='idle');
-  check('A local product click starts the one-question card conversation without Gemini',lastBubble()==='Bạn cần in bao nhiêu hộp?'&&f.posts().length===0&&f.shadow.querySelectorAll('.ta-price-table').length===0);
+  await until(()=>plainReply()==='Bạn chọn in offset hay in nhanh?'&&widget.host.dataset.activity==='idle');
+  const printingButtons=[...f.shadow.querySelector('.ta-log').lastElementChild.querySelectorAll('.ta-suggestions .ta-chip')].map(button=>button.textContent),printingFirst=printingButtons.join('|')==='In offset|In nhanh'&&f.posts().length===0;
+  await widget.send('In nhanh');
+  check('A local card click asks the exact printing choices before the selected quick-print quantity question',printingFirst&&plainReply()==='Bạn cần in bao nhiêu hộp?'&&f.posts().length===0&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   await widget.send('9');
   check('Card quantity asks the next paper specification instead of dumping source rows',lastBubble().includes('?')&&!lastBubble().includes('Tổng tham khảo')&&f.shadow.querySelectorAll('.ta-price-table').length===0&&f.posts().length===0);
   await widget.send('C300');
   const cardFacts=data.products.find(p=>p.id==='namecard-c300').priceFacts,five=cardFacts.find(f=>f.quantity===5),ten=cardFacts.find(f=>f.quantity===10);
-  const cardSession=ThanhAnFAQ.createSession(data);let cardQuote;for(const step of ['Danh thiếp','9','C300'])cardQuote=cardSession.answer(step);
+  const cardSession=ThanhAnFAQ.createSession(data);let cardQuote;for(const step of ['Danh thiếp in nhanh','9','C300'])cardQuote=cardSession.answer(step);
   check('Nine card boxes use the five-box floor tier with only specs and total in the bubble',compactPrice(lastBubble(),9,'hộp',five.priceVnd*9,['C300'])&&cardQuote.quote.unitPriceVnd===five.priceVnd&&cardQuote.quote.sourceQuantity===5&&cardQuote.quote.provenance.kind==='business-owner-policy'&&f.posts().length===0,lastBubble());
   for(const quantity of [10,11,12,30]){
    await widget.send(String(quantity)+' hộp');
@@ -134,7 +186,25 @@ async function tests(){
   check('The new owner tier does not authorize model discounts or extra commercial promises',lastBubble().includes('không tự suy ra giảm giá')&&f.posts().length===0&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   const incompleteEarring=data.products.find(p=>p.id==='earring-tag-vp').priceFacts[0];await widget.send(incompleteEarring.lookupQuery);
   const incompleteResult=ThanhAnFAQ.answer(incompleteEarring.lookupQuery,data);
-  check('An earring price with unresolved lamination inclusion hands off locally without a computed quote',incompleteResult.handoff===true&&!incompleteResult.quote&&incompleteEarring.rawSourceFlags.ownerRecipeIncomplete&&incompleteEarring.rawSourceFlags.missingConditions.some(value=>value.includes('cán màng'))&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&!!f.shadow.querySelector('.ta-log').lastElementChild.querySelector('.ta-handoff')&&f.posts().length===0);
+  check('An earring price with unresolved lamination inclusion hands off locally without a computed quote',incompleteResult.handoff===true&&!incompleteResult.quote&&incompleteEarring.rawSourceFlags.ownerRecipeIncomplete&&incompleteEarring.rawSourceFlags.missingConditions.some(value=>value.includes('cán màng'))&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&!!f.shadow.querySelector('.ta-quick button[aria-label="Tư vấn qua Zalo"]')&&f.posts().length===0);
+
+  f=await mount();f.optIn();await widget.send('Danh thiếp');await widget.send('In offset');
+  check('Selecting the local offset method asks one quantity question without silently quoting',plainReply()==='Bạn cần in bao nhiêu hộp?'&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
+  await widget.send('12 hộp');
+  const offsetSource=data.products.find(product=>product.id==='namecard-offset-ta').priceFacts;
+  const offsetSession=ThanhAnFAQ.createSession(data);let offsetResult;for(const step of ['Danh thiếp','In offset','12 hộp'])offsetResult=offsetSession.answer(step);
+  check('Twelve offset boxes use the approved unit-rule provenance while published package records stay intact',compactPrice(lastBubble(),12,'hộp',192000,['offset'])&&f.posts().length===0&&offsetResult.quote.unitPriceVnd===16000&&offsetResult.quote.sourceQuantity===10&&offsetResult.quote.totalKind==='computed-owner-offset'&&offsetResult.quote.provenance.kind==='business-owner-policy'&&offsetResult.quote.provenance.policyId==='owner-card-offset-unit-2026-10-13'&&offsetResult.quote.sourcePriceKind==='source_total'&&offsetResult.quote.sourcePublishedTotalVnd===160000&&offsetSource.map(fact=>[fact.quantity,fact.priceVnd,fact.priceKind]).map(row=>row.join(':')).join('|')==='2:90000:source_total|5:120000:source_total|10:160000:source_total',lastBubble());
+  await widget.send('kích thước danh thiếp bao nhiêu?');
+  const sizeAnswer=!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&lastBubble().length>0;
+  await widget.send('tổng tiền');
+  check('An information question does not repeat the old quote or forget the saved offset quantity',sizeAnswer&&compactPrice(lastBubble(),12,'hộp',192000,['offset'])&&f.posts().length===0,lastBubble());
+  await widget.send('7 hộp');const unsupportedOffset=!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&lastBubble().includes('?')&&lastBubble().includes('hộp');
+  await widget.send('15 hộp');
+  check('An unsupported small offset quantity asks clarification while fifteen boxes quote directly without splitting packages',unsupportedOffset&&compactPrice(lastBubble(),15,'hộp',240000,['offset'])&&f.posts().length===0,lastBubble());
+  await widget.send('12 hộp');await widget.send('In nhanh');
+  const quickSwitchAsked=lastBubble().includes('C300')&&lastBubble().includes('?')&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote');
+  await widget.send('C300');
+  check('Switching offset to quick print retains twelve boxes and asks paper before quoting',quickSwitchAsked&&compactPrice(lastBubble(),12,'hộp',ten.priceVnd*12,['C300'])&&f.posts().length===0,lastBubble());
   f=await mount({reply:{...suggestion,priceVnd:1}});f.optIn();await widget.send(unknown);
   check('A response containing a fabricated price is discarded for local fallback',f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   f=await mount({reply:{...suggestion,categoryId:'invented'}});f.optIn();await widget.send(unknown);
@@ -144,24 +214,71 @@ async function tests(){
   f=await mount({offline:true});f.optIn();await widget.send(unknown);
   check('Network failure returns to the local unknown answer',f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
   f=await mount({metadata:{...metadata,enabled:false}});await widget.send(unknown);
-  check('A deployment without a key stays local and disables opt-in behind the generic privacy label',f.consent.disabled&&!f.consent.checked&&f.posts().length===0&&f.shadow.querySelector('.ta-ai-options summary').textContent==='Thông tin & quyền riêng tư');
+  check('A deployment without a key stays local and disables the generic deep-understanding toggle',f.consent.disabled&&!f.consent.checked&&f.posts().length===0&&f.shadow.querySelector('.ta-ai-title').textContent==='Bật hiểu sâu'&&f.shadow.querySelector('.ta-privacy-open').getAttribute('aria-label')==='Thông tin & quyền riêng tư');
   f=await mount();f.optIn();const privateInput='fictional@example.invalid';await widget.send(privateInput);
   check('An email-containing unknown question is never sent to the provider',f.posts().length===0);
   window.__geminiHarnessXss=0;await widget.send('<img src=x onerror="window.__geminiHarnessXss=1">');
   check('Visitor XSS is literal text, never HTML or a provider call',window.__geminiHarnessXss===0&&f.posts().length===0&&f.shadow.querySelectorAll('img').length===0&&f.shadow.querySelector('.ta-log').textContent.includes('<img'));
   f=await mount({pending:true});f.optIn();let pending=widget.send(unknown);await until(()=>f.posts().length===1);
-  check('Pending optional understanding uses a generic customer status',!(/Gemini|Flash|backend|provider|API/i.test(f.shadow.querySelector('.ta-subtitle').textContent))&&widget.host.dataset.activity==='working');
+  check('Pending optional understanding shows only three small gray dots with a static customer status',pendingDots(f.shadow)&&widget.host.dataset.activity==='working');
   f.revoke();f.resolve();await pending;
-  check('Revoking consent aborts the pending request and suppresses its late suggestion',f.posts()[0].signal.aborted&&!f.consent.checked&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue'));
-  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);f.shadow.querySelector('.ta-footnote button').click();const cleared=f.shadow.querySelector('.ta-log').textContent;f.resolve();await pending;
-  check('Clear cancels in-flight work and a late reply cannot repopulate the chat',f.posts()[0].signal.aborted&&!f.consent.checked&&f.shadow.querySelector('.ta-log').textContent===cleared&&f.shadow.querySelectorAll('.ta-message').length===1);
+  check('Revoking consent aborts the pending request and suppresses its late suggestion',f.posts()[0].signal.aborted&&!f.consent.checked&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
+  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);f.shadow.querySelector('.ta-clear').click();const cleared=f.shadow.querySelector('.ta-log').textContent;f.resolve();await pending;
+  check('Clear cancels in-flight work and a late reply cannot repopulate the chat',f.posts()[0].signal.aborted&&!f.consent.checked&&f.shadow.querySelector('.ta-log').textContent===cleared&&f.shadow.querySelectorAll('.ta-message').length===1&&typingAbsent(f.shadow));
   f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const oldHost=widget.host;widget.destroy();widget=null;f.resolve();await pending;
-  check('Destroy aborts pending work and leaves no orphan host',f.posts()[0].signal.aborted&&!oldHost.isConnected&&!document.getElementById('ta-mam-chat-host'));
+  check('Destroy aborts pending work and leaves no orphan host',f.posts()[0].signal.aborted&&!oldHost.isConnected&&!document.getElementById('ta-mam-chat-host')&&typingAbsent(f.shadow));
+  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const successDots=pendingDots(f.shadow);f.resolve();await pending;
+  check('Successful optional understanding removes the waiting dots before showing its confirmation',successDots&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
+  f=await mount({pending:true,status:429});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const failureDots=pendingDots(f.shadow);f.resolve();await pending;
+  check('An asynchronous quota error removes waiting dots and returns to the local fallback without retrying',failureDots&&typingAbsent(f.shadow)&&f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
+  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);widget.close();const closedLog=f.shadow.querySelector('.ta-log').textContent,closedDots=typingAbsent(f.shadow);f.resolve();await pending;
+  check('Closing cancels optional understanding immediately and suppresses the late response on reopening',closedDots&&f.posts()[0].signal.aborted&&f.shadow.querySelector('.ta-panel').hidden&&f.shadow.querySelector('.ta-log').textContent===closedLog&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
+  widget.open();
+  f=await mount({pending:true});f.optIn();const aiTimeoutStart=performance.now();pending=widget.send(unknown);await until(()=>f.posts().length===1);const timeoutDots=pendingDots(f.shadow);await pending;f.resolve();await frames();
+  check('A stalled optional understanding request times out, removes its dots and rejects an ignored-abort late reply',timeoutDots&&f.posts()[0].signal.aborted&&typingAbsent(f.shadow)&&f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle'&&performance.now()-aiTimeoutStart<9000);
+
+  // Source information is mocked independently. No raw visitor text is sent to
+  // this read-only endpoint, and its responses never become price conditions.
+  f=await mount();f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp','kích thước danh thiếp bao nhiêu?'])await widget.send(step);
+  check('Without an optional source endpoint a recognized information question remains local with no provider call or dots',f.infoCalls.length===0&&f.posts().length===0&&typingAbsent(f.shadow)&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
+  f=await mount({sourceInfo:true,infoPending:true});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+  const localQuoteHadNoDots=typingAbsent(f.shadow)&&f.infoCalls.length===0&&f.posts().length===0;pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);
+  check('Only an actual asynchronous information lookup shows the three dots while local prices bypass both endpoints',localQuoteHadNoDots&&pendingDots(f.shadow)&&f.posts().length===0);
+  const infoRequest=f.infoCalls[0],infoUrl=new URL(infoRequest.url);
+  check('The source-information mock receives only the known product and field in a same-origin read-only GET',infoUrl.origin===location.origin&&infoUrl.pathname==='/api/mam-info'&&[...infoUrl.searchParams.keys()].sort().join(',')==='field,productId,version'&&infoUrl.searchParams.get('version')==='1'&&infoUrl.searchParams.get('productId')==='namecard-offset-ta'&&infoUrl.searchParams.get('field')==='size'&&infoRequest.method==='GET'&&infoRequest.body===undefined&&infoRequest.credentials==='omit'&&infoRequest.cache==='no-store'&&infoRequest.referrerPolicy==='no-referrer'&&infoRequest.redirect==='error'&&![...infoUrl.searchParams.values()].includes('12')&&f.posts().length===0);
+  f.resolveInfo();await pending;const infoBlock=f.shadow.querySelector('.ta-log').lastElementChild,infoLink=infoBlock.querySelector('.ta-source');
+  const successfulInfo=hasMockInfo()&&/^Dạ[,\s]/u.test(lastBubble())&&!infoBlock.classList.contains('ta-message-quote')&&infoLink?.href===INFO_SOURCE&&infoLink.target==='_blank'&&infoLink.rel.includes('noopener')&&infoLink.referrerPolicy==='no-referrer'&&typingAbsent(f.shadow)&&f.posts().length===0;
+  await widget.send('tổng tiền');
+  check('Validated source information removes dots, keeps its safe reference separate from prices and preserves the offset quote context',successfulInfo&&compactPrice(lastBubble(),12,'hộp',192000,['offset'])&&f.infoCalls.length===1&&f.posts().length===0,lastBubble());
+  const invalidInfo={version:1,kind:'information',productId:'namecard-offset-ta',field:'size',text:INFO_TEXT,sources:[{provider:'thanh-an',url:INFO_SOURCE}],reference:false,checkedAtUtc:'2026-10-13T07:00:00.000Z'};
+  for(const [name,reply] of [
+   ['a price-bearing response',{...invalidInfo,priceVnd:1}],
+   ['HTML and an untrusted reference',{...invalidInfo,text:'<img src=x onerror="window.__geminiHarnessXss=1">',sources:[{provider:'thanh-an',url:'https://example.invalid/fake-source'}]}],
+   ['an unavailable source field',{version:1,kind:'fallback',productId:'namecard-offset-ta',field:'size'}]
+  ]){
+   f=await mount({sourceInfo:true,infoPending:true,infoReply:reply});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+   pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);const beforeFallback=pendingDots(f.shadow);f.resolveInfo();await pending;
+   check('Source information rejects '+name+' without replacing the local fallback or quoting',beforeFallback&&f.posts().length===0&&f.infoCalls.length===1&&typingAbsent(f.shadow)&&!hasMockInfo()&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&f.shadow.querySelectorAll('img').length===0&&window.__geminiHarnessXss===0&&![...f.shadow.querySelectorAll('.ta-source')].some(link=>link.href.startsWith('https://example.invalid/')));
+  }
+  f=await mount({sourceInfo:true,infoOffline:true});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp','kích thước danh thiếp bao nhiêu?'])await widget.send(step);
+  check('A source-information network error removes dots and uses local information without falling through to Gemini',f.infoCalls.length===1&&f.posts().length===0&&typingAbsent(f.shadow)&&lastBubble().length>0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&widget.host.dataset.activity==='idle');
+  f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+  const infoTimeoutStart=performance.now();pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);const infoTimeoutDots=pendingDots(f.shadow);await pending;const timeoutFallback=f.shadow.querySelector('.ta-log').textContent;f.resolveInfo();await frames();
+  check('A stalled source lookup times out without consent, removes dots and suppresses a late source reply',infoTimeoutDots&&f.infoCalls[0].signal.aborted&&f.infoCalls.length===1&&f.posts().length===0&&!f.consent.checked&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===timeoutFallback&&!hasMockInfo()&&widget.host.dataset.activity==='idle'&&performance.now()-infoTimeoutStart<7000);
+  f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+  pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);f.shadow.querySelector('.ta-clear').click();const infoClearedLog=f.shadow.querySelector('.ta-log').textContent,infoClearedDots=typingAbsent(f.shadow);f.resolveInfo();await pending;
+  check('Clear aborts source information immediately and an ignored-abort response cannot restore its dots or content',infoClearedDots&&f.infoCalls[0].signal.aborted&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===infoClearedLog&&f.shadow.querySelectorAll('.ta-message').length===1&&f.posts().length===0);
+  f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+  pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);widget.close();const infoClosedLog=f.shadow.querySelector('.ta-log').textContent,infoClosedDots=typingAbsent(f.shadow);f.resolveInfo();await pending;widget.open();
+  check('Close aborts source information and reopening never reveals an ignored-abort late reply',infoClosedDots&&f.infoCalls[0].signal.aborted&&typingAbsent(f.shadow)&&!f.shadow.querySelector('.ta-panel').hidden&&f.shadow.querySelector('.ta-log').textContent===infoClosedLog&&!hasMockInfo()&&f.posts().length===0);
+  f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+  pending=widget.send('kích thước danh thiếp bao nhiêu?');await until(()=>f.infoCalls.length===1);const infoDestroyedHost=widget.host;widget.destroy();widget=null;const destroyedInfoDots=typingAbsent(f.shadow);f.resolveInfo();await pending;
+  check('Destroy aborts source information and removes waiting dots even when the fake fetch ignores abort',destroyedInfoDots&&f.infoCalls[0].signal.aborted&&typingAbsent(f.shadow)&&!infoDestroyedHost.isConnected&&!document.getElementById('ta-mam-chat-host')&&f.posts().length===0);
 
   // Regressions for the real local quote session; provider responses remain fake.
   const owner300=allFacts.find(fact=>fact.id==='catalogue-a4-cover-c300-offset-16-300'),owner500=allFacts.find(fact=>fact.id==='catalogue-a4-cover-c250-offset-16-500');
   f=await mount();f.optIn();await widget.send('catalogue A4 300 cuốn');
-  check('A local catalogue A4 300 request keeps quantity and size and asks only pages',lastBubble()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
+  check('A local catalogue A4 300 request keeps quantity and size and asks only pages',plainReply()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   await widget.send('16 trang');
   check('A sixteen-page reply continues the existing catalogue and asks only paper',lastBubble().endsWith('?')&&['C250','C150','C300'].every(paper=>lastBubble().includes(paper))&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   await widget.send('Bìa C300 ruột C150');
@@ -195,20 +312,20 @@ async function tests(){
   const approvedHint=approvedMemory.lookup(seed.phrase);
   check('The isolated synthetic approved fixture returns only a category hint without changing the actual pending data',ThanhAnFAQ.answer(seed.phrase,data).kind==='unknown'&&approvedHint?.intent==='product'&&approvedHint.categoryId==='catalogue'&&Object.keys(approvedHint).sort().join(',')==='categoryId,intent'&&JSON.stringify(languageData)===languageSnapshot);
   f=await mount({approvedLanguageData:approvedFixture});f.optIn();await widget.send(seed.phrase);
-  check('An exact synthetically approved catalogue phrase skips the provider and starts local quantity-first lookup',lastBubble()==='Bạn cần in bao nhiêu cuốn?'&&f.posts().length===0);
+  check('An exact synthetically approved catalogue phrase skips the provider and starts local quantity-first lookup',plainReply()==='Bạn cần in bao nhiêu cuốn?'&&f.posts().length===0);
   await widget.send('A4 300 cuốn');
-  check('The approved category route keeps a combined quantity and size reply for the next question',lastBubble()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0);
+  check('The approved category route keeps a combined quantity and size reply for the next question',plainReply()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0);
   await widget.send('16 trang');await widget.send('Bìa C300 ruột C150');
   check('The approved phrase route preserves the original message context through the final source-based quote',compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
   const hoursFixture=syntheticFixture({id:'synthetic-hours',phrase:'lịch tiếp khách ở tiệm',intent:'hours',categoryId:null,status:'pending',author:'assistant',review:null});
   f=await mount({approvedLanguageData:hoursFixture});f.optIn();await widget.send(hoursFixture.entries[0].phrase);
-  check('A synthetic approved non-product phrase routes to the actual local FAQ without a provider call',lastBubble().includes(data.faq.hours)&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
+  check('A synthetic approved non-product phrase routes to the actual local FAQ without a provider call',plainReply().includes(data.faq.hours)&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   const outOfScopeFixture=syntheticFixture({id:'synthetic-out-of-scope',phrase:'kể chuyện về bầu trời',intent:'out_of_scope',categoryId:null,status:'pending',author:'assistant',review:null});
   f=await mount({approvedLanguageData:outOfScopeFixture});f.optIn();await widget.send(outOfScopeFixture.entries[0].phrase);
   check('A synthetic approved out-of-scope phrase stays on a bounded local answer instead of spending provider quota',f.posts().length===0&&lastBubble().length>0&&lastBubble().length<=500&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   const invalidFixture=JSON.parse(JSON.stringify(approvedFixture));invalidFixture.entries[0].priceVnd=1;
   f=await mount({approvedLanguageData:invalidFixture,status:429});f.optIn();await widget.send(seed.phrase);
-  check('An invalid language fixture cannot inject a price or activate an unreviewed local product route',f.posts().length===1&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&!lastBubble().includes('Bạn cần in bao nhiêu cuốn?')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
+  check('An invalid language fixture cannot inject a price or activate an unreviewed local product route',f.posts().length===1&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&!plainReply().includes('Bạn cần in bao nhiêu cuốn?')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   let stalledSignal=null,stalledCalls=0;const stallStarted=performance.now();
   f=await mount({approvedLanguageUrl:'/widget/approved-language.json',approvedLanguageFetch:(_url,init)=>{stalledCalls++;stalledSignal=init.signal;return new Promise(()=>{});}});
   const stallMountMs=performance.now()-stallStarted;f.optIn();
@@ -216,7 +333,7 @@ async function tests(){
   check('A stalled optional rules fetch cannot block mount or the local catalogue even when it ignores abort',stalledCalls===1&&stalledSignal?.aborted===true&&stallMountMs<3000&&f.posts().length===0&&compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang']),JSON.stringify({mountMs:stallMountMs,fetchCalls:stalledCalls,aborted:stalledSignal?.aborted}));
 
   // Leave the actual widget open for visual review; this is still a mock provider.
-  f=await mount();f.shadow.querySelector('.ta-ai-options').open=true;
+  f=await mount();f.shadow.querySelector('.ta-privacy-open').click();
   check('Final review uses the original native mascot assets',widget.avatarMascot.getFrame().assetUrl.includes('seedy-spritesheet-v10.webp')&&widget.avatarMascot.element.width===192&&widget.avatarMascot.element.height===208);
  }catch(error){check('Harness completed without an uncaught error',false,error.message);}
  const pass=results.filter(r=>r.pass).length,report={kind:'Gemini MOCK browser integration; no real provider call',began,ended:new Date().toISOString(),viewport:{width:innerWidth,height:innerHeight},pass,fail:results.length-pass,total:results.length,results};

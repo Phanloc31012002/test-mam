@@ -4,6 +4,6 @@
   "buildCommand": "node tools/build.mjs",
   "installCommand": "",
   "outputDirectory": "public",
-  "functions": { "api/mam-assist.js": { "maxDuration": 10 } },
+  "functions": { "api/mam-assist.js": { "maxDuration": 10 }, "api/mam-info.js": { "maxDuration": 10 } },
   "git": { "deploymentEnabled": true }
 }

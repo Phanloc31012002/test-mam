@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "id": "card-printing-source-2026-10-13",
+  "status": "applied-to-local-data-only",
+  "provider": "thanh-an",
+  "productId": "namecard-offset-ta",
+  "sourceSnapshotDate": "2026-10-13",
+  "verifiedAtUtc": "2026-10-13T06:47:00Z",
+  "independentlyReadAtUtc": "2026-10-13T06:49:56Z",
+  "sourceUrls": [
+    "https://innhanhtphcm.com/san-pham/in-card-visit-offset",
+    "https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re"
+  ],
+  "previousDataSha256": "2521ee2d7d238574837567eec14073b25f3cf9081faa3a98c1a62e11dae62615",
+  "currentDataSha256": "eae81a30a9e0a9151ed6f1e6f465468957e85f45f3b69ea91b6ec63069bfd7d2",
+  "existing193RecordsSha256": "77d3d1db78174e9145663f1cd11e03f9fe477c1c04bba10d31d4ae7c018bfb7e",
+  "previousFactCount": 193,
+  "currentFactCount": 196,
+  "newFactCount": 3,
+  "existingFactsChanged": false,
+  "historicalDatasetSnapshotDateUnchanged": "2026-10-12",
+  "ownerPriceRevisionUnchanged": true,
+  "interpretation": {
+    "tableAmountColumn": "THÀNH TIỀN",
+    "amountKind": "published-package-total",
+    "printing": "offset",
+    "cardsPerBox": 100,
+    "quantityAxis": "hộp",
+    "exactQuantities": [
+      2,
+      5,
+      10
+    ],
+    "perBoxUnitPricePublished": false,
+    "materialConfirmedForPackages": false,
+    "sizeConfirmedForPackages": false,
+    "sidesConfirmedForPackages": false,
+    "laminationConfirmedForPackages": false
+  },
+  "addedFacts": [
+    {
+      "id": "ta-namecard-offset-2",
+      "lookupQuery": "Xem tổng gói danh thiếp offset Thanh Ấn 2 hộp",
+      "quantity": 2,
+      "quantityUnit": "hộp",
+      "unit": "gói 2 hộp / 200 tấm",
+      "priceVnd": 90000,
+      "sourceTotalVnd": 90000,
+      "priceKind": "source_total",
+      "priceBasis": "source-total",
+      "provider": "thanh-an",
+      "specs": {
+        "printing": "offset",
+        "cardsPerBox": 100
+      },
+      "conditions": [
+        "In offset theo bảng Thanh Ấn",
+        "100 tấm mỗi hộp",
+        "Gói đúng 2 hộp / 200 tấm",
+        "Giấy, kích thước, cán màng và số mặt in của gói cần xác nhận riêng",
+        "Nguồn ghi chưa gồm VAT 8% và chi phí thiết kế"
+      ],
+      "sourceNote": "Số tiền công bố là tổng gói ở đúng số hộp, không phải đơn giá mỗi hộp. Không chia gói, nhân gói, nội suy hoặc áp bậc đơn giá kỹ thuật số. Chỉ mô tả gói nguồn; quy cách chưa nêu cần xác nhận trước khi đặt. Không cam kết thời gian giao hoặc tự cộng VAT/phí.",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-card-visit-offset",
+      "secondarySourceUrls": [
+        "https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re"
+      ],
+      "verifiedAtUtc": "2026-10-13T06:47:00Z",
+      "sourceSnapshotDate": "2026-10-13",
+      "rawSourceFlags": {
+        "quantityKey": "hop",
+        "exactPackageQuantityOnly": true,
+        "publishedTotalVerified": true,
+        "unitPriceNotPublished": true,
+        "materialUnknown": true,
+        "sizeUnknown": true,
+        "sidesUnknown": true,
+        "laminationAmbiguous": true,
+        "vatExcluded": true,
+        "vatRatePercent": 8,
+        "designExcluded": true,
+        "missingConditions": [
+          "giấy của gói offset",
+          "kích thước của gói offset",
+          "cán màng của gói offset",
+          "số mặt in của gói offset"
+        ]
+      }
+    },
+    {
+      "id": "ta-namecard-offset-5",
+      "lookupQuery": "Xem tổng gói danh thiếp offset Thanh Ấn 5 hộp",
+      "quantity": 5,
+      "quantityUnit": "hộp",
+      "unit": "gói 5 hộp / 500 tấm",
+      "priceVnd": 120000,
+      "sourceTotalVnd": 120000,
+      "priceKind": "source_total",
+      "priceBasis": "source-total",
+      "provider": "thanh-an",
+      "specs": {
+        "printing": "offset",
+        "cardsPerBox": 100
+      },
+      "conditions": [
+        "In offset theo bảng Thanh Ấn",
+        "100 tấm mỗi hộp",
+        "Gói đúng 5 hộp / 500 tấm",
+        "Giấy, kích thước, cán màng và số mặt in của gói cần xác nhận riêng",
+        "Nguồn ghi chưa gồm VAT 8% và chi phí thiết kế"
+      ],
+      "sourceNote": "Số tiền công bố là tổng gói ở đúng số hộp, không phải đơn giá mỗi hộp. Không chia gói, nhân gói, nội suy hoặc áp bậc đơn giá kỹ thuật số. Chỉ mô tả gói nguồn; quy cách chưa nêu cần xác nhận trước khi đặt. Không cam kết thời gian giao hoặc tự cộng VAT/phí.",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-card-visit-offset",
+      "secondarySourceUrls": [
+        "https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re"
+      ],
+      "verifiedAtUtc": "2026-10-13T06:47:00Z",
+      "sourceSnapshotDate": "2026-10-13",
+      "rawSourceFlags": {
+        "quantityKey": "hop",
+        "exactPackageQuantityOnly": true,
+        "publishedTotalVerified": true,
+        "unitPriceNotPublished": true,
+        "materialUnknown": true,
+        "sizeUnknown": true,
+        "sidesUnknown": true,
+        "laminationAmbiguous": true,
+        "vatExcluded": true,
+        "vatRatePercent": 8,
+        "designExcluded": true,
+        "missingConditions": [
+          "giấy của gói offset",
+          "kích thước của gói offset",
+          "cán màng của gói offset",
+          "số mặt in của gói offset"
+        ]
+      }
+    },
+    {
+      "id": "ta-namecard-offset-10",
+      "lookupQuery": "Xem tổng gói danh thiếp offset Thanh Ấn 10 hộp",
+      "quantity": 10,
+      "quantityUnit": "hộp",
+      "unit": "gói 10 hộp / 1000 tấm",
+      "priceVnd": 160000,
+      "sourceTotalVnd": 160000,
+      "priceKind": "source_total",
+      "priceBasis": "source-total",
+      "provider": "thanh-an",
+      "specs": {
+        "printing": "offset",
+        "cardsPerBox": 100
+      },
+      "conditions": [
+        "In offset theo bảng Thanh Ấn",
+        "100 tấm mỗi hộp",
+        "Gói đúng 10 hộp / 1000 tấm",
+        "Giấy, kích thước, cán màng và số mặt in của gói cần xác nhận riêng",
+        "Nguồn ghi chưa gồm VAT 8% và chi phí thiết kế"
+      ],
+      "sourceNote": "Số tiền công bố là tổng gói ở đúng số hộp, không phải đơn giá mỗi hộp. Không chia gói, nhân gói, nội suy hoặc áp bậc đơn giá kỹ thuật số. Chỉ mô tả gói nguồn; quy cách chưa nêu cần xác nhận trước khi đặt. Không cam kết thời gian giao hoặc tự cộng VAT/phí.",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-card-visit-offset",
+      "secondarySourceUrls": [
+        "https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re"
+      ],
+      "verifiedAtUtc": "2026-10-13T06:47:00Z",
+      "sourceSnapshotDate": "2026-10-13",
+      "rawSourceFlags": {
+        "quantityKey": "hop",
+        "exactPackageQuantityOnly": true,
+        "publishedTotalVerified": true,
+        "unitPriceNotPublished": true,
+        "materialUnknown": true,
+        "sizeUnknown": true,
+        "sidesUnknown": true,
+        "laminationAmbiguous": true,
+        "vatExcluded": true,
+        "vatRatePercent": 8,
+        "designExcluded": true,
+        "missingConditions": [
+          "giấy của gói offset",
+          "kích thước của gói offset",
+          "cán màng của gói offset",
+          "số mặt in của gói offset"
+        ]
+      }
+    }
+  ],
+  "sourceTaxAndDesign": {
+    "vatExcluded": true,
+    "publishedVatRatePercent": 8,
+    "designExcluded": true,
+    "rule": "Source condition only, not a current statutory VAT claim; no automatic tax or design-fee addition."
+  },
+  "digitalComparison": {
+    "existingProductId": "namecard-c300",
+    "changed": false,
+    "printingMethod": "digital",
+    "quantityAxis": "hộp",
+    "sourcePublishedUnitPrices": [
+      {
+        "quantity": 1,
+        "priceVnd": 90000
+      },
+      {
+        "quantity": 5,
+        "priceVnd": 80000
+      },
+      {
+        "quantity": 10,
+        "priceVnd": 70000
+      }
+    ],
+    "amountKind": "per-box",
+    "ownerFloorCapBoxes": 10,
+    "rule": "Separate from offset packages; preserve 30 digital boxes = 2,100,000 VND under the previously authorized floor-tier policy."
+  },
+  "supplementalProviderComparison": {
+    "provider": "vinh-phat",
+    "sourceUrl": "https://invinhphat.com/san-pham/in-name-card-visit-danh-thiep-gia-re/",
+    "amountsSameButSeparateGroup": true,
+    "sourceSpecificationDifferences": {
+      "paper": "C300",
+      "size": "90x54 mm",
+      "sides": "1 or 2",
+      "lamination": "by request, inclusion not established",
+      "publishedVatRatePercent": 10
+    },
+    "verificationLimit": "Backup browser result was cached; no new VP runtime record or verification timestamp was introduced."
+  },
+  "constraints": [
+    "Only exact package quantities 2, 5 and 10 can use these totals",
+    "Never divide package totals into per-box prices or multiply packages for 12/20/30 boxes",
+    "Do not infer C300, 90x54/90x55, number of sides or film options for the TA package from general prose or other products",
+    "20-box title/display conflict remains outside this dataset supplement",
+    "No delivery-time guarantees, extra discount, new VAT inference, WordPress edits or publication"
+  ],
+  "verification": {
+    "all193ExistingProductRecordsDeepEqual": true,
+    "all62OwnerFactsUnchanged": true,
+    "taDigitalRecordsUnchanged": true,
+    "sourceTotalEqualsPriceVndForAll3": true,
+    "distinctTaOffsetSourceGroup": true
+  },
+  "unverifiedSpecificationTokenGuards": [
+    "c300",
+    "c350",
+    "90x54",
+    "90 x 54",
+    "90x55",
+    "90 x 55",
+    "can mang",
+    "khong can mang",
+    "in 1 mat",
+    "in 2 mat",
+    "mot mat",
+    "hai mat",
+    "kraft",
+    "giay my thuat",
+    "briston",
+    "bristol",
+    "ep kim",
+    "bo goc",
+    "nhua"
+  ]
+}

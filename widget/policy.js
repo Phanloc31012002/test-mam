@@ -19,6 +19,10 @@
   const OWNER_TIER_POLICY = Object.freeze({id:'owner-floor-tier-2026-10-13',approvedOn:'2026-10-13',enabled:true,
     rule:'highest-published-quantity-not-above-request',aboveLargest:'keep-largest-unit-price',belowSmallest:'handoff',
     provenance:Object.freeze({kind:'business-owner-policy',approvedOn:'2026-10-13'}),cardBoxCap:10});
+  // Owner-confirmed unit definition is separate from the immutable published package totals.
+  const CARD_PRINTING_POLICY=Object.freeze({id:'owner-card-offset-unit-2026-10-13',offsetConversationQuotesEnabled:true,approvedOn:'2026-10-13',offsetMinimumUnitQuantity:10,offsetUnitPriceVnd:16000,offsetBasisFactId:'ta-namecard-offset-10',offsetBasisTotalVnd:160000,
+    provenance:Object.freeze({kind:'business-owner-policy',policyId:'owner-card-offset-unit-2026-10-13',approvedOn:'2026-10-13',rule:'offset-unit-price-for-integer-quantities-at-least-10'})});
+  const INFORMATION_FIELDS=Object.freeze(['size','material','sides','lamination','finishing','leadTime','fileRequirements']);
   const canonicalUnit = value => {const unit=normalize(value);return unit==='quyen'?'cuon':unit;};
   const perUnit = f => (!f.priceKind || f.priceKind==='per_unit') && canonicalUnit(f.unit)===canonicalUnit(f.quantityUnit) && !f.rawSourceFlags?.nominalQuantityBasisOnly && !f.rawSourceFlags?.paymentBasisRequiresConfirmation && !f.rawSourceFlags?.minimumOrderUnknown && !f.rawSourceFlags?.referenceOnly;
   const tierGroupKey = f => JSON.stringify({provider:f.provider,sourceUrl:f.sourceUrl,unit:f.priceKind==='source_total'?'published-package':canonicalUnit(f.unit),quantityUnit:canonicalUnit(f.quantityUnit),priceKind:f.priceKind||'per_unit',
@@ -48,7 +52,7 @@
   }
   function compactSpecifications(product, fact) {
     const s=fact.specs||{};
-    const base=/^namecard/.test(product.id)?'Danh thiếp':product.id==='catalogue'?'Catalogue':/^receipt/.test(product.id)?'Phiếu thu':
+    const base=product.id==='namecard-offset-ta'?'Danh thiếp in offset':/^namecard/.test(product.id)?'Danh thiếp':product.id==='catalogue'?'Catalogue':/^receipt/.test(product.id)?'Phiếu thu':
       product.id==='paper-bag-vp'?'Túi giấy đứng':product.id==='flyer-vp'?'Tờ rơi':product.id==='envelope-vp'?'Bao thư':product.id==='red-envelope'?'Bao lì xì':product.id==='tag-vp'?'Tag treo':displayText(product.name);
     const materials={'c100':'C100','c150':'C150','c200':'C200','c250':'C250','c300':'C300','all-c150':'C150 toàn bộ','cover-c250':'bìa C250/ruột C150','cover-c300':'bìa C300/ruột C150','fort80':'Fort 80','fort100':'Fort 100','fort120':'Fort 120','carbonless':'carbonless'};
     let size=s.size&&/^a[3456]$/i.test(s.size)?s.size.toUpperCase():s.size==='large'?'16 × 7,4 cm':s.size?String(s.size).replace(/x/g,' × ').replace(/\./g,','):'';
@@ -84,6 +88,7 @@
       totalKind:packageTotal?'published-package':'computed-owner-tier',sourceQuantity:fact.quantity,
       tierPolicyId:packageTotal?null:OWNER_TIER_POLICY.id,provenance:packageTotal?{kind:'published-source-total'}:OWNER_TIER_POLICY.provenance,
       essentialConditions:essential.map(displayText),conditions,provider:fact.provider,sourceUrl:fact.sourceUrl};
+    if(fact.sourceSnapshotDate){quote.sourceSnapshotDate=fact.sourceSnapshotDate;quote.verifiedAtUtc=fact.verifiedAtUtc;}
     if(fact.ownerPriceRevision) {
       quote.ownerPriceRevision={...fact.ownerPriceRevision};
       quote.originalSourceRecord=fact.originalSourceRecord||null;
@@ -93,14 +98,31 @@
     const price=quantity.toLocaleString('vi-VN')+' '+fact.quantityUnit+': '+money(total)+(excludesTax?' (chưa VAT)':'');
     return {quote,compactText:displayText(compactSpecifications(product,fact)+'\n'+price)};
   }
+  function offsetOwnerQuote(product,fact,quantity) {
+    const policy=CARD_PRINTING_POLICY;
+    if(!positiveInteger(quantity)||quantity<policy.offsetMinimumUnitQuantity||fact.id!==policy.offsetBasisFactId||fact.priceKind!=='source_total'||fact.priceVnd!==policy.offsetBasisTotalVnd||fact.sourceTotalVnd!==policy.offsetBasisTotalVnd||fact.quantity!==10||fact.provider!=='thanh-an'||fact.sourceUrl!=='https://innhanhtphcm.com/san-pham/in-card-visit-offset'||fact.specs?.printing!=='offset'||fact.specs?.cardsPerBox!==100)return {};
+    const total=quantity*policy.offsetUnitPriceVnd;if(!Number.isSafeInteger(total))return {};
+    const sourceConditions=fact.conditions.slice(),conditions=sourceConditions.filter(c=>!/^Gói đúng /i.test(c));
+    conditions.push('Số lượng '+quantity+' hộp','Đơn giá theo hộp do chủ cơ sở xác nhận ngày '+policy.approvedOn+'; không khẳng định website công bố đơn giá này.');
+    const quote={totalVnd:total,unitPriceVnd:policy.offsetUnitPriceVnd,quantity,quantityUnit:'hộp',unit:'hộp',totalKind:'computed-owner-offset',sourceQuantity:10,tierPolicyId:policy.id,provenance:policy.provenance,conditions,essentialConditions:conditions.map(displayText),sourceConditions,
+      provider:fact.provider,sourceUrl:fact.sourceUrl,sourceSnapshotDate:fact.sourceSnapshotDate,verifiedAtUtc:fact.verifiedAtUtc,sourcePriceKind:'source_total',sourcePublishedTotalVnd:fact.priceVnd,sourcePublishedUnit:fact.unit};
+    return {quote,compactText:displayText(compactSpecifications(product,fact)+'\n'+quantity.toLocaleString('vi-VN')+' hộp: '+money(total)+' (chưa VAT)')};
+  }
   function validateData(data) {
     if (!data || data.schemaVersion !== 1 || !validDate(data.snapshotDate) || !validVerifiedTime(data.verifiedAtUtc, data.snapshotDate) || !nonempty(data.snapshotLabel) || !positiveInteger(data.priceReviewAfterDays) || data.priceReviewAfterDays > 30 || !Array.isArray(data.products) || !data.products.length || !Array.isArray(data.contacts) || !data.contacts.length || !data.faq) throw new Error('Dữ liệu FAQ hoặc ngày kiểm tra không hợp lệ');
     const validRevision=r=>r&&nonempty(r.revisionId)&&r.kind==='business-owner-price-update'&&validDate(r.approvedOn)&&Array.isArray(r.appliesToProviders)&&r.appliesToProviders.length>0&&r.appliesToProviders.every(provider=>['thanh-an','vinh-phat'].includes(provider))&&new Set(r.appliesToProviders).size===r.appliesToProviders.length;
     if(data.ownerPriceRevision!==undefined&&(!validRevision(data.ownerPriceRevision)||!/^[a-f0-9]{64}$/i.test(data.ownerPriceRevision.baselineSha256)||data.ownerPriceRevision.historicalWebsiteSnapshotDate!==data.snapshotDate))throw new Error('Thông tin giá chủ cơ sở xác nhận không hợp lệ');
+    const cardUpdate=data.cardPrintingSourceUpdate,cardUrls=['https://innhanhtphcm.com/san-pham/in-card-visit-offset','https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re'],cardIds=['ta-namecard-offset-2','ta-namecard-offset-5','ta-namecard-offset-10'];
+    if(cardUpdate!==undefined&&(!cardUpdate||cardUpdate.productId!=='namecard-offset-ta'||!validDate(cardUpdate.sourceSnapshotDate)||cardUpdate.sourceSnapshotDate<data.snapshotDate||!validVerifiedTime(cardUpdate.verifiedAtUtc,cardUpdate.sourceSnapshotDate)||!Array.isArray(cardUpdate.sourceUrls)||cardUpdate.sourceUrls.length!==2||!cardUrls.every(url=>cardUpdate.sourceUrls.includes(url))||!Array.isArray(cardUpdate.addedFactIds)||cardUpdate.addedFactIds.length!==3||!cardIds.every(id=>cardUpdate.addedFactIds.includes(id))))throw new Error('Nguồn bổ sung danh thiếp offset không hợp lệ');
+    const cardSupplement=(value,productId)=>Boolean(cardUpdate&&productId===cardUpdate.productId&&value.sourceSnapshotDate===cardUpdate.sourceSnapshotDate&&value.verifiedAtUtc===cardUpdate.verifiedAtUtc&&value.provider==='thanh-an'&&cardUpdate.sourceUrls.includes(value.sourceUrl)&&(value.id===productId||cardUpdate.addedFactIds.includes(value.id)));
+    const information=data.cardPrintingInformation;
+    if(information!==undefined&&(!information||information.digital?.material!=='c300'||information.digital?.printing!=='digital'||information.digital?.sourceUrl!=='https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re'||!validVerifiedTime(information.digital?.verifiedAtUtc,information.digital?.verifiedAtUtc?.slice(0,10))||information.standardSizeReference?.size!=='90x54'||information.standardSizeReference?.dimensionsUnit!=='mm'||information.standardSizeReference?.scope!=='common-reference-not-price-condition'||information.standardSizeReference?.sourceUrl!=='https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re'||!validVerifiedTime(information.standardSizeReference?.verifiedAtUtc,information.standardSizeReference?.verifiedAtUtc?.slice(0,10))))throw new Error('Thông tin tham khảo danh thiếp chưa đủ nguồn');
     const ownerOnlyRecipe=value=>Boolean(data.ownerPriceRevision&&validRevision(value.ownerPriceRevision)&&value.ownerPriceRevision.revisionId===data.ownerPriceRevision.revisionId&&value.ownerPriceRevision.approvedOn===data.ownerPriceRevision.approvedOn&&value.sourceUrl===null&&value.rawSourceFlags?.websiteSourceUnverified===true&&value.rawSourceFlags?.ownerRecipeIncomplete===true&&value.sourceOwnerRecipe&&(typeof value.sourceOwnerRecipe==='object'||nonempty(value.sourceOwnerRecipe)));
     const productIds = new Set(), factIds = new Set(), queries = new Set(), phones = new Set();
     for (const p of data.products) {
-      if (!nonempty(p.id) || productIds.has(p.id) || !nonempty(p.name) || !stringList(p.aliases) || !websiteSource(p.sourceUrl)&&!ownerOnlyRecipe(p) || !Number.isSafeInteger(p.displayPriceVnd) || p.displayPriceVnd < 0 || !['reference_only_requires_confirmation', 'published_conditions', 'conflict_handoff_only'].includes(p.quotationStatus) || !validVerifiedTime(p.verifiedAtUtc, data.snapshotDate)&&!(ownerOnlyRecipe(p)&&p.verifiedAtUtc===null) || !stringList(p.missingConditions)) throw new Error('Sản phẩm không hợp lệ');
+      if (!nonempty(p.id) || productIds.has(p.id) || !nonempty(p.name) || !stringList(p.aliases) || !websiteSource(p.sourceUrl)&&!ownerOnlyRecipe(p) || !Number.isSafeInteger(p.displayPriceVnd) || p.displayPriceVnd < 0 || !['reference_only_requires_confirmation', 'published_conditions', 'conflict_handoff_only'].includes(p.quotationStatus) || !validVerifiedTime(p.verifiedAtUtc, data.snapshotDate)&&!(ownerOnlyRecipe(p)&&p.verifiedAtUtc===null)&&!cardSupplement(p,p.id) || !stringList(p.missingConditions)) throw new Error('Sản phẩm không hợp lệ');
+      if(p.sourceSnapshotDate!==undefined&&!cardSupplement(p,p.id))throw new Error('Ngày nguồn bổ sung không khớp sản phẩm');
+      if(cardSupplement(p,p.id)&&(!Array.isArray(p.priceFacts)||p.priceFacts.length!==3||!cardIds.every(id=>p.priceFacts.some(f=>f.id===id))))throw new Error('Bảng bổ sung offset thiếu gói nguồn');
       productIds.add(p.id);
       if (p.sessionFields !== undefined && (!stringList(p.sessionFields) || (!p.sessionFields.includes('quantity') && !p.priceFacts?.every(f => f.priceKind === 'reference_display' && f.rawSourceFlags?.nominalQuantityBasisOnly)) || !nonempty(p.quantityKey) || !p.sessionQuestions || typeof p.sessionQuestions !== 'object')) throw new Error('Thiếu quy cách hội thoại của bảng nguồn');
       if (p.uncertainFinishingTokens !== undefined && !stringList(p.uncertainFinishingTokens)) throw new Error('Gia công cần xác nhận không hợp lệ');
@@ -111,6 +133,7 @@
       if (p.quotationStatus === 'conflict_handoff_only' && !nonempty(p.conflictReason)) throw new Error('Giá chưa thống nhất cần lý do');
       if (p.priceFacts !== undefined && !Array.isArray(p.priceFacts)) throw new Error('Bảng giá không hợp lệ');
       for (const f of p.priceFacts || []) {
+        if(f.sourceSnapshotDate!==undefined&&!cardSupplement(f,p.id)||cardSupplement(p,p.id)&&!cardSupplement(f,p.id))throw new Error('Dòng giá bổ sung sai ngày hoặc nguồn');
         if (!nonempty(f.lookupQuery) || !normalize(f.lookupQuery) || queries.has(normalize(f.lookupQuery)) || !nonempty(f.id) || factIds.has(f.id) || !Number.isSafeInteger(f.priceVnd) || f.priceVnd < 0 || !positiveInteger(f.quantity) || !nonempty(f.quantityUnit) || !nonempty(f.unit) || !stringList(f.conditions) || !nonempty(f.sourceNote) || !websiteSource(f.sourceUrl)&&!ownerOnlyRecipe(f) || (f.sourceUrl !== p.sourceUrl && !p.relatedSourceUrls?.includes(f.sourceUrl)) || !['thanh-an', 'vinh-phat'].includes(f.provider) || (f.priceKind !== undefined && !['per_unit', 'source_total', 'reference_display'].includes(f.priceKind)) || (f.sourceTotalVnd !== null && (!Number.isSafeInteger(f.sourceTotalVnd) || f.sourceTotalVnd < 0)) || (f.priceKind === 'source_total' && f.sourceTotalVnd !== f.priceVnd) || (f.secondarySourceUrls !== undefined && (!stringList(f.secondarySourceUrls) || !f.secondarySourceUrls.every(websiteSource)))) throw new Error('Dòng bảng giá thiếu điều kiện');
         if (!ownerOnlyRecipe(f)&&new URL(f.sourceUrl).hostname !== (f.provider === 'thanh-an' ? 'innhanhtphcm.com' : 'invinhphat.com')) throw new Error('Nhà cung cấp và nguồn giá không khớp');
         if(f.ownerPriceRevision!==undefined) {
@@ -149,7 +172,10 @@
     if(hasAny(text,['bao thu','phong bi'])&&!contains(text,'vinh phat')&&!/\ba[3456]\b/.test(text))return byIds(['envelope-a5','envelope-vp']);
     const vp = data.products.find(p => p.id === 'namecard-vp');
     const digital = data.products.find(p => p.id === 'namecard-digital-vp');
-    if (digital && hasAny(text, ['digital', 'ky thuat so', 'kts']) && matches.some(p => ['namecard-c300','namecard-vp','namecard-digital-vp'].includes(p.id))) return [digital];
+    if (digital && hasAny(text, ['digital', 'ky thuat so', 'kts']) && matches.some(p => ['namecard-c300','namecard-vp','namecard-digital-vp'].includes(p.id))) {
+      const reference=contains(text,'vinh phat')||hasAny(text,['briston','bristol','giay my thuat','giay fort','giay kraft','giay gan']);
+      return byIds([reference?digital.id:'namecard-c300'],['namecard-c300','namecard-vp','namecard-digital-vp','namecard-offset-ta']);
+    }
     const explicitVpCard = hasAny(text, ['danh thiep vinh phat', 'card vinh phat', 'namecard vinh phat', 'name card vinh phat']);
     const fullVpCard = matches.some(p => p.id === 'namecard-c300') && /\b100\s*(?:tam|card)\s*(?:moi\s*)?hop\b/.test(text) && /\b90\s*(?:x\s*)?54(?:\s*mm)?\b/.test(text) && contains(text, 'offset');
     if (vp && (explicitVpCard || fullVpCard)) return [vp];
@@ -178,6 +204,7 @@
     const text = normalize(raw);
     const source = {label:'Nguồn: Thanh Ấn', url:data.faq.sourceUrl};
     const dated = 'Dữ liệu website ngày ' + data.snapshotLabel + '.';
+    const beforeSupplement=value=>value.sourceSnapshotDate&&now<Date.parse(value.verifiedAtUtc);
     // A clock before verification, an invalid clock, or the review boundary stops every price path.
     const expired = !Number.isFinite(now) || now < Date.parse(data.verifiedAtUtc) || data.ownerPriceRevision&&now<Date.parse(data.ownerPriceRevision.approvedOn+'T00:00:00Z') || now >= Date.parse(data.snapshotDate + 'T00:00:00Z') + data.priceReviewAfterDays * 86400000;
     const stale = url => response('stale', 'Bảng giá chưa thể dùng ở thời điểm này hoặc đã đến hạn kiểm tra lại. Bạn liên hệ tư vấn viên để xác nhận nhé.', {handoff:true, sources:[{label:'Xem nguồn hiện tại', url}]});
@@ -192,7 +219,7 @@
     const hits = matchingProducts(text, data);
     const row = data.products.flatMap(p => (p.priceFacts || []).map(f => ({product:p, fact:f}))).find(({fact:f}) => text === normalize(f.lookupQuery) || text === normalize(f.lookupQuery + ' tổng công bố'));
     if (row) {
-      if (expired) return stale(row.fact.sourceUrl);
+      if (expired||beforeSupplement(row.fact)) return stale(row.fact.sourceUrl);
       // Signs/operators are not part of the generated source-row selector.
       if (/[+−–—=]|(?:^|\s)-\s*\d/.test(raw)) return response('clarify', 'Số lượng hoặc yêu cầu của bạn cần xác nhận lại. Bạn chọn nguyên dòng bảng giá đã công bố hoặc gửi quy cách cho tư vấn viên.', {handoff:true, sources:[{label:'Xem bảng giá gốc', url:row.fact.sourceUrl}]});
       const f = row.fact;
@@ -201,7 +228,8 @@
       const priceSource=f.ownerPriceRevision?'Chủ cơ sở xác nhận ngày '+f.ownerPriceRevision.approvedOn:f.provider==='thanh-an'?'Thanh Ấn (innhanhtphcm.com)':'Giá tham khảo';
       const sources=[...(f.sourceUrl?[{label:f.ownerPriceRevision?'Nguồn website trước cập nhật để đối chiếu':'Xem bảng giá & quy cách gốc',url:f.sourceUrl}]:[]),...(f.secondarySourceUrls||[]).map(url=>({label:'Nguồn tham khảo thứ hai',url}))];
       const incomplete=f.rawSourceFlags?.ownerRecipeIncomplete===true;
-      return response(f.priceKind === 'reference_display'||incomplete ? 'reference' : 'price', row.product.name + '\nNguồn giá: ' + priceSource + '.\n' + priceLine + '\nĐiều kiện áp dụng:\n• ' + f.conditions.join('\n• ') + total + '\n' + f.sourceNote + '\n' + dated + (f.ownerPriceRevision?' Giá này do chủ cơ sở xác nhận; không khẳng định là giá website đã đăng.':' Đây là thông tin nguồn công bố, cần xác nhận đơn thực tế với nhà in.'), {productId:row.product.id, factId:f.id, priceKind:f.priceKind || 'per_unit', provider:f.provider,sources,handoff:true,...(f.ownerPriceRevision?{ownerPriceRevision:{...f.ownerPriceRevision}}:{}),...(incomplete?{compactText:incompleteRecipeText(f)}:quoteDetails(row.product,f,f.quantity))});
+      const rowDated=f.sourceSnapshotDate?'Dữ liệu website ngày '+f.sourceSnapshotDate.split('-').reverse().join('/')+'.':dated;
+      return response(f.priceKind === 'reference_display'||incomplete ? 'reference' : 'price', row.product.name + '\nNguồn giá: ' + priceSource + '.\n' + priceLine + '\nĐiều kiện áp dụng:\n• ' + f.conditions.join('\n• ') + total + '\n' + f.sourceNote + '\n' + rowDated + (f.ownerPriceRevision?' Giá này do chủ cơ sở xác nhận; không khẳng định là giá website đã đăng.':' Đây là thông tin nguồn công bố, cần xác nhận đơn thực tế với nhà in.'), {productId:row.product.id, factId:f.id, priceKind:f.priceKind || 'per_unit', provider:f.provider,sources,handoff:true,...(f.ownerPriceRevision?{ownerPriceRevision:{...f.ownerPriceRevision}}:{}),...(incomplete?{compactText:incompleteRecipeText(f)}:quoteDetails(row.product,f,f.quantity))});
     }
     const estimate = data.products.flatMap(p => (p.referenceEstimates || []).map(e => ({product:p, estimate:e}))).find(({estimate:e}) => text === normalize(e.lookupQuery));
     if (estimate) {
@@ -226,7 +254,7 @@
     if (!hits.length && hasAny(text, ['decal', 'tem', 'nhan'])) return response('clarify', 'Bạn muốn decal giấy hay decal nhựa bóng? Mỗi vật liệu cần quy cách và số lượng riêng.', {suggestions:['Decal giấy', 'Decal nhựa bóng']});
     if (hits.length === 1) {
       const p = hits[0];
-      if (expired) return stale(p.sourceUrl);
+      if (expired||beforeSupplement(p)) return stale(p.sourceUrl);
       if ((p.id === 'red-envelope' && hasAny(text, ['ep kim', 'can mang', 'dap noi'])) || (p.id === 'receipt' && hasAny(text, ['so nhay', 'danh so']))) return response('handoff', 'Phần gia công bạn yêu cầu chưa có mức giá được xác minh trong dòng bảng này. Mầm không áp dụng giá của quy cách thường cho đơn có gia công khác. Bạn gửi tư vấn viên quy cách và số lượng để xác nhận.', {handoff:true, sources:[{label:'Xem sản phẩm gốc', url:p.sourceUrl}]});
       if (p.disallowedTokens?.some(t => contains(text, t))) return response('clarify', 'Biến thể bạn hỏi chưa có giá đủ điều kiện trong dữ liệu của Mầm. Bạn gửi tư vấn viên loại giấy, kích thước và số lượng để xác nhận.', {handoff:true, sources:[{label:'Xem sản phẩm liên quan', url:p.sourceUrl}]});
       if (p.selectionTokens && !p.selectionTokens.some(t => contains(text, t))) return response('clarify', p.selectionQuestion, {suggestions:[p.name, 'Liên hệ Zalo']});
@@ -241,7 +269,7 @@
   }
   function createSession(data, clock = Date.now) {
     validateData(data);
-    let state = null;
+    let state = null,informationPending=null;
     const time = () => typeof clock === 'function' ? clock() : clock;
     const required = {
       'namecard-c300':['quantity', 'material'],
@@ -257,10 +285,41 @@
       quantityUnit[p.id] = p.quantityKey || normalize(p.priceFacts?.[0]?.quantityUnit);
       quantityLabels[p.id] = p.priceFacts?.[0]?.quantityUnit || 'sản phẩm';
     }
-    const reset = () => { state = null; };
+    const reset = () => { state = null;informationPending=null; };
     const approvedCategoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư','red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
     const clarify = (p, text, suggestions = []) => response('clarify', text, {productId:p.id,compactText:displayText((text.match(/^[^?]*\?/)||[text])[0]),pendingField:state?.pending, sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], suggestions});
     const handoff = (p, text) => response('handoff', text, {productId:p.id,compactText:'Quy cách hoặc số lượng này cần báo giá riêng. Bạn nhắn Zalo để được tư vấn nhé.', sources:[{label:'Xem bảng giá gốc', url:p.sourceUrl}], handoff:true});
+    function informationField(text,raw) {
+      if(hasAny(text,['thoi gian','bao lau','khi nao','may ngay','mat may ngay']))return 'leadTime';
+      const question=/\?/.test(raw)||hasAny(text,['bao nhieu','the nao','nhu nao','nhu the nao','la gi','giay gi','giay nao','loai nao','loai giay nao','loai giay gi','chat lieu gi','chat lieu nao','kich thuoc nao','kho nao','co can mang khong','can mang gi','can mang nao','may mat','so mat','in 1 mat khong','in 2 mat khong','in mot mat khong','in hai mat khong','gui file gi','can file gi','dinh dang file','file dinh dang']);
+      if(contains(text,'file')&&question&&!hasAny(text,['gia','bao gia','phi','chi phi','tinh tien','tinh tong','tong tien','vat','thue']))return 'fileRequirements';
+      if(hasAny(text,['kich thuoc','size','kho giay'])&&(question||!/[0-9]/.test(text)))return 'size';
+      if(hasAny(text,['giay','chat lieu','dinh luong'])&&question)return 'material';
+      if(hasAny(text,['can mang','mang mo','mang bong'])&&question)return 'lamination';
+      if(contains(text,'mat')&&question)return 'sides';
+      if(hasAny(text,['gia cong','bo goc','ep kim','ep nhu','dong kim','can gap','so nhay'])&&question)return 'finishing';
+      return null;
+    }
+    function informationReply(p,field) {
+      const sources=p?[{label:'Xem chi tiết',url:p.sourceUrl||p.secondarySourceUrls?.[0]}]:[{label:'Xem chi tiết',url:data.faq.sourceUrl}];
+      if(!p)return response('clarify','Dạ, bạn muốn hỏi thông tin của ấn phẩm nào ạ?',{pendingField:'product',suggestions:['Danh thiếp','Catalogue','Tag treo']});
+      const reply=(kind,text,extra={})=>response(kind,text,{...extra,informationQuery:{productId:p.id,field}});
+      if(field==='leadTime')return reply('handoff',data.faq.delivery+' Dạ, bạn nhắn Zalo để xác nhận thời gian cho đơn của mình ạ.',{sources:[{label:'Xem chi tiết',url:data.faq.sourceUrl}],handoff:true,compactText:'Dạ, bạn nhắn Zalo để xác nhận thời gian cho đơn của mình ạ.'});
+      if(p.id==='namecard-offset-ta')return reply('handoff','Dạ, giấy, kích thước và cán màng của gói offset cần xác nhận thêm ạ.',{productId:p.id,sources,handoff:true,compactText:'Dạ, quy cách gói offset cần xác nhận thêm. Bạn nhắn Zalo để được tư vấn ạ.'});
+      if(p.id==='namecard-c300'&&field==='size') {
+        const ref=data.cardPrintingInformation?.standardSizeReference;
+        if(ref&&time()>=Date.parse(ref.verifiedAtUtc))return reply('faq','Dạ, kích thước danh thiếp thông dụng là 90 × 54 mm. Kích thước khác cần xác nhận thêm ạ.',{productId:p.id,sources:[{label:'Xem chi tiết',url:ref.sourceUrl}],informationScope:ref.scope});
+        return reply('handoff','Dạ, kích thước riêng cần xác nhận thêm. Bạn nhắn Zalo để được tư vấn ạ.',{productId:p.id,sources,handoff:true,compactText:'Dạ, bạn nhắn Zalo để xác nhận kích thước danh thiếp ạ.'});
+      }
+      const facts=(p.priceFacts||[]).filter(f=>!state||state.productId!==p.id||Object.entries(state.slots).filter(([key])=>!['quantity','printing','cardsPerBox'].includes(key)).every(([key,value])=>f.specs?.[key]===value));
+      const values=[...new Set(facts.map(f=>f.specs?.[field]).filter(value=>typeof value==='string'))];
+      if(field==='material'&&values.length) {
+        const labels={c300:'C300',c250:'C250',c150:'C150','all-c150':'C150 toàn bộ','cover-c250':'bìa C250, ruột C150','cover-c300':'bìa C300, ruột C150',briston300:'Briston 300gsm',briston350:'Briston 350gsm','art-fort-kraft-textured':'giấy mỹ thuật/Fort/Kraft/giấy gân',carbonless:'carbonless'};
+        return reply('faq','Dạ, giấy: '+values.map(value=>labels[value]||value).join('; ')+' ạ.',{productId:p.id,sources});
+      }
+      if(field==='size'&&values.length)return reply('faq','Dạ, kích thước: '+values.map(value=>value==='large'?'16 × 7,4 cm':value.toUpperCase().replace(/X/g,' × ')).join(', ')+' ạ.',{productId:p.id,sources});
+      return reply('handoff','Dạ, phần này cần xác nhận thêm. Bạn nhắn Zalo để được tư vấn ạ.',{productId:p.id,sources,handoff:true,compactText:'Dạ, phần này cần xác nhận thêm. Bạn nhắn Zalo để được tư vấn ạ.'});
+    }
     function unsupported(p, text, raw) {
       if (p.disallowedTokens?.some(t => contains(text, t))) return true;
       if (p.uncertainFinishingTokens?.some(t => contains(text, t))) return true;
@@ -283,6 +342,7 @@
         if(paper.some(material=>!p.priceFacts.some(f=>f.specs?.material===material)))return true;
         if(p.priceFacts.every(f=>f.specs?.cord==='ordinary-nylon')&&hasAny(text,['khong quai','khong day','quai giay','day giay','quai vai','day vai','ruy bang','day lua','day cotton']))return true;
       }
+      if(p.id==='namecard-offset-ta'&&(hasAny(text,['bo goc','goc tron','ep kim','ep nhu','dap noi'])||/\b(?:1|2|mot|hai)\s*mat\b/.test(text)))return true;
       if(p.id==='tag-vp'&&hasAny(text,['khong lo','khong duc lo','khong khoan lo','khong bam lo'])&&p.priceFacts.every(f=>String(f.specs?.finishing||'').includes('hole')||f.specs?.holes))return true;
       if(p.id==='tag-vp') {
         const holes=text.match(/\b(\d+|mot|hai|ba|nhieu)\s*lo\b/);
@@ -308,8 +368,10 @@
     }
     function nextQuestion(p) {
       const slots = state.slots;
+      if(p.id==='namecard-c300'&&!state.cardMethod){state.pending='printing';return clarify(p,'Bạn chọn in offset hay in nhanh?',['In offset','In nhanh']);}
       const field = required[p.id].find(key => slots[key] === undefined);
       state.pending = field;
+      if(field==='quantity'&&p.id==='namecard-offset-ta')return clarify(p,'Bạn cần in bao nhiêu hộp?',['2 hộp','5 hộp','10 hộp','20 hộp','30 hộp']);
       if (field === 'quantity') return clarify(p, 'Bạn cần in bao nhiêu ' + quantityLabels[p.id] + '?', [...new Set(p.priceFacts.filter(f=>!f.rawSourceFlags?.nominalQuantityBasisOnly).map(f => f.quantity + ' ' + f.quantityUnit))]);
       if (p.sessionFields && field) {
         const options = [...new Set(p.priceFacts.map(f => f.specs?.[field]).filter(value => value !== undefined))];
@@ -335,15 +397,35 @@
       const wantsTotal=hasAny(text,['tong tien','thanh tien','tinh tong','nhan gia','tinh tien','bao nhieu tien cho','tong cong bo']);
       const commercialRequest=hasAny(text,['vat','thue','gtgt','giam gia','chiet khau','gia si','re hon','bot gia','mien phi','free','uu dai','khuyen mai','voucher','coupon','giao hang','ship','van chuyen','lay ngay','hom nay','ngay mai','bao lau','kip','deadline','2 gio','30 phut']);
       const ownerCardQuantity=base.kind==='conflict'&&matchingProducts(normalize(raw),data).some(p=>p.id==='namecard-c300')&&/\b(?:1[1-9]|[2-9]\d|\d{3,})\s*hop\b/.test(text)&&!/(?:280|300)(?:k|\s*(?:nghin|ngan|vnd|dong))|[₫đ]\s*$/.test(text);
-      if (['empty', 'limit', 'policy', 'contacts', 'faq', 'stale'].includes(base.kind)||base.kind==='conflict'&&!ownerCardQuantity) return base;
+      const infoField=informationField(text,raw),infoMethod=hasAny(text,['in nhanh','ky thuat so','digital','kts'])?'digital':contains(text,'offset')?'offset':null;
+      if (['empty', 'limit', 'policy', 'contacts'].includes(base.kind)||['faq','stale'].includes(base.kind)&&!infoField||base.kind==='conflict'&&!ownerCardQuantity&&!infoField) return base;
+      if(!base.factId&&(infoField||informationPending&&!wantsTotal&&!hasAny(text,['gia','bao gia']))) {
+        const hits=matchingProducts(normalize(raw),data),field=infoField||informationPending.field;
+        if(hits.length>1)return response('clarify','Dạ, bạn muốn hỏi thông tin của ấn phẩm nào ạ?',{pendingField:'product',suggestions:hits.map(p=>displayText(p.name))});
+        let p=hits[0]||(state&&data.products.find(p=>p.id===state.productId));
+        if(infoMethod&&(['namecard-c300','namecard-offset-ta'].includes(p?.id)||informationPending))p=data.products.find(p=>p.id===(infoMethod==='offset'?'namecard-offset-ta':'namecard-c300'))||p;
+        else if(p?.id==='namecard-c300'&&state?.productId==='namecard-offset-ta')p=data.products.find(p=>p.id===state.productId);
+        if(p?.id==='namecard-c300'&&field!=='size'&&!infoMethod&&!state?.cardMethod) {
+          informationPending={field};return response('clarify','Dạ, bạn muốn hỏi về in offset hay in nhanh ạ?',{pendingField:'printing',compactText:'Dạ, bạn muốn hỏi về in offset hay in nhanh ạ?',suggestions:['In offset','In nhanh']});
+        }
+        if(infoMethod&&informationPending&&p){if(!state||state.productId!==p.id)state={productId:p.id,slots:{}};if(p.id==='namecard-c300')state.cardMethod='digital';}
+        informationPending=null;return informationReply(p,field);
+      }
+      informationPending=null;
       if (base.factId) {
         const p = data.products.find(p => p.id === base.productId);
         const f = p.priceFacts.find(f => f.id === base.factId);
-        state = {productId:p.id, slots:{quantity:f.quantity, ...f.specs}, factId:f.id};
+        state = {productId:p.id, slots:{quantity:f.quantity, ...f.specs}, factId:f.id,...(p.id==='namecard-c300'?{cardMethod:'digital'}:{})};
         return base;
       }
       if (base.kind === 'estimate') return base;
       let products = matchingProducts(normalize(raw), data);
+      const cardDigital=hasAny(text,['in nhanh','ky thuat so','digital','kts']),cardOffset=contains(text,'offset');
+      const taCardFamily=['namecard-c300','namecard-offset-ta'];
+      if(products.length<=1&&(products.length===1&&taCardFamily.includes(products[0].id)||!products.length&&state&&taCardFamily.includes(state.productId))&&(cardDigital||cardOffset)) {
+        const targetId=cardOffset&&!cardDigital?'namecard-offset-ta':'namecard-c300';
+        const target=data.products.find(p=>p.id===targetId);if(target)products=[target];
+      }
       // Reviewed language memory may identify a category only; every supplied spec still uses local guards.
       const categoryHint=options&&typeof options==='object'&&!Array.isArray(options)&&Object.keys(options).length===1&&Object.hasOwn(options,'approvedCategoryId')&&typeof options.approvedCategoryId==='string'&&Object.hasOwn(approvedCategoryQueries,options.approvedCategoryId)?options.approvedCategoryId:null;
       if(!state&&!products.length&&base.kind==='unknown'&&categoryHint&&!hasAny(text,['thoi tiet','bitcoin','gia vang','viet code','lap trinh','lam tho','chinh tri','y te'])) {
@@ -352,7 +434,11 @@
         if(products.length!==1)return answer(categoryQuery,data,time());
       }
       if (products.length > 1) {state=null;return base;}
-      if (products.length === 1 && (!state || state.productId !== products[0].id)) state = {productId:products[0].id, slots:{}};
+      if (products.length === 1 && (!state || state.productId !== products[0].id)) {
+        const retained=state&&taCardFamily.includes(state.productId)&&taCardFamily.includes(products[0].id)?{...state.slots}:{};
+        delete retained.printing;delete retained.cardsPerBox;
+        state = {productId:products[0].id, slots:retained};
+      }
       if (!state) return base;
       const p = data.products.find(p => p.id === state.productId);
       if (!required[p.id] || !p.priceFacts?.length) {
@@ -375,13 +461,18 @@
         }
         return base;
       }
-      if (/[+−–—=÷*]|(?:^|\s)-\s*\d|\d\s*\/\s*\d/.test(raw) || /\b\d+[.,]\d{1,2}\s*(?:hộp|hop|cuốn|cuon|quyển|quyen|cái|cai|con|tờ|to|tấm|tam|tem|tag|bộ|bo)\b/iu.test(raw) || (raw.includes('×') && !p.sessionFields && p.id !== 'namecard-vp' && !/16\s*×\s*7[.,]4/.test(raw))) { state.factId = null;delete state.slots.quantity;state.pending='quantity';return clarify(p, 'Bạn nhập một số lượng nguyên dương theo đơn vị ' + quantityLabels[p.id] + ' nhé.'); }
+      if (/[+−–—=÷*]|(?:^|\s)-\s*\d|\d\s*\/\s*\d/.test(raw) || /\b\d+[.,]\d{1,2}\s*(?:hộp|hop|cuốn|cuon|quyển|quyen|cái|cai|con|tờ|to|tấm|tam|tem|tag|bộ|bo)\b/iu.test(raw) || (raw.includes('×') && !p.sessionFields && p.id !== 'namecard-vp' && !/16\s*×\s*7[.,]4/.test(raw))) { state.factId = null;delete state.slots.quantity;state.pending='quantity';return clarify(p, 'Bạn cần in bao nhiêu '+quantityLabels[p.id]+'?'); }
       if (hasAny(text, ['thoi tiet', 'bitcoin', 'gia vang', 'viet code', 'lap trinh', 'lam tho', 'chinh tri', 'y te'])) return base;
       const standardConfirmed = hasAny(text, ['quy cach cong bo', 'quy cach chuan']);
       if (standardConfirmed) { state.blocked = false; }
       if (state.blocked) return handoff(p, 'Biến thể bạn vừa yêu cầu cần báo giá riêng. Bạn có thể chọn quy cách công bố, đổi sản phẩm hoặc liên hệ tư vấn viên.');
       const slots = state.slots;
+      if(p.id==='namecard-offset-ta'&&standardConfirmed)for(const key of ['material','size','sides','finishing','variant','cover','inside'])delete slots[key];
       let changed = products.length === 1 || standardConfirmed;
+      if(p.id==='namecard-c300') {
+        const digital=hasAny(text,['in nhanh','ky thuat so','digital','kts']),offset=contains(text,'offset');
+        if(digital||offset){state.cardMethod=digital&&offset?null:digital?'digital':'offset';changed=true;}
+      }
       if (p.id === 'catalogue') {
         if (hasAny(text, ['vinh phat'])) { state.provider = 'vinh-phat'; changed = true; }
         if (hasAny(text, ['thanh an'])) { state.provider = 'thanh-an'; changed = true; }
@@ -413,6 +504,7 @@
         return clarify(p, 'Bảng nguồn của ' + p.name + ' dùng đơn vị ' + quantityLabels[p.id] + '. Bạn cần in bao nhiêu '+quantityLabels[p.id]+'?');
       }
       if (/^\d+$/.test(text) && ['quantity', 'pages', 'layers'].includes(state.pending)) { slots[state.pending] = Number(text); changed = true; }
+      else if(/^\d+$/.test(text)&&p.id==='namecard-c300'&&state.pending==='printing'){slots.quantity=Number(text);changed=true;}
       const sizes = [...text.matchAll(/\b(a[3456])\b/g)].map(m => m[1]);
       if (new Set(sizes).size > 1) { delete slots.size; state.factId = null;state.pending='size';return clarify(p, 'Bạn chọn một khổ giấy cần in nhé?'); }
       if (sizes.length) { slots.size = sizes[0]; changed = true; }
@@ -441,6 +533,9 @@
         }
       }
       if (changed) state.factId = null;
+      if(p.id==='namecard-offset-ta'&&!CARD_PRINTING_POLICY.offsetConversationQuotesEnabled)return {...handoff(p,'Giá danh thiếp in offset đang cần xác nhận theo quy cách và số lượng.'),compactText:'Giá danh thiếp in offset đang cần xác nhận. Bạn nhắn Zalo để được tư vấn nhé.'};
+      if(p.id==='namecard-offset-ta'&&['material','size','sides','finishing','variant'].some(key=>slots[key]!==undefined))return handoff(p,'Quy cách bạn đã chọn chưa được bảng offset xác nhận. Bạn nhắn Zalo để được tư vấn nhé.');
+      if(p.id==='namecard-c300'&&state.cardMethod==='offset')return {...handoff(p,'Bảng giá in offset cần xác nhận riêng, không áp dụng giá in nhanh kỹ thuật số.'),compactText:'Danh thiếp in offset cần xác nhận giá theo quy cách bạn chọn. Bạn nhắn Zalo để được tư vấn nhé.'};
       if (p.id === 'catalogue' && slots.size === 'a5') {
         if(slots.quantity===undefined)return nextQuestion(p);
         const e = p.referenceEstimates?.find(e => e.quantity === slots.quantity && Object.entries(e.specs).every(([key,value]) => slots[key] === value));
@@ -455,6 +550,15 @@
       const question = nextQuestion(p);
       if (question) return question;
       if (!changed&&!wantsTotal) return clarify(p, 'Mầm đã giữ sản phẩm và quy cách bạn chọn. Bạn có thể đổi số lượng, khổ giấy, số trang hoặc chọn “tổng công bố” cho dòng nguồn vừa xem.');
+      if(p.id==='namecard-offset-ta') {
+        const quantity=slots.quantity,f=p.priceFacts.find(f=>f.quantity===(quantity>=CARD_PRINTING_POLICY.offsetMinimumUnitQuantity?10:quantity));
+        if(!f||quantity<CARD_PRINTING_POLICY.offsetMinimumUnitQuantity&&![2,5].includes(quantity)){state.factId=null;state.pending='quantity';return clarify(p,'Số lượng '+quantity+' hộp cần tư vấn riêng. Bạn muốn nhập số hộp khác hay nhắn Zalo?',['Liên hệ Zalo']);}
+        const result=answer(f.lookupQuery,data,time());if(result.kind!=='price')return result;
+        state.factId=f.id;
+        if(quantity<CARD_PRINTING_POLICY.offsetMinimumUnitQuantity)return result;
+        const details=offsetOwnerQuote(p,f,quantity);
+        return details.quote?{...result,...details}:handoff(p,'Tổng theo số lượng này chưa thể tính an toàn. Bạn nhắn Zalo để được tư vấn nhé.');
+      }
       const candidates = p.priceFacts.filter(f => required[p.id].filter(key=>key!=='quantity').every(key => f.specs?.[key] === slots[key]) && ['printing','pagesIncludeCover','cover','inside'].every(key=>slots[key]===undefined||f.specs?.[key]===slots[key]) && (!state.provider || f.provider === state.provider));
       const selection=selectOwnerTier(p,candidates,slots.quantity);
       if(selection.error)return handoff(p,selection.error);
@@ -469,5 +573,5 @@
     }
     return Object.freeze({answer:sessionAnswer, reset});
   }
-  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText,OWNER_TIER_POLICY});
+  root.ThanhAnFAQ = Object.freeze({answer, createSession, validateData, normalize, money, safeLink, displayText,OWNER_TIER_POLICY,CARD_PRINTING_POLICY,INFORMATION_FIELDS});
 })(typeof window !== 'undefined' ? window : globalThis);

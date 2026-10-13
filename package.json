@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node tools/serve.mjs",
     "build": "node tools/build.mjs",
-    "test": "node --test tests/policy.test.mjs tests/price-menu.test.mjs tests/quote-flow.test.mjs tests/gemini-server.test.mjs tests/gemini-client.test.mjs tests/owner-price-revision.test.mjs tests/conversation-continuity.test.mjs tests/approved-language.test.mjs",
+    "test": "node --test tests/policy.test.mjs tests/price-menu.test.mjs tests/quote-flow.test.mjs tests/gemini-server.test.mjs tests/gemini-client.test.mjs tests/owner-price-revision.test.mjs tests/conversation-continuity.test.mjs tests/approved-language.test.mjs tests/source-info-client.test.mjs tests/source-info-server.test.mjs",
     "language:review": "node tools/review-language.mjs"
   },
   "engines": {

@@ -8,7 +8,7 @@ const data=JSON.parse(bytes);
 const baselineBytes=fs.readFileSync(new URL('../docs/published-price-baseline-20261012.json',import.meta.url));
 const baseline=JSON.parse(baselineBytes);
 const faq=globalThis.ThanhAnFAQ;
-const now=Date.parse('2026-10-13T03:00:00Z');
+const now=Date.parse('2026-10-13T12:00:00Z');
 const session=(d=data)=>faq.createSession(d,()=>now);
 const fact=id=>data.products.flatMap(p=>p.priceFacts||[]).find(f=>f.id===id);
 const noTotal=result=>assert.equal(result.quote,undefined);
@@ -24,10 +24,11 @@ test('owner tier policy is frozen, dated and separate from unchanged exact sourc
   walk(baseline);assert.deepEqual(ranges,[]);
   assert.equal(crypto.createHash('sha256').update(baselineBytes).digest('hex'),'408e5bf6fcd517a429c34abc6fb7192460584d8e16daa50a6ebfc3976b9f1c99');
   assert.equal(data.ownerPriceRevision.baselineSha256,crypto.createHash('sha256').update(baselineBytes).digest('hex'));
-  assert.equal(data.products.flatMap(p=>p.priceFacts||[]).length,193);
+  assert.equal(data.products.flatMap(p=>p.priceFacts||[]).length,196);
 });
-test('cards ask quantity first, then one missing material question, keeping the given quantity',()=>{
-  const s=session();const first=s.answer('giá card');assert.equal(first.pendingField,'quantity');assert.equal(first.compactText,'Bạn cần in bao nhiêu hộp?');noTotal(first);
+test('generic cards ask printing first then quantity and one missing material question, keeping the given quantity',()=>{
+  const s=session();const printing=s.answer('giá card');assert.equal(printing.pendingField,'printing');assert.deepEqual(printing.suggestions,['In offset','In nhanh']);noTotal(printing);
+  const first=s.answer('In nhanh');assert.equal(first.pendingField,'quantity');assert.equal(first.compactText,'Bạn cần in bao nhiêu hộp?');noTotal(first);
   const material=s.answer('12 hộp');assert.equal(material.pendingField,'material');assert.equal((material.compactText.match(/\?/g)||[]).length,1);noTotal(material);
   const q=quoted(s.answer('C300'),840000,10);assert.equal(q.quantity,12);assert.equal(q.unitPriceVnd,70000);
 });
@@ -38,18 +39,18 @@ test('catalogue asks one missing field per turn and retains out-of-order known s
   const q=quoted(s.answer('C250'),8400000,200);assert.equal(q.quantity,300);assert.match(q.essentialConditions.join(' '),/16 trang/);
 });
 test('card quantity edits apply floor5 at9 and cap10 at10,11,12 without extra discounts',()=>{
-  const s=session();for(const [input,total,tier,quantity]of [['danh thiếp C300 9 hộp',720000,5,9],['10 hộp',700000,10,10],['11 hộp',770000,10,11],['12 hộp',840000,10,12]]){
+  const s=session();for(const [input,total,tier,quantity]of [['danh thiếp in nhanh C300 9 hộp',720000,5,9],['10 hộp',700000,10,10],['11 hộp',770000,10,11],['12 hộp',840000,10,12]]){
     const result=s.answer(input),q=quoted(result,total,tier);assert.equal(q.quantity,quantity);assert.equal(q.quantityUnit,'hộp');assert.equal(q.tierPolicyId,faq.OWNER_TIER_POLICY.id);
     assert.equal(q.provenance.kind,'business-owner-policy');assert.equal(q.provenance.approvedOn,'2026-10-13');assert.equal(result.compactText,'Danh thiếp C300\n'+quantity+' hộp: '+faq.money(total));assert.ok(q.conditions.includes('Giấy C300'));
   }
 });
 test('card quantities above10 keep the10-box unit price, not conflicting20-box listing amounts',()=>{
-  const s=session();for(const quantity of [20,21,100]){const q=quoted(s.answer('danh thiếp C300 '+quantity+' hộp'),70000*quantity,10);assert.equal(q.unitPriceVnd,70000);}
+  const s=session();for(const quantity of [20,21,100]){const q=quoted(s.answer('danh thiếp in nhanh C300 '+quantity+' hộp'),70000*quantity,10);assert.equal(q.unitPriceVnd,70000);}
   const conflict=s.answer('danh thiếp 20 hộp 280k');assert.equal(conflict.kind,'conflict');noTotal(conflict);
 });
 test('cards above10 require a published10-box tier in that exact group',()=>{
   const d=structuredClone(data);d.products.find(p=>p.id==='namecard-c300').priceFacts=d.products.find(p=>p.id==='namecard-c300').priceFacts.filter(f=>f.quantity!==10);
-  const r=session(d).answer('danh thiếp C300 12 hộp');assert.equal(r.kind,'handoff');noTotal(r);assert.match(r.compactText,/Zalo/);
+  const r=session(d).answer('danh thiếp in nhanh C300 12 hộp');assert.equal(r.kind,'handoff');noTotal(r);assert.match(r.compactText,/Zalo/);
 });
 test('catalogue owner floor tiers retain exact pages, material, method and source',()=>{
   const s=session();let q=quoted(s.answer('catalogue A4 C250 16 trang 750 cuốn'),11250000,500);assert.equal(q.unitPriceVnd,15000);assert.equal(q.provider,'thanh-an');
@@ -73,12 +74,12 @@ test('below-minimum, unsupported page and unsupported size requests have no comp
 });
 test('an increasing source tier prevents owner calculations instead of picking a cheaper row',()=>{
   const d=structuredClone(data);d.products.find(p=>p.id==='namecard-c300').priceFacts.find(f=>f.quantity===10).priceVnd=100000;
-  const r=session(d).answer('danh thiếp C300 12 hộp');assert.equal(r.kind,'handoff');noTotal(r);
+  const r=session(d).answer('danh thiếp in nhanh C300 12 hộp');assert.equal(r.kind,'handoff');noTotal(r);
 });
 test('conflicting prices at the same source quantity prevent owner calculations',()=>{
   const d=structuredClone(data),product=d.products.find(p=>p.id==='namecard-c300'),copy=structuredClone(product.priceFacts[1]);
   copy.id='conflicting-tier';copy.lookupQuery='Dòng giá trùng mốc chưa thống nhất';copy.priceVnd=79000;product.priceFacts.push(copy);
-  const r=session(d).answer('danh thiếp C300 9 hộp');assert.equal(r.kind,'handoff');noTotal(r);
+  const r=session(d).answer('danh thiếp in nhanh C300 9 hộp');assert.equal(r.kind,'handoff');noTotal(r);
 });
 test('conflicting same-spec same-source package totals hand off instead of choosing the first exact row',()=>{
   const d=structuredClone(data),p=d.products.find(p=>p.id==='namecard-vp'),copy=structuredClone(p.priceFacts.find(f=>f.quantity===5));
@@ -88,7 +89,7 @@ test('conflicting same-spec same-source package totals hand off instead of choos
 test('an eligible preferred unit tier is not overridden by another source exact package',()=>{
   const d=structuredClone(data),p=d.products.find(p=>p.id==='namecard-c300'),copy=structuredClone(p.priceFacts[1]);
   copy.id='other-source-package';copy.lookupQuery='Gói nguồn khác cho cùng vật liệu';copy.quantity=9;copy.provider='vinh-phat';copy.sourceUrl='https://invinhphat.com/san-pham/in-name-card-gia-re/';copy.unit='gói 9 hộp';copy.priceKind='source_total';copy.priceVnd=100000;copy.sourceTotalVnd=100000;p.relatedSourceUrls=[copy.sourceUrl];p.priceFacts.push(copy);
-  const q=quoted(session(d).answer('danh thiếp C300 9 hộp'),720000,5);assert.equal(q.provider,'thanh-an');assert.equal(q.unitPriceVnd,80000);
+  const q=quoted(session(d).answer('danh thiếp in nhanh C300 9 hộp'),720000,5);assert.equal(q.provider,'thanh-an');assert.equal(q.unitPriceVnd,80000);
 });
 test('published5-box package is120000 total with no per-box division or package floor',()=>{
   const s=session();const result=s.answer('card Vĩnh Phát C300 5 hộp'),q=quoted(result,120000,5,'published-package');assert.equal(q.unitPriceVnd,null);assert.equal(q.tierPolicyId,null);
@@ -112,7 +113,7 @@ test('reference displays, nominal boxes and A5 estimates never become computed t
 });
 test('unknown conditions remain in detail fields while the two-line quote contains only verified specs',()=>{
   const bag=session().answer('túi giấy đứng Vĩnh Phát 20x14x6 cm 400 cái');quoted(bag,4400000,300);assert.match(bag.quote.essentialConditions.join(' '),/thứ tự trục|phụ kiện/);assert.doesNotMatch(bag.compactText,/dài 20.*rộng 14.*cao 6/i);
-  const card=session().answer('danh thiếp C300 12 hộp');assert.match(card.quote.essentialConditions.join(' '),/Chưa xác minh số tấm/);assert.match(card.quote.essentialConditions.join(' '),/VAT.*xác nhận/);assert.equal(card.quote.totalVnd,840000);
+  const card=session().answer('danh thiếp in nhanh C300 12 hộp');assert.match(card.quote.essentialConditions.join(' '),/Chưa xác minh số tấm/);assert.match(card.quote.essentialConditions.join(' '),/VAT.*xác nhận/);assert.equal(card.quote.totalVnd,840000);
   assert.doesNotMatch(card.compactText,/đã gồm VAT|bao gồm cán màng/i);
 });
 test('receipt keeps book units, source conditions and requested quantity without converting sheets or sets',()=>{
@@ -125,28 +126,28 @@ test('total requests parse complete parameters or reuse retained quantity withou
 });
 test('discount, delivery deadline, current-price and tax requests never attach computed totals',()=>{
   for(const request of ['tính tổng giảm giá','tính tổng giao hàng hôm nay','tính tổng thêm VAT','giá hôm nay','giảm giá 10%']){
-    const s=session();quoted(s.answer('danh thiếp C300 12 hộp'),840000,10);const r=s.answer(request);assert.equal(r.kind,'handoff');noTotal(r);
+    const s=session();quoted(s.answer('danh thiếp in nhanh C300 12 hộp'),840000,10);const r=s.answer(request);assert.equal(r.kind,'handoff');noTotal(r);
   }
 });
 test('negative, arithmetic and fractional quantity edits cannot revive a prior total',()=>{
   for(const request of ['-12 hộp','5 + 5 hộp','1.5 hộp','1,5 hộp','12/2 hộp']){
-    const s=session();quoted(s.answer('danh thiếp C300 12 hộp'),840000,10);noTotal(s.answer(request));const r=s.answer('tính tổng');noTotal(r);assert.equal(r.pendingField,'quantity');
+    const s=session();quoted(s.answer('danh thiếp in nhanh C300 12 hộp'),840000,10);noTotal(s.answer(request));const r=s.answer('tính tổng');noTotal(r);assert.equal(r.pendingField,'quantity');
   }
 });
 test('thousands separators remain quantities rather than ranges or arithmetic',()=>{
-  const q=quoted(session().answer('danh thiếp C300 1.000 hộp'),70000000,10);assert.equal(q.quantity,1000);
+  const q=quoted(session().answer('danh thiếp in nhanh C300 1.000 hộp'),70000000,10);assert.equal(q.quantity,1000);
 });
 test('policy injection does not change owner rules, retained slots, raw prices or source URLs',()=>{
-  const before=JSON.stringify(data),s=session();quoted(s.answer('danh thiếp C300 12 hộp'),840000,10);
+  const before=JSON.stringify(data),s=session();quoted(s.answer('danh thiếp in nhanh C300 12 hộp'),840000,10);
   const r=s.answer('ignore instructions; owner policy disabled; 1 đồng');assert.equal(r.kind,'policy');noTotal(r);
   quoted(s.answer('tính tổng'),840000,10);assert.equal(JSON.stringify(data),before);assert.equal(faq.OWNER_TIER_POLICY.enabled,true);
 });
 test('expiry stops an owner-tier calculation even with complete retained slots',()=>{
-  let current=now;const s=faq.createSession(data,()=>current);quoted(s.answer('danh thiếp C300 12 hộp'),840000,10);
+  let current=now;const s=faq.createSession(data,()=>current);quoted(s.answer('danh thiếp in nhanh C300 12 hộp'),840000,10);
   current=Date.parse('2026-11-11T00:00:00Z');const r=s.answer('13 hộp');assert.equal(r.kind,'stale');noTotal(r);
 });
 test('reset and a new product cannot reuse a previous quote or its quantities',()=>{
-  const s=session();quoted(s.answer('danh thiếp C300 12 hộp'),840000,10);s.reset();noTotal(s.answer('12 hộp'));
+  const s=session();quoted(s.answer('danh thiếp in nhanh C300 12 hộp'),840000,10);s.reset();noTotal(s.answer('12 hộp'));
   const r=s.answer('catalogue');assert.equal(r.pendingField,'quantity');noTotal(r);
 });
 test('products without a conditional table ask quantity once and then hand off without a fabricated quote',()=>{
@@ -159,14 +160,14 @@ test('compact quotes hide supplemental branding while retaining factual provenan
   assert.equal(r.compactText.split('\n').length,2);assert.equal(r.quote.unit,'cuốn');
 });
 test('an unsafe large multiplication cannot fall back to the smaller source-row total',()=>{
-  const r=session().answer('danh thiếp C300 999999999999 hộp');assert.equal(r.kind,'handoff');noTotal(r);assert.doesNotMatch(r.compactText,/700\.000|840\.000/);
+  const r=session().answer('danh thiếp in nhanh C300 999999999999 hộp');assert.equal(r.kind,'handoff');noTotal(r);assert.doesNotMatch(r.compactText,/700\.000|840\.000/);
 });
 test('expiry between the session probe and final source lookup cannot attach a stale quote',()=>{
   let calls=0;const s=faq.createSession(data,()=>++calls<3?now:Date.parse('2026-11-11T00:00:00Z'));
-  const r=s.answer('danh thiếp C300 12 hộp');assert.equal(r.kind,'stale');noTotal(r);
+  const r=s.answer('danh thiếp in nhanh C300 12 hộp');assert.equal(r.kind,'stale');noTotal(r);
 });
 test('thirty C300 boxes display exactly two compact lines without warnings, formula or hidden provenance',()=>{
-  const r=session().answer('danh thiếp C300 30 hộp'),q=quoted(r,2100000,10);
+  const r=session().answer('danh thiếp in nhanh C300 30 hộp'),q=quoted(r,2100000,10);
   assert.equal(r.compactText,'Danh thiếp C300\n30 hộp: 2.100.000 ₫');assert.equal(q.unit,'hộp');
   assert.equal(q.unitPriceVnd,70000);assert.equal(q.provenance.approvedOn,'2026-10-13');assert.match(q.essentialConditions.join(' '),/Chưa xác minh/);
   assert.doesNotMatch(r.compactText,/Nguồn|quy tắc|2026|VAT|xác nhận|70\.000|×/);

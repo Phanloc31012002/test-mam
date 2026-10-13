@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "card-information-source-2026-10-13",
+  "status": "informational-supplement-only",
+  "verifiedAtUtc": "2026-10-13T07:16:01Z",
+  "previousDataSha256": "eae81a30a9e0a9151ed6f1e6f465468957e85f45f3b69ea91b6ec63069bfd7d2",
+  "currentDataSha256": "a72e39615ad3e1a878a6afe995515f695b5610ca3033fc954ac340114f26fa5f",
+  "all196ProductRecordsSha256": "d5c390a39b9bc3c1bb0197229d5333a7d37d2b481bd5fede0326395d78157e14",
+  "cardPrintingInformation": {
+    "digital": {
+      "material": "c300",
+      "printing": "digital",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re",
+      "verifiedAtUtc": "2026-10-13T07:16:01Z"
+    },
+    "standardSizeReference": {
+      "size": "90x54",
+      "dimensionsUnit": "mm",
+      "scope": "common-reference-not-price-condition",
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re",
+      "verifiedAtUtc": "2026-10-13T07:16:01Z"
+    }
+  },
+  "evidence": [
+    {
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-giay-c300-gia-re",
+      "verifiedAtUtc": "2026-10-13T07:16:01Z",
+      "verifiedFields": {
+        "material": "c300",
+        "printing": "digital"
+      },
+      "basis": "The C300 product page explicitly describes fast KTS printing with C300 and defines C300 as Couche 300gsm. It does not specify this product's dimensions, printed sides or lamination."
+    },
+    {
+      "sourceUrl": "https://innhanhtphcm.com/san-pham/in-danh-thiep-chuan-gia-re",
+      "verifiedAtUtc": "2026-10-13T07:16:01Z",
+      "verifiedFields": {
+        "commonSize": "90x54",
+        "dimensionsUnit": "mm"
+      },
+      "scope": "common-reference-not-price-condition",
+      "basis": "The standard-card page identifies 90×54mm as a common size and says custom sizes are available. It lists one/two sides and finishing options generally, without locking those to the digital or offset price tables."
+    }
+  ],
+  "informationResponseExample": "Kích thước danh thiếp thông dụng là 90 × 54 mm. Khổ khác cần xác nhận quy cách.",
+  "priceAndRecipeBoundaries": {
+    "existingProductRecordsChanged": false,
+    "existingPriceFactCountUnchanged": 196,
+    "ownerPriceRevisionChanged": false,
+    "offsetSourceSupplementChanged": false,
+    "quoteSizeSlotMayBeFilledFromCommonReference": false,
+    "digitalSizePriceConditionVerified": false,
+    "digitalSidesVerified": false,
+    "digitalLaminationVerified": false,
+    "digitalCardsPerBoxVerified": false,
+    "offsetSizeMaterialAndLaminationRemainUnknown": true,
+    "noProductionOrDeliveryTimeFactsAdded": true
+  },
+  "integrationRule": "Answer product-information questions separately from price requests. A common reference size is not the selected customer size and must not modify a retained quote, quantity, method or price/specification slots. Offset-specific price-recipe questions remain unresolved unless separately confirmed.",
+  "sourceTimingRule": "Source pages contain varying production claims. This informational supplement captures none of them and authorizes no deadline promise."
+}
