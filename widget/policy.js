@@ -14,7 +14,9 @@
     'https://invinhphat.com/san-pham/phieu-thu-cac-loai/':'https://innhanhtphcm.com/san-pham/in-bien-nhan-gia-re',
     'https://invinhphat.com/san-pham/in-tui-giay-gia-re/':'https://innhanhtphcm.com/san-pham/in-tui-giay-uy-tin',
     'https://invinhphat.com/san-pham/in-folder-kep-file/':'https://innhanhtphcm.com/san-pham/in-bia-kep-ho-so-tphcm',
-    'https://invinhphat.com/san-pham/in-tag-treo-the-bai/':'https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay'
+    'https://invinhphat.com/san-pham/in-tag-treo-the-bai/':'https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay',
+    'https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/':'https://innhanhtphcm.com/san-pham/in-decal-giay-gia-re-tai-tphcm',
+    'https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/':'https://innhanhtphcm.com/san-pham/in-tag-treo-bong-tai'
   });
   const displayLink=value=>typeof value==='string'&&Object.hasOwn(DISPLAY_LINKS,value)?DISPLAY_LINKS[value]:value;
   // Presentation only: provider ids, row selectors, source URLs and data stay unchanged.

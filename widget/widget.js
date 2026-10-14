@@ -74,14 +74,6 @@
     if(dragButton){dragButton.type='button';dragButton.setAttribute('aria-label','Di chuyển hoặc đặt lại vị trí');dragButton.setAttribute('title','Kéo để di chuyển; bấm để về vị trí ban đầu');headerActions.insertBefore(dragButton,close);dragButton.addEventListener('click',()=>{dragController?.reset();dragController?.reclamp();});}
     const aiClient=config.aiEndpoint&&root.ThanhAnGemini?root.ThanhAnGemini.create({endpoint:assetUrl(config.aiEndpoint),fetchImpl:config.aiFetch}):null;
     const infoClient=config.infoEndpoint&&root.ThanhAnSourceInfo?root.ThanhAnSourceInfo.create({endpoint:assetUrl(config.infoEndpoint),productIds:data.products.map(product=>product.id),fetchImpl:config.infoFetch}):null;
-    const privacyButton=el('button','ta-privacy-open','i',headerActions);privacyButton.type='button';privacyButton.setAttribute('aria-label','Thông tin & quyền riêng tư');privacyButton.setAttribute('title','Thông tin & quyền riêng tư');privacyButton.setAttribute('aria-expanded','false');privacyButton.setAttribute('aria-controls','ta-mam-aux-view');headerActions.insertBefore(privacyButton,close);
-    const privacyDocument=el('section','ta-privacy-document',undefined,panel);privacyDocument.hidden=true;
-    el('p','ta-ai-notice','Mầm hỗ trợ thông tin in ấn và giá trong bảng. Mầm chỉ giữ cuộc trò chuyện trong phiên mở trang, không lưu lâu dài, không thu thập chat riêng hoặc gửi lịch sử cho doanh nghiệp.',privacyDocument);
-    if(aiClient){
-      el('p','ta-ai-notice','Mầm tự hỗ trợ nhận diện câu hỏi khi phần xử lý tại trang chưa hiểu. Khi bạn gửi câu hỏi, chỉ câu hiện tại đã qua bộ lọc có thể được gửi cho Google; toàn bộ lịch sử, bảng giá và tệp của bạn không được gửi.',privacyDocument);
-      el('p','ta-ai-notice','Phần xử lý qua Google dành cho người từ 18 tuổi đang tại Việt Nam. Dịch vụ miễn phí có thể dùng nội dung để cải thiện sản phẩm và có người xét duyệt. Đừng nhập thông tin cá nhân, chat riêng hoặc bí mật; bộ lọc không nhận diện được mọi dữ liệu nhạy cảm.',privacyDocument);
-    }else el('p','ta-ai-notice','Bản này xử lý câu hỏi ngay tại trang và không gửi nội dung cuộc trò chuyện cho Google.',privacyDocument);
-    privacyButton.addEventListener('click',showPrivacy);
     // Metadata contains no chat. Let it finish across reset/close so the
     // default remains available; cancel waiting questions and active POSTs.
     let aiStatusReady=false;
@@ -129,20 +121,13 @@
     function destroyMenus(){for(const menu of priceMenus.values())menu.destroy();priceMenus.clear();}
     function removeMessage(block){const menu=priceMenus.get(block);if(menu){menu.destroy();priceMenus.delete(block);}block.remove();}
     function showChat(restoreFocus=true){
-      if(privacyDocument&&privacyDocument.parentElement===auxBody){privacyDocument.hidden=true;panel.appendChild(privacyDocument);}
       destroyMenus();auxBody.replaceChildren();auxiliary.hidden=true;auxiliary.removeAttribute('data-view');log.hidden=false;
-      privacyButton?.setAttribute('aria-expanded','false');
       if(restoreFocus){const target=auxReturnFocus?.isConnected&&!auxiliary.contains(auxReturnFocus)?auxReturnFocus:input;target.focus({preventScroll:true});}
       auxReturnFocus=null;
     }
     function showAuxiliary(title,view,returnFocus){
       showChat(false);auxReturnFocus=returnFocus||input;auxTitle.textContent=title;
       log.hidden=true;auxiliary.hidden=false;auxiliary.dataset.view=view;auxiliary.scrollTop=0;auxBack.focus({preventScroll:true});
-    }
-    function showPrivacy(){
-      if(destroyed||!privacyDocument)return;
-      showAuxiliary('Thông tin & quyền riêng tư','privacy',privacyButton);
-      privacyDocument.hidden=false;auxBody.appendChild(privacyDocument);privacyButton.setAttribute('aria-expanded','true');
     }
     function cancelPaint(){for(const wait of [...paintWaits])wait.cancel();}
     function nextPaint(){return new Promise(resolve=>{

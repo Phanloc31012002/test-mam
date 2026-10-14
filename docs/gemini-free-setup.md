@@ -40,7 +40,7 @@ Cờ Free/quota chỉ ghi nhận kiểm tra thủ công, app không tự xác mi
 
 ## Nghiệm thu không lộ khóa
 
-1. Với bản sửa này, kiểm tra local/mock trước; kiểm tra deployment chỉ khi bản sửa đã được phát hành riêng. Nút **Thông tin & quyền riêng tư** ở header luôn mở được bằng bàn phím, cả standalone/chỉ chạy local. Không còn checkbox hoặc dòng chọn chế độ. Disclosure vẫn nói rõ Google Free/người rà soát, yêu cầu 18+/Việt Nam và không nhập thông tin riêng, không giả định khách vừa xác nhận.
+1. Với bản sửa ngày 14/10/2026, kiểm tra local/mock trước; kiểm tra deployment chỉ khi bản sửa đã được phát hành riêng. Widget/demo không còn nút i **Thông tin & quyền riêng tư**, panel thông tin, thông báo hay link thay thế, cả standalone/chỉ chạy local. Panel bị bỏ chỉ cung cấp thông tin, không phải checkbox đồng ý hoặc điều khiển gửi AI. Cơ chế mặc định hiểu sâu và các kiểm soát AI giữ nguyên.
 2. GET metadata cùng origin chỉ trả version/enabled/privacyVersion, không chứa chat. Widget chỉ tự gọi `setConsent(true)` sau khi metadata hợp lệ báo `enabled:true`. Dùng câu thử không riêng tư mà local và bộ nhớ cụm từ đã duyệt chưa nhận diện; nếu GET còn chờ, chỉ câu mới nhất chờ metadata rồi qua bộ lọc trước POST. Payload giữ `consent:'google-free-v1'`, `adult:true` để tương thích backend; đây là mặc định client, không phải bằng chứng checkbox được xác nhận hoặc tuổi được kiểm chứng. Model chỉ gợi ý intent/category; khách xác nhận rồi local hỏi số lượng/quy cách.
 3. Hỏi giá/FAQ local hiểu không gọi Google; response không model text/giá/link lạ. Hết quota/lỗi/timeout quay local, không retry/tự đổi model.
 4. Làm mới/đóng/gửi câu mới hủy POST và câu đang chờ metadata, chặn kết quả muộn và giữ mặc định hiểu sâu. GET không chứa chat được phép hoàn tất sau các thao tác này; destroy hủy cả GET. Không tự gửi lại câu đã hủy; reload không giữ chat và lần mount mới dùng mặc định nếu metadata khả dụng. Ứng dụng không thu thập chat riêng, không gửi lịch sử hoặc lưu chat bền vững. Bộ lọc không nhận diện mọi dữ liệu nhạy cảm; không dùng thông tin khách thật để thử.
@@ -52,7 +52,7 @@ Limiter best effort **mỗi instance** (6/IP/phút, 30 tổng/phút, 2 đồng t
 
 Gỡ GEMINI_QUOTA_VERIFIED, làm cờ model không khớp hoặc gỡ secret rồi deploy lại để tắt; GET enabled:false, local vẫn hoạt động. Không sửa policy giá để xử lý lỗi Gemini.
 
-Standalone không endpoint nhưng vẫn có nút quyền riêng tư trong header; WordPress plugin mặc định tắt/không backend Gemini, chưa cài website Thanh Ấn. Assets WordPress cũ giữ opt-in và không được đồng bộ trong đợt sửa mặc định hiểu sâu. Không sửa bảo mật/hosting WordPress, không tự nhắn khách/doanh nghiệp, không gửi lịch sử/lưu chat bền vững/bật billing.
+Standalone không endpoint và không còn nút i/panel thông tin; WordPress plugin mặc định tắt/không backend Gemini, chưa cài website Thanh Ấn. Assets WordPress cũ giữ opt-in và không được đồng bộ trong đợt sửa widget/demo này. Không sửa bảo mật/hosting WordPress, không tự nhắn khách/doanh nghiệp, không gửi lịch sử/lưu chat bền vững/bật billing.
 
 Lần gọi thật/Ready ở trên thuộc commit `6907`, không phải xác nhận bản sửa giá/giao diện mới đã phát hành. Runtime đã hoàn tất giá/metadata với 193 dòng/22 sản phẩm-biến thể, gồm 62 owner-revision. Source cuối đạt **652/652 Node**, **55/55 mock** ở cả 1280×720 và 320×568, cùng **107/107 native/widget** ở 1280×720 sau chạy lại đúng source, không có lỗi. Deployment cuối vẫn cần đối chiếu Ready/commit thực tế. Website updates là công việc riêng; dataset giữ baseline lịch sử và không khẳng định từng giá sửa đã công bố chính xác trên web.
 

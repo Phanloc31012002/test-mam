@@ -13,9 +13,11 @@ const pairs=[
  ['phieu-thu-cac-loai/','in-bien-nhan-gia-re'],
  ['in-tui-giay-gia-re/','in-tui-giay-uy-tin'],
  ['in-folder-kep-file/','in-bia-kep-ho-so-tphcm'],
- ['in-tag-treo-the-bai/','in-tag-be-lay-ngay']
+ ['in-tag-treo-the-bai/','in-tag-be-lay-ngay'],
+ ['in-tem-nhan-decal-giay-gia-re/','in-decal-giay-gia-re-tai-tphcm'],
+ ['in-tag-treo-khuyen-tai/','in-tag-treo-bong-tai']
 ].map(([from,to])=>['https://invinhphat.com/san-pham/'+from,'https://innhanhtphcm.com/san-pham/'+to]);
-test('navigation map contains exactly the ten owner-provided pairs and cannot be edited',()=>{
+test('navigation map contains exactly the twelve owner-provided pairs and cannot be edited',()=>{
  assert.deepEqual(Object.entries(faq.DISPLAY_LINKS),pairs);
  assert.equal(Object.isFrozen(faq.DISPLAY_LINKS),true);
  assert.throws(()=>{faq.DISPLAY_LINKS[pairs[0][0]]='https://example.com';},TypeError);
@@ -24,10 +26,11 @@ for(const[from,to]of pairs)test('display link maps the exact approved '+from,()=
  assert.equal(faq.displayLink(from),to);assert.equal(faq.safeLink(from),from);assert.equal(faq.safeLink(to),to);
 });
 test('unknown values, alternate spellings, query strings, fragments and inherited names are not rewritten',()=>{
- for(const value of [null,undefined,0,'toString','__proto__','javascript:alert(1)','https://example.com',pairs[0][0]+'?q=1',pairs[0][0]+'#details',pairs[0][0].slice(0,-1)])assert.equal(faq.displayLink(value),value);
+ for(const value of [null,undefined,0,'toString','__proto__','javascript:alert(1)','https://example.com'])assert.equal(faq.displayLink(value),value);
+ for(const [from]of pairs)for(const value of [from+'?q=1',from+'#details',from.slice(0,-1)])assert.equal(faq.displayLink(value),value);
 });
-test('catalogue A5, paper decal and earring tags retain their exact original links',()=>{
- for(const url of ['https://invinhphat.com/san-pham/in-catalogue-a5/','https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/','https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/'])assert.equal(faq.displayLink(url),url);
+test('unmapped catalogue A5 retains its exact original link',()=>{
+ const url='https://invinhphat.com/san-pham/in-catalogue-a5/';assert.equal(faq.displayLink(url),url);
 });
 test('presentation mapping does not edit any of the 196 prices or their provenance',()=>{
  const data=JSON.parse(fs.readFileSync(new URL('../widget/data.json',import.meta.url),'utf8'));

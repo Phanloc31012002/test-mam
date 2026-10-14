@@ -131,7 +131,7 @@ test('offset arithmetic, two-line quote text, display map and source bytes remai
     const s=session();s.answer('danh thiếp offset '+quantity+' hộp');basic(s.answer('kt a4 bn'),A4);
     const r=s.answer('tổng tiền');assert.equal(r.quote.quantity,quantity);assert.equal(r.quote.totalVnd,total);assert.equal(r.compactText.split('\n').length,2);
   }
-  assert.equal(Object.keys(faq.DISPLAY_LINKS).length,10);assert.equal(faq.CARD_PRINTING_POLICY.offsetUnitPriceVnd,16000);
+  assert.equal(Object.keys(faq.DISPLAY_LINKS).length,12);assert.equal(faq.CARD_PRINTING_POLICY.offsetUnitPriceVnd,16000);
   assert.deepEqual(fs.readFileSync(new URL('../widget/data.json',import.meta.url)),dataBytes);
   assert.deepEqual(fs.readFileSync(new URL('../widget/information.json',import.meta.url)),infoBytes);
 });

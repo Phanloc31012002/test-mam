@@ -68,10 +68,12 @@ function deferredClient(c,options,kind){
 }
 
 async function fixture(options={}){
-  const c=clock(),doc=fakeDocument(),events=new Map(),network=[],storage=[];
+  const c=clock(),doc=fakeDocument(),events=new Map(),network=[],storage=[],alerts=[],dragCalls=[];
   const epoch=Date.parse('2026-10-13T12:00:00Z');
   class ClockDate extends Date{constructor(...args){super(...(args.length?args:[epoch+c.now]));}static now(){return epoch+c.now;}}
   const root={document:doc,location:{origin:'https://mam.test',href:'https://mam.test/demo'},innerHeight:800,setTimeout:c.setTimeout,clearTimeout:c.clearTimeout,addEventListener:(name,fn)=>events.set(name,fn),removeEventListener:(name,fn)=>{if(events.get(name)===fn)events.delete(name);}};
+  root.alert=value=>alerts.push(String(value));
+  if(options.drag)root.ThanhAnDrag={create(){return{reset(){dragCalls.push('reset');},reclamp(){dragCalls.push('reclamp');},destroy(){dragCalls.push('destroy');}};}};
   root.ThanhAnMascot={create(){return{element:doc.createElement('canvas'),ready:Promise.resolve(),setState(){},setPaused(){},destroy(){}};}};
   const menuCalls=[];
   root.ThanhAnPriceMenu={isMenuRequest:text=>/^(xem gia|xem bang gia)$/.test(root.ThanhAnFAQ.normalize(text)),buildCatalog:()=>({categories:[{id:'namecard',name:'Danh thiếp'},{id:'catalogue',name:'Catalogue'}]}),create({onActivity}){const element=doc.createElement('div');const b=doc.createElement('button');b.className='ta-price-category';b.textContent='Danh thiếp';element.appendChild(b);b.addEventListener('click',()=>{menuCalls.push(c.now);element.dataset.selected='namecard';onActivity();});return{element,destroy(){element.remove();},showCategory(){}};}};
@@ -99,14 +101,21 @@ async function fixture(options={}){
   const original=root.ThanhAnFAQ;
   root.ThanhAnFAQ={...original,createSession(...args){const session=original.createSession(...args);return{answer(...values){answers++;return session.answer(...values);},reset(){resets++;session.reset();}};}};
   const widget=await root.ThanhAnChat.mount({data,styles:'/* fixture styles */',reducedMotion:options.reducedMotion,aiEndpoint:ai||options.realAi?'/api/mam-ai':undefined,aiFetch:options.realAi?aiFetch:undefined,infoEndpoint:info?'/api/mam-info':undefined});
-  const f={clock:c,document:doc,root,widget,ai,info,network,storage,menuCalls,aiRequests,posts:()=>aiRequests.filter(call=>call.method==='POST'),resolveAi(method='POST'){aiPending.find(call=>call.method===method)?.resolve();},get answers(){return answers;},get resets(){return resets;},find:selector=>widget.shadow.querySelector(selector),all:selector=>widget.shadow.querySelectorAll(selector),bots:()=>widget.shadow.querySelectorAll('.ta-message').filter(n=>!n.classList.contains('ta-message-user')&&!n.classList.contains('ta-message-typing')),users:()=>widget.shadow.querySelectorAll('.ta-message-user')};
+  const f={clock:c,document:doc,root,widget,ai,info,network,storage,alerts,dragCalls,menuCalls,aiRequests,posts:()=>aiRequests.filter(call=>call.method==='POST'),resolveAi(method='POST'){aiPending.find(call=>call.method===method)?.resolve();},get answers(){return answers;},get resets(){return resets;},find:selector=>widget.shadow.querySelector(selector),all:selector=>widget.shadow.querySelectorAll(selector),bots:()=>widget.shadow.querySelectorAll('.ta-message').filter(n=>!n.classList.contains('ta-message-user')&&!n.classList.contains('ta-message-typing')),users:()=>widget.shadow.querySelectorAll('.ta-message-user')};
   if(options.open!==false){widget.open();await c.advance(320);}
   return f;
 }
 
-async function prepared(t,options){const f=await fixture(options);t.after(()=>{f.widget.destroy();assert.deepEqual(f.network,[]);assert.deepEqual(f.storage,[]);});return f;}
+async function prepared(t,options){const f=await fixture(options);t.after(()=>{f.widget.destroy();assert.deepEqual(f.network,[]);assert.deepEqual(f.storage,[]);assert.deepEqual(f.alerts,[]);});return f;}
 const noTyping=f=>assert.equal(f.all('.ta-message-typing').length,0);
 const typing=f=>{assert.equal(f.all('.ta-message-typing').length,1);assert.equal(f.all('.ta-typing-dot').length,3);assert.equal(f.find('.ta-typing-dots').getAttribute('aria-hidden'),'true');assert.equal(f.find('.ta-typing-bubble').textContent,'Mầm đang trả lời');};
+const noInformationUi=f=>{
+  for(const selector of ['.ta-privacy-open','.ta-privacy-document','.ta-ai-notice','.ta-ai-options','.ta-ai-label','.ta-ai-helper','.ta-ai-title','.ta-ai-consent'])assert.equal(f.find(selector),null);
+  assert.equal(f.find('.ta-aux-view').dataset.view==='privacy',false);assert.equal(f.find('.ta-alert').hidden,true);assert.equal(f.find('.ta-alert').textContent,'');
+  const interfaceText=node=>node.classList.contains('ta-message-user')?'':node._text+node.children.map(interfaceText).join('');
+  assert.doesNotMatch(interfaceText(f.find('.ta-panel')),/quyền riêng tư|Google|Gemini|người xét duyệt|18 tuổi|Bật hiểu sâu|Giúp Mầm hiểu/iu);assert.deepEqual(f.alerts,[]);
+  for(const node of [...f.all('button'),...f.all('a')])assert.doesNotMatch([node.textContent,node.getAttribute('aria-label'),node.getAttribute('title'),node.href].filter(Boolean).join(' '),/privacy|quyền riêng tư|thông tin\s*&/iu);
+};
 
 test('opening the actual widget shows three dots before the greeting and renders at320ms',async t=>{
   const f=await prepared(t,{open:false});f.widget.open();typing(f);assert.equal(f.bots().length,0);await f.clock.advance(319);assert.equal(f.bots().length,0);typing(f);await f.clock.advance(1);noTyping(f);assert.equal(f.bots().length,1);assert.match(f.bots()[0].textContent,/Mầm chào bạn/);
@@ -182,10 +191,10 @@ test('enabled metadata automatically handles an unknown turn while FAQ remains l
   assert.doesNotMatch(f.posts()[0].body,/kt a4|21|history|priceFacts|contacts/);
 });
 
-test('disabled metadata keeps unknown messages local with privacy still accessible',async t=>{
+test('disabled metadata keeps unknown messages local without information controls or notices',async t=>{
   const f=await prepared(t,{realAi:{enabled:false}}),p=f.widget.send('zz_disabled_unknown');await f.clock.advance(320);await p;
   assert.equal(f.aiRequests.length,1);assert.equal(f.posts().length,0);assert.equal(f.ai.getState().consent,false);
-  assert.ok(f.find('.ta-privacy-open'));assert.equal(f.find('.ta-ai-consent'),null);
+  noInformationUi(f);
   assert.ok(!f.bots().at(-1).querySelectorAll('button').some(button=>button.textContent==='Xem lựa chọn Catalogue'));
 });
 
@@ -250,20 +259,15 @@ for(const action of ['close','clear','destroy'])test(action+' aborts automatic u
   else assert.equal(f.ai.getState().consent,true);
 });
 
-for(const options of [{},{realAi:{}},{realAi:{enabled:false}}])test('privacy stays in keyboard focus flow without a mode selector '+JSON.stringify(options),async t=>{
-  const f=await prepared(t,options),trigger=f.find('.ta-privacy-open');
-  assert.equal(trigger.tagName,'BUTTON');assert.equal(trigger.type,'button');assert.equal(Boolean(trigger.disabled),false);
-  assert.equal(trigger.getAttribute('aria-label'),'Thông tin & quyền riêng tư');assert.equal(f.find('.ta-header').contains(trigger),true);
-  assert.equal(f.find('.ta-ai-consent'),null);assert.equal(f.find('.ta-ai-options'),null);assert.equal(f.find('.ta-ai-helper'),null);
-  assert.equal(f.all('input').some(input=>input.type==='checkbox'),false);
-  trigger.focus();assert.equal(f.widget.shadow.activeElement,trigger);trigger.click();
-  const view=f.find('.ta-aux-view'),notice=f.find('.ta-privacy-document').textContent;
-  assert.equal(view.dataset.view,'privacy');assert.equal(view.hidden,false);assert.equal(f.find('.ta-log').hidden,true);
-  assert.equal(view.contains(f.widget.shadow.activeElement),true);assert.equal(trigger.getAttribute('aria-expanded'),'true');
-  assert.match(notice,/không lưu lâu dài/);assert.match(notice,/không thu thập chat riêng/);
-  if(options.realAi){assert.match(notice,/Google/);assert.match(notice,/18 tuổi/);assert.match(notice,/Việt Nam/);assert.match(notice,/chỉ câu hiện tại/);assert.match(notice,/người xét duyệt/);}
-  else assert.match(notice,/không gửi nội dung cuộc trò chuyện cho Google/);
-  f.widget.shadow.activeElement.dispatchEvent({type:'keydown',key:'Escape'});
-  assert.equal(view.hidden,true);assert.equal(f.find('.ta-log').hidden,false);assert.equal(f.widget.shadow.activeElement,trigger);
-  trigger.click();f.find('.ta-view-back').click();assert.equal(f.widget.shadow.activeElement,trigger);assert.equal(trigger.getAttribute('aria-expanded'),'false');
+for(const options of [{},{realAi:{}},{realAi:{enabled:false}}])test('removed information UI has no replacement and remaining header/form keyboard actions work '+JSON.stringify(options),async t=>{
+  const f=await prepared(t,{...options,drag:true});noInformationUi(f);assert.equal(f.all('input').some(input=>input.type==='checkbox'),false);
+  const actions=f.find('.ta-header-actions').querySelectorAll('button');assert.equal(actions.length,3);
+  assert.deepEqual(actions.map(button=>button.getAttribute('aria-label')).sort(),['Di chuyển hoặc đặt lại vị trí','Làm mới','Đóng trò chuyện'].sort());
+  for(const button of actions){assert.equal(button.type,'button');assert.equal(Boolean(button.disabled),false);button.focus();assert.equal(f.widget.shadow.activeElement,button);}
+  f.find('.ta-window-drag').focus();f.find('.ta-window-drag').click();assert.ok(f.dragCalls.includes('reset'));
+  const input=f.find('.ta-input');input.focus();input.value='Giờ làm việc';f.find('.ta-form').dispatchEvent({type:'submit'});typing(f);await f.clock.advance(320);noTyping(f);assert.equal(f.users().at(-1).querySelector('.ta-message-bubble').textContent,'Giờ làm việc');noInformationUi(f);
+  f.find('.ta-clear').focus();f.find('.ta-clear').click();await f.clock.advance(320);assert.equal(f.bots().length,1);assert.equal(f.users().length,0);assert.equal(f.widget.shadow.activeElement,input);noInformationUi(f);
+  f.find('.ta-close').focus();f.find('.ta-close').click();assert.equal(f.find('.ta-panel').hidden,true);assert.equal(f.widget.shadow.activeElement,f.find('.ta-launcher'));
+  f.widget.open();input.dispatchEvent({type:'keydown',key:'Escape'});assert.equal(f.find('.ta-panel').hidden,true);assert.equal(f.widget.shadow.activeElement,f.find('.ta-launcher'));
+  f.widget.open();assert.equal(f.widget.shadow.activeElement,input);noInformationUi(f);
 });

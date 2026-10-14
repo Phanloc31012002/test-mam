@@ -1,6 +1,8 @@
-# Đối chiếu liên kết hiển thị — 13/10/2026
+# Đối chiếu liên kết hiển thị — 13–14/10/2026
 
-Chủ doanh nghiệp đã duyệt đúng 10 ánh xạ dưới đây. Agent thu thập đã đối chiếu từng URL đích trên trang công khai chính thức lúc **08:19–08:20 UTC, ngày 13/10/2026**: cả 10 URL trả nội dung HTML đọc được. Công cụ web không cung cấp mã HTTP số nên kết quả này không xác nhận HTTP 200. URL catalogue gặp `Internal Error` ở lần đầu; đọc lại **cùng URL** thành công.
+Đợt ngày 13/10/2026, chủ doanh nghiệp đã duyệt 10 ánh xạ trong bảng đầu tiên dưới đây. Agent thu thập đã đối chiếu từng URL đích trên trang công khai chính thức lúc **08:19–08:20 UTC, ngày 13/10/2026**: cả 10 URL trả nội dung HTML đọc được. Công cụ web không cung cấp mã HTTP số nên kết quả này không xác nhận HTTP 200. URL catalogue gặp `Internal Error` ở lần đầu; đọc lại **cùng URL** thành công.
+
+Ngày **14/10/2026**, bổ sung hai ánh xạ decal giấy và tag bông tai theo kiểm tra GET công khai ghi riêng bên dưới. Tổng hiện tại là **12 ánh xạ**; bằng chứng ngày 14/10 không được gộp thành kết quả kiểm tra cả 12 đích ngày 13/10.
 
 Phạm vi áp dụng: **chỉ đổi `href` hiển thị cho khách**. Giữ nguyên nguồn lịch sử của giá và corpus thông tin, ngày xác minh, nhà cung cấp và bằng chứng. Một trang đích đọc được hoặc cùng nhóm sản phẩm không chứng minh quy cách hay điều kiện giá tương đương. Không lấy nội dung trang đích để thay điều kiện của dòng giá cũ.
 
@@ -17,10 +19,19 @@ Phạm vi áp dụng: **chỉ đổi `href` hiển thị cho khách**. Giữ ngu
 | Folder — In Bìa Kẹp Hồ Sơ | https://invinhphat.com/san-pham/in-folder-kep-file/ → https://innhanhtphcm.com/san-pham/in-bia-kep-ho-so-tphcm | Không suy tương đương tay gấp, chất liệu hoặc kích thước. |
 | Tag — In Tag Bế Theo Yêu Cầu | https://invinhphat.com/san-pham/in-tag-treo-the-bai/ → https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay | Trang đích là tag KTS tròn 5 cm; nguồn gốc có nhóm offset chữ nhật/vuông. Không thay quy cách hoặc điều kiện giá giữa hai nhóm. |
 
-Ba URL chưa có ánh xạ được giữ nguyên:
+## Hai ánh xạ bổ sung ngày 14/10/2026
+
+Hai URL đích dưới đây đã được GET công khai ngày **14/10/2026**: đều trả **HTTP 200**, không chuyển hướng, URL cuối đúng URL đích sạch và không có query. Tiêu đề trang tương ứng là **IN DECAL GIẤY** và **IN TAG TREO BÔNG TAI**. Đây là bằng chứng đọc đích hiển thị, không xác nhận giá/quy cách của nguồn lịch sử tương đương trang đích.
+
+| Nhóm / tiêu đề trang đích đã đối chiếu | URL nguồn → URL hiển thị | Giới hạn phạm vi |
+| --- | --- | --- |
+| Decal giấy — IN DECAL GIẤY | https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/ → https://innhanhtphcm.com/san-pham/in-decal-giay-gia-re-tai-tphcm | Chỉ đổi link hiển thị; không thay giấy, kích thước, gia công hoặc điều kiện giá trong nguồn gốc. |
+| Tag bông tai — IN TAG TREO BÔNG TAI | https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/ → https://innhanhtphcm.com/san-pham/in-tag-treo-bong-tai | Chỉ đổi link hiển thị; không coi nội dung trang đích là xác nhận mới về cán màng, quy cách hoặc giá nguồn gốc. |
+
+## URL chưa có ánh xạ
+
+Chỉ URL catalogue A5 được giữ nguyên vì chưa có ánh xạ:
 
 - https://invinhphat.com/san-pham/in-catalogue-a5/
-- https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/
-- https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/
 
 Tài liệu này là bản đối chiếu liên kết, không phải bản sửa giá hoặc xác nhận thời gian giao hàng. Việc ghi tài liệu không thực hiện thay đổi website, dữ liệu, corpus hoặc runtime.

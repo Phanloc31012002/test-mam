@@ -26,7 +26,9 @@ const DISPLAY_LINK_FIXTURE=Object.freeze({
   'https://invinhphat.com/san-pham/phieu-thu-cac-loai/':'https://innhanhtphcm.com/san-pham/in-bien-nhan-gia-re',
   'https://invinhphat.com/san-pham/in-tui-giay-gia-re/':'https://innhanhtphcm.com/san-pham/in-tui-giay-uy-tin',
   'https://invinhphat.com/san-pham/in-folder-kep-file/':'https://innhanhtphcm.com/san-pham/in-bia-kep-ho-so-tphcm',
-  'https://invinhphat.com/san-pham/in-tag-treo-the-bai/':'https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay'
+  'https://invinhphat.com/san-pham/in-tag-treo-the-bai/':'https://innhanhtphcm.com/san-pham/in-tag-be-lay-ngay',
+  'https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/':'https://innhanhtphcm.com/san-pham/in-decal-giay-gia-re-tai-tphcm',
+  'https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/':'https://innhanhtphcm.com/san-pham/in-tag-treo-bong-tai'
 });
 const visibleSources=urls=>[...new Set(urls.map(raw=>DISPLAY_LINK_FIXTURE[raw]||raw))];
 const all196FactsHash='c90340dd41b2aea6565129e92194da055fef279d73e9100175733703da1e8a9f';
@@ -284,7 +286,7 @@ test('earring tag table combines owner prices with the verified printing recipe 
     assert.ok(table.rows.every(f=>f.specs.material==='c300'&&f.specs.sides===2&&/^offset/.test(f.specs.printing)&&f.sourceUrl===null&&f.rawSourceFlags.ownerRecipeIncomplete===true));
     assert.ok(table.rows.every(f=>JSON.stringify(f.secondarySourceUrls)===JSON.stringify([verifiedUrl])));
     view.showVariant(table.id);assert.ok(byClass(view.element,'ta-price-table')[0].textContent.includes('Giá mỗi cái'));
-    assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[verifiedUrl]);
+    assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[DISPLAY_LINK_FIXTURE[verifiedUrl]]);
     assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem chi tiết'));
     assert.match(byClass(view.element,'ta-price-date')[0].textContent,/Trang sản phẩm bên dưới là nguồn tham chiếu/);
     assert.ok(byClass(view.element,'ta-price-zalo').length===3);
@@ -380,8 +382,8 @@ test('all existing 193 product records remain byte-for-byte equivalent after add
   assert.equal(createHash('sha256').update(JSON.stringify(originalProducts)).digest('hex'),'77d3d1db78174e9145663f1cd11e03f9fe477c1c04bba10d31d4ae7c018bfb7e');
 });
 
-test('all ten approved display links render exact targets while all 196 raw fact objects stay unchanged',()=>{
-  const before=JSON.stringify(data),view=build();assert.equal(Object.keys(DISPLAY_LINK_FIXTURE).length,10);
+test('all twelve approved display links render exact targets while all 196 raw fact objects stay unchanged',()=>{
+  const before=JSON.stringify(data),view=build();assert.equal(Object.keys(DISPLAY_LINK_FIXTURE).length,12);
   for(const [raw,target] of Object.entries(DISPLAY_LINK_FIXTURE)){
     const matching=variants(catalog()).filter(v=>v.sourceUrls.includes(raw));assert.ok(matching.length,raw);
     for(const variant of matching){
@@ -397,12 +399,10 @@ test('all ten approved display links render exact targets while all 196 raw fact
   assert.equal(createHash('sha256').update(JSON.stringify(afterFacts)).digest('hex'),all196FactsHash);view.destroy();
 });
 
-test('unmapped A5, paper decal and earring backlinks stay exact instead of borrowing an ordinary tag page',()=>{
+test('unmapped A5 backlink stays exact instead of borrowing another product page',()=>{
   const view=build();
   for(const [id,url] of [
-    ['estimate-catalogue-a5-all-c150-12-1000-estimate','https://invinhphat.com/san-pham/in-catalogue-a5/'],
-    ['table-vp-decal-9x5.5-1000','https://invinhphat.com/san-pham/in-tem-nhan-decal-giay-gia-re/'],
-    ['table-owner-earring-tag-50x40-1000','https://invinhphat.com/san-pham/in-tag-treo-khuyen-tai/']
+    ['estimate-catalogue-a5-all-c150-12-1000-estimate','https://invinhphat.com/san-pham/in-catalogue-a5/']
   ]){
     view.showVariant(id);assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[url]);
   }
