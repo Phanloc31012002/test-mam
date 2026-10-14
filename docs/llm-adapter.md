@@ -1,6 +1,8 @@
-# Gemini Free: bộ phân loại ý định tùy chọn
+# Gemini Free: bộ phân loại ý định khi khả dụng
 
-Mã hiện tại: `api/mam-assist.js`, `server/gemini-assistant.mjs`, `widget/gemini-client.js`. Cơ chế tắt khi thiếu cấu hình; demo Production hiện đã bật backend `gemini-3.5-flash-lite`, khách vẫn phải tự đồng ý. Standalone và WordPress không mount endpoint. Chủ sở hữu đã chấp thuận/tự lưu khóa có sẵn dưới dạng Secret Production; người hỗ trợ không đọc khóa. AI Studio Default Gemini Project Free/quota đã kiểm tra, và hai lần phân loại thật/UI xác nhận đã thành công ngày 13/10/2026 trên commit `6907`. Deployment cuối của bản sửa dữ liệu/giao diện mới còn chờ. Test tự động vẫn dùng fetch giả lập. [Cấu hình và quota quan sát](gemini-free-setup.md).
+Mã hiện tại: `api/mam-assist.js`, `server/gemini-assistant.mjs`, `widget/gemini-client.js`. Cơ chế tắt khi thiếu cấu hình; demo Production hiện đã bật backend `gemini-3.5-flash-lite`. Widget mặc định hiểu sâu sau khi metadata hợp lệ báo khả dụng, không còn checkbox hoặc dòng chọn chế độ. Standalone và WordPress không mount endpoint. Chủ sở hữu đã chấp thuận/tự lưu khóa có sẵn dưới dạng Secret Production; người hỗ trợ không đọc khóa. AI Studio Default Gemini Project Free/quota đã kiểm tra, và hai lần phân loại thật/UI xác nhận đã thành công ngày 13/10/2026 trên commit `6907`. Deployment cuối của bản sửa dữ liệu/giao diện mới còn chờ. Test tự động vẫn dùng fetch giả lập. [Cấu hình và quota quan sát](gemini-free-setup.md).
+
+**Bản sửa hiểu sâu mặc định được chuẩn bị từ `6aee189`.** Kết quả kiểm thử/build và trạng thái triển khai được ghi riêng trong báo cáo bàn giao; các kết quả gọi thật và nghiệm thu lịch sử bên dưới thuộc những bản trước.
 
 ## Luồng dữ liệu
 
@@ -8,9 +10,15 @@ Mã hiện tại: `api/mam-assist.js`, `server/gemini-assistant.mjs`, `widget/ge
 flowchart TD
   Q[Khách gửi câu hỏi] --> L[Logic và phiên local]
   L -->|Đã hiểu| A[FAQ / hỏi quy cách / báo giá local]
-  L -->|Chưa hiểu| C{Đã bật và khách đồng ý?}
+  L -->|Chưa hiểu| B[Bộ nhớ cụm từ đã duyệt]
+  B -->|Đã hiểu| A
+  B -->|Vẫn unknown| C{Metadata hợp lệ và enabled true?}
   C -->|Không| F[Mẫu local / Zalo]
-  C -->|Có| S[Server cùng origin kiểm tra đầu vào]
+  C -->|Đang chờ GET| W[Chờ metadata cho câu mới nhất]
+  W --> C
+  C -->|Có| R[Bộ lọc một câu mới nhất]
+  R -->|Bị chặn| F
+  R -->|Hợp lệ| S[Server cùng origin kiểm tra đầu vào]
   S --> M[Gemini phân loại một câu]
   M --> V[Kiểm tra JSON và allowlist]
   V -->|Sản phẩm| P[Khách xác nhận sản phẩm]
@@ -19,9 +27,11 @@ flowchart TD
   V -->|Lỗi / không rõ| F
 ```
 
-Local xử lý trước. Chỉ `kind:'unknown'` từ phiên local mới có thể gọi Gemini. Giao diện chính ẩn nhãn model/backend; phần thu gọn **Thông tin & quyền riêng tư** giữ disclosure xử lý qua Google và checkbox đồng ý. Checkbox không tích sẵn, chỉ bật sau GET status khả dụng. Khách đọc thông báo, xác nhận 18+/Việt Nam và đồng ý. Làm mới bỏ đồng ý; đóng/revoke/destroy hủy request và bỏ kết quả đến muộn.
+Local và bộ nhớ cụm từ đã duyệt xử lý trước. Chỉ `kind:'unknown'` còn lại mới có thể gọi Gemini. Giao diện chính ẩn nhãn model/backend và bỏ toàn bộ điều khiển chọn chế độ. Nút **Thông tin & quyền riêng tư** trong header luôn mở được bằng bàn phím, cả ở standalone/chỉ chạy local; nội dung vẫn giải thích Google Free, người rà soát, yêu cầu 18+/Việt Nam và không nhập dữ liệu cá nhân/bí mật. Nội dung không giả định khách vừa xác nhận bằng checkbox.
 
-Browser gửi một câu mới nhất tối đa 500 ký tự đã qua bộ lọc, không lịch sử/snapshot giá/file/dữ liệu đặt hàng. Server gửi câu đó cùng system instruction cố định. Bộ lọc chặn nhiều mẫu email/điện thoại/địa chỉ/khóa/injection, không nhận diện được mọi thông tin riêng; thông báo không gửi dữ liệu nhạy cảm vẫn cần thiết.
+Widget kiểm tra GET metadata cùng origin, không chứa chat. Chỉ metadata hợp lệ với `enabled:true` mới tự gọi `setConsent(true)`; nếu còn chờ GET, câu `unknown` mới nhất chờ kết quả này trước POST. Metadata lỗi/không khả dụng trả về local. Làm mới, đóng panel hoặc gửi câu mới hủy POST và câu đang chờ metadata, bỏ kết quả đến muộn mà không tắt mặc định hiểu sâu. GET metadata được phép hoàn tất sau các thao tác đó; `destroy()` hủy cả GET. Không gửi lại câu đã bị hủy sau khi metadata đến muộn.
+
+Browser gửi một câu mới nhất tối đa 500 ký tự đã qua bộ lọc, không lịch sử/snapshot giá/file/dữ liệu đặt hàng. Ứng dụng không thu thập chat riêng và không lưu chat bền vững. Server gửi câu đó cùng system instruction cố định. Bộ lọc chặn nhiều mẫu email/điện thoại/địa chỉ/khóa/injection, không nhận diện được mọi thông tin riêng; thông báo không gửi dữ liệu nhạy cảm vẫn cần thiết.
 
 ## Hợp đồng phân loại
 
@@ -50,6 +60,8 @@ POST chỉ nhận đúng bốn trường JSON UTF-8:
 ```json
 {"version":1,"message":"Mình cần một ấn phẩm giới thiệu sản phẩm","consent":"google-free-v1","adult":true}
 ```
+
+`consent:'google-free-v1'` và `adult:true` được giữ để tương thích hợp đồng backend. Trong bản sửa này, đây là giá trị mặc định do client đặt sau metadata hợp lệ, không phải bằng chứng người dùng đã xác nhận checkbox, đồng ý riêng trong phiên hoặc được kiểm chứng tuổi.
 
 Response hợp lệ:
 
@@ -96,9 +108,11 @@ Giá gói/source_total chỉ đúng số lượng, giữ nguyên tổng; không 
 
 Câu báo giá chỉ có hai dòng chính: quy cách đã xác minh, rồi số lượng và tổng tiền. Không hiển thị đơn giá, đoạn nguồn/ngày chính sách hoặc cảnh báo thiếu dài trong câu trả lời chính. Điều kiện, provenance và ý nghĩa giá giữ ở chi tiết tùy chọn/mã/tài liệu. Ghi chú “chưa VAT” nhỏ chỉ hiện khi nguồn nêu rõ. Chữ 16px và các bố cục nhỏ đã được kiểm tra thủ công; kiểm tra phóng 200% dùng CSS tương đương, không thao tác zoom browser thật.
 
-## Đồng ý và dữ liệu Free
+## Thông tin quyền riêng tư và dữ liệu Free
 
 Google Free có thể dùng input/output để cải thiện sản phẩm và người rà soát có thể đọc chúng. Không gửi dữ liệu cá nhân/nhạy cảm/bí mật. API yêu cầu 18+; API Clients tại EEA/Thụy Sĩ/Anh phải dùng Paid Services, nên bản Free này chỉ gate Việt Nam. [Điều khoản](https://ai.google.dev/gemini-api/terms).
+
+Mặc định của client không thay thế thông tin này và không kiểm chứng tuổi. Nút quyền riêng tư vẫn hiện trong header khi Gemini không khả dụng. Assets WordPress cũ giữ opt-in và không nhận thay đổi mặc định của bản sửa này widget/demo; không đồng bộ assets plugin trong đợt này.
 
 `store:false` tắt lưu Interaction để truy xuất/state, không hủy điều khoản dữ liệu Free. Chủ sở hữu đã tự nhập key trong UI Vercel bảo mật sau chấp thuận; không gửi key qua chat. Cờ Free/quota ghi nhận kiểm tra thủ công đã thực hiện, không tự theo dõi thay đổi billing/quota. [Lưu trữ](https://ai.google.dev/gemini-api/docs/interactions-overview), [quota](https://ai.google.dev/gemini-api/docs/rate-limits).
 

@@ -2,7 +2,9 @@
 
 Bản thử gồm widget, demo độc lập và plugin WordPress mặc định tắt. Baseline web ngày 12/10/2026 có **177 dòng giá**. Runtime hiện có **196 dòng/23 sản phẩm-biến thể**: 193 dòng của bản đã nghiệm thu và 3 gói danh thiếp offset được đọc lại ngày 13/10/2026. Có 62 dòng mang bản sửa chủ cơ sở: 46 dòng sửa và 16 dòng mới. Các dòng lịch sử giữ nguyên. Chính sách giá chủ cơ sở có provenance riêng với bằng chứng website; báo cáo nghiệm thu hiện tại nằm trong `evidence/TEST-REPORT.md` của gói bàn giao.
 
-Gemini Free đã được cấu hình và gọi thật thành công trên [demo Production](https://test-mam.vercel.app/) ngày 13/10/2026, với model **gemini-3.5-flash-lite**. Chủ sở hữu đã chấp thuận và tự lưu khóa có sẵn dưới dạng Secret, scope Production; người hỗ trợ chỉ xác nhận tên/loại/phạm vi biến, không đọc giá trị khóa. Model chỉ phân loại câu chưa được local hiểu, không tạo câu trả lời, thông số hoặc giá. Cơ chế vẫn tắt Gemini nếu thiếu cấu hình; khách phải tự đồng ý trước mỗi phiên. Xem [luồng Gemini](docs/llm-adapter.md) và [cấu hình/giới hạn Free](docs/gemini-free-setup.md).
+Gemini Free đã được cấu hình và gọi thật thành công trên [demo Production](https://test-mam.vercel.app/) ngày 13/10/2026, với model **gemini-3.5-flash-lite**. Chủ sở hữu đã chấp thuận và tự lưu khóa có sẵn dưới dạng Secret, scope Production; người hỗ trợ chỉ xác nhận tên/loại/phạm vi biến, không đọc giá trị khóa. Model chỉ phân loại câu chưa được local hiểu, không tạo câu trả lời, thông số hoặc giá. Cơ chế vẫn tắt Gemini nếu thiếu cấu hình. Trong bản sửa hiện tại, Mầm mặc định hiểu sâu khi metadata cùng origin hợp lệ báo khả dụng, không còn nút chọn chế độ. Xem [luồng Gemini](docs/llm-adapter.md) và [cấu hình/giới hạn Free](docs/gemini-free-setup.md).
+
+**Bản sửa hiểu sâu mặc định được chuẩn bị từ `6aee189`.** Kết quả kiểm thử/build và trạng thái triển khai được ghi riêng trong báo cáo bàn giao; các kết quả gọi thật và nghiệm thu lịch sử bên dưới thuộc những bản trước.
 
 ## Bộ nhớ cụm từ được duyệt
 
@@ -29,9 +31,9 @@ Standalone chứa sẵn JSON giá/quy cách, CSS, JS và sprite, không mount en
 
 Bấm **Báo giá** để chọn cần in gì. Mầm hỏi từng thông tin còn thiếu, ưu tiên số lượng, rồi giữ quy cách trong phiên để khách đổi số lượng/thông số. Đổi sản phẩm xóa thông số không còn áp dụng. Câu báo giá chỉ có **hai dòng chính**: quy cách đã xác minh; số lượng và tổng tiền. Không tự điền quy cách thiếu. Đơn giá, nguồn, căn cứ tính, provenance/ngày chính sách và điều kiện dài nằm trong phần chi tiết tùy chọn hoặc dữ liệu/mã, không thành các đoạn chính của câu trả lời. Chỉ thêm ghi chú nhỏ “chưa VAT” khi nguồn nêu rõ. Chữ trong panel/ô nhập dùng cỡ 16px; kiểm tra đọc và bố cục được ghi ở phần nghiệm thu.
 
-Bấm hoặc gõ **Xem bảng giá** khi muốn xem toàn bảng: chọn sản phẩm, quy cách, rồi xem các dòng nguồn. Không tự mở cả bảng sau mỗi câu hỏi giá. Bảng giữ số lượng, đơn vị, ý nghĩa giá, nguồn/ngày và điều kiện từng dòng; màn chọn sản phẩm/quy cách và cuối bảng đều có mục Tư vấn qua Zalo, lời nhắc website chưa có đủ quy cách/giá và ba liên hệ đã xác minh. Nếu quy cách cần in không có trong bảng, khách nhắn Zalo để tư vấn.
+Bấm hoặc gõ **Xem bảng giá** khi muốn xem toàn bảng: chọn sản phẩm, quy cách, rồi xem các dòng nguồn. Không tự mở cả bảng sau mỗi câu hỏi giá. Bảng giữ số lượng, đơn vị, ý nghĩa giá, nguồn/ngày và điều kiện từng dòng; màn chọn sản phẩm/quy cách và cuối bảng đều có mục **Tư vấn qua Zalo** cùng ba liên hệ đã xác minh, không kèm mô tả dài.
 
-Đợt [bố cục mới của khung Mầm](docs/ui-redesign-20261013.md) chỉ sửa widget/demo: một vùng giữa hiển thị chat hoặc bảng giá/quyền riêng tư/tư vấn, không lồng bảng dài vào lịch sử. Nút **← Trò chuyện** quay về chat; Escape từ phần phụ trợ quay về chat trước khi đóng panel. Nguồn của câu trả lời không phải báo giá được thu gọn. **Tư vấn** mở danh sách ba tư vấn viên và nói rõ website chưa có đủ giá/quy cách. Điều khiển **Bật hiểu sâu** dùng helper **Giúp Mầm hiểu câu hỏi rõ hơn**, với thông tin Google/18+/Việt Nam/Free/người rà soát ở phần quyền riêng tư riêng. Handler đồng ý, mascot và ba seed pending giữ nguyên. Không sửa WordPress hoặc SEO.
+Đợt [bố cục mới của khung Mầm](docs/ui-redesign-20261013.md) chỉ sửa widget/demo: một vùng giữa hiển thị chat hoặc bảng giá/quyền riêng tư/tư vấn, không lồng bảng dài vào lịch sử. Nút **← Trò chuyện** quay về chat; Escape từ phần phụ trợ quay về chat trước khi đóng panel. Nguồn của câu trả lời không phải báo giá được thu gọn. **Tư vấn qua Zalo** mở danh sách ba tư vấn viên, không có đoạn mô tả mở đầu. Widget bỏ toàn bộ checkbox và dòng chọn chế độ hiểu sâu; nút **Thông tin & quyền riêng tư** nằm trong header và luôn truy cập được, kể cả standalone hoặc chỉ chạy local. Phần riêng tư giải thích Google/18+/Việt Nam/Free/người rà soát, không mô tả như khách vừa xác nhận bằng checkbox. Mascot, bảng giá và ba seed pending giữ nguyên. Không sửa WordPress hoặc SEO.
 
 Danh thiếp hỏi **In offset** hoặc **In nhanh** trước khi báo giá nếu chưa biết phương pháp. In nhanh giữ bậc C300 đã có. Offset: 2 hộp tổng 90.000 ₫; 5 hộp tổng 120.000 ₫; mọi số nguyên từ 10 hộp tính theo chính sách chủ cơ sở **16.000 ₫/hộp** (12 hộp 192.000 ₫, 15 hộp 240.000 ₫). Số dưới 10 ngoài 2/5 cần làm rõ. Không đổi số lượng, không chia/ghép gói. Ba tổng công bố 2/5/10 hộp giữ nguyên; tổng từ chính sách là `computed-owner-offset`, không nhận là tổng website công bố.
 
@@ -70,15 +72,17 @@ Chín trạng thái: idle, running-right, running-left, waving, jumping, failed,
 
 Asset: [sprite Seedy v10](https://chatgpt.com/cdn/assets/seedy-spritesheet-v10.c613f3fce1.webp), bản local `widget/seedy-spritesheet-v10.webp`, 1536 × 2288, lưới 8 × 11, mỗi ô 192 × 208. SHA-256: `4cc6c9f4bc61882379472dfa7fa91ca128b90933b0ae3cda9fff3da91dc6d1f8`.
 
-## Gemini Free tùy chọn
+## Gemini Free khi khả dụng
 
 Demo HTTP(S) mount `/api/mam-assist`; standalone và WordPress wrapper không dùng endpoint. Backend cần Vercel Production, đúng origin, edge country VN, khóa server và cờ xác nhận Free/quota đúng model. Production hiện cấu hình `gemini-3.5-flash-lite`; giá trị mặc định trong mã nếu không đặt model là `gemini-3.8-flash`. AI Studio **Default Gemini Project** đã được xác minh Free, với quota quan sát ngày 13/10/2026: Flash-Lite 15 RPM/250K TPM/500 RPD; Flash 3.8 là 5 RPM/250K TPM/20 RPD. Đây là giới hạn hiển thị theo project/model, không phải số lượt còn lại hoặc cam kết hạn mức cố định. [Giá](https://ai.google.dev/gemini-api/docs/pricing), [quota](https://ai.google.dev/gemini-api/docs/rate-limits).
 
-Giao diện khách hàng không dùng nhãn model/backend trong các phần chính. Checkbox **Bật hiểu sâu** vẫn là opt-in không tích sẵn. Nút **Thông tin & quyền riêng tư** mở phần riêng với disclosure Google và xác nhận 18+/Việt Nam; không bỏ nội dung đồng ý hoặc thay payload/handler. Local xử lý trước; chỉ câu mới nhất chưa hiểu được gửi, không lịch sử hoặc bảng giá. Model trả đúng `intent` và `categoryId`; khách xác nhận sản phẩm gợi ý rồi mới vào local hỏi số lượng/quy cách. Hết quota, timeout, output sai hoặc thiếu cấu hình quay về local.
+Giao diện khách hàng không dùng nhãn model/backend trong các phần chính và không có nút chọn chế độ. Nút **Thông tin & quyền riêng tư** trong header mở phần riêng bằng bàn phím, cả khi không có endpoint. Local và bộ nhớ cụm từ đã duyệt xử lý trước; chỉ câu mới nhất còn `unknown` mới có thể qua bộ lọc rồi gửi. Widget chờ GET metadata cùng origin được kiểm tra hợp lệ với `enabled:true` trước khi tự gọi `setConsent(true)`; metadata không chứa chat. Payload vẫn giữ `consent:'google-free-v1'` và `adult:true` để tương thích backend: đây là giá trị mặc định của client, không phải bằng chứng khách đã xác nhận checkbox hoặc được kiểm chứng tuổi. Model trả đúng `intent` và `categoryId`; khách xác nhận sản phẩm gợi ý rồi mới vào local hỏi số lượng/quy cách. Hết quota, timeout, output sai hoặc thiếu cấu hình quay về local.
+
+Gửi câu mới, Làm mới hoặc đóng panel hủy POST và câu đang chờ metadata, chặn kết quả cũ và giữ mặc định hiểu sâu. GET metadata không chứa chat được phép hoàn tất sau các thao tác này; `destroy()` hủy cả GET. Sau reload, phiên chat mới tiếp tục dùng mặc định này nếu metadata hợp lệ và khả dụng.
 
 Google có thể dùng input/output Free để cải thiện sản phẩm và có người rà soát; không gửi thông tin cá nhân/bí mật/tài liệu khách hàng. `store:false` tắt lưu Interaction để truy xuất, không thay thế điều khoản dữ liệu Free. Bộ lọc của prototype không nhận diện được mọi dữ liệu nhạy cảm. [Điều khoản](https://ai.google.dev/gemini-api/terms), [Interactions/lưu trữ](https://ai.google.dev/gemini-api/docs/interactions-overview).
 
-Ứng dụng không lưu chat bền vững, không analytics, không gửi chat cho doanh nghiệp. Client cách lần gọi tối thiểu 10 giây. Server giới hạn **mỗi instance**: 6/IP/phút, 30 tổng/phút, 2 đồng thời; đây là best effort, không phải hard cap toàn deployment/tài khoản. Chi tiết ở [adapter](docs/llm-adapter.md).
+Ứng dụng không thu thập chat riêng, không gửi lịch sử chat hoặc bảng giá cho Gemini, không lưu chat bền vững, không analytics, không gửi chat cho doanh nghiệp. Chỉ một câu khách chủ động nhập và chưa được local hiểu mới có thể được gửi qua luồng đã mô tả. Client cách lần gọi tối thiểu 10 giây. Server giới hạn **mỗi instance**: 6/IP/phút, 30 tổng/phút, 2 đồng thời; đây là best effort, không phải hard cap toàn deployment/tài khoản. Chi tiết ở [adapter](docs/llm-adapter.md).
 
 ## Tích hợp website thường
 
@@ -99,7 +103,7 @@ Hoặc nạp các script đến widget.js rồi gọi `ThanhAnChat.mount({dataUr
 
 Gemini chỉ dùng khi endpoint cùng origin đã triển khai/cấu hình đúng: nạp `gemini-client.js` trước `widget.js`, custom mount có `aiEndpoint:'/api/mam-assist'`. Bootstrap hiện tại dùng kho quy cách đã rà soát và không tra mạng ngoài; wrapper WordPress cũ vẫn local. Tra nguồn chỉ đọc cần nạp source-info.js trước widget.js, triển khai api/mam-info.js cùng server/source-information.mjs và inventory, rồi custom mount với infoEndpoint cùng origin. Không đưa khóa vào JS, HTML, JSON hay assets WordPress.
 
-Widget không tự mở; panel modeless không khóa cuộn/backdrop. Escape khi focus trong widget đóng và trả focus về launcher. Header có nút ×; khi mở thì launcher ẩn và Mầm nằm ngoài khung. Ô nhập local tối đa 1.000 ký tự, Gemini tối đa 500. Giữ tối đa 50 khối tin trong bộ nhớ; Làm mới/reload xóa phiên, Làm mới bỏ đồng ý Gemini. Input dùng `textContent`.
+Widget không tự mở; panel modeless không khóa cuộn/backdrop. Escape khi focus trong widget đóng và trả focus về launcher. Header có nút × và nút **Thông tin & quyền riêng tư**; khi mở thì launcher ẩn và Mầm nằm ngoài khung. Ô nhập local tối đa 1.000 ký tự, Gemini tối đa 500. Giữ tối đa 50 khối tin trong bộ nhớ; Làm mới/reload xóa phiên, nhưng không chuyển mặc định hiểu sâu thành tắt. Làm mới/đóng/gửi câu mới hủy POST và câu đang chờ metadata; `destroy()` hủy thêm GET metadata. Input dùng `textContent`.
 
 Shadow DOM tách CSS selector, không phải ranh giới bảo mật với host script. JSON/CSS phải HTTP(S) cùng origin. Nếu CDN/plugin tối ưu đổi origin/thứ tự nạp cần kiểm tra staging.
 
@@ -107,7 +111,7 @@ Shadow DOM tách CSS selector, không phải ranh giới bảo mật với host 
 
 `wordpress/ta-mam-chat` chưa cài/kích hoạt trên website. Plugin mặc định **không hiện widget ngay cả khi kích hoạt**. Không tạo option, endpoint, bảng dữ liệu, tài khoản, credential hoặc network write. Gemini Function thuộc Vercel, không đóng gói thành backend WordPress.
 
-Đợt sửa bố cục này giữ nguyên các file WordPress. Build mặc định không đồng bộ assets vào plugin. Các ghi chú staging bên dưới dành cho công việc tích hợp riêng, không được thực hiện trong đợt này.
+Đợt sửa bố cục và bản sửa này hiểu sâu mặc định này giữ nguyên các file WordPress. Assets WordPress cũ vẫn giữ giao diện opt-in; wrapper không mount endpoint Gemini. Build mặc định không đồng bộ assets vào plugin. Các ghi chú staging bên dưới dành cho công việc tích hợp riêng, không được thực hiện trong đợt này.
 
 Sau review và kiểm tra staging, quản trị viên có thể bật filter trong child theme/plugin riêng:
 

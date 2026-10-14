@@ -102,7 +102,7 @@ test('building and navigating the menu does not mutate the data or the typed pol
   assert.equal(JSON.stringify(data),before);assert.equal(session.answer('tổng công bố').kind,'price');
   assert.equal(session.answer('tổng công bố').factId,'catalogue-a4-16-500');view.destroy();
 });
-test('DOM category → variant → full table has all 21 rows and a bold Zalo footer',()=>{
+test('DOM category → variant → full table has all 21 rows and three direct Zalo consultation links',()=>{
   const view=build();const category=byClass(view.element,'ta-price-category').find(b=>b.dataset.categoryId==='catalogue');category.click();
   assert.equal(view.getState().screen,'variants');
   const variant=byClass(view.element,'ta-price-variant').find(b=>b.dataset.variantId==='table-catalogue-a4-12-200');variant.click();
@@ -110,7 +110,7 @@ test('DOM category → variant → full table has all 21 rows and a bold Zalo fo
   const rows=descendants(table,e=>e.tagName==='TR'&&e.dataset.factId);
   assert.equal(rows.length,21);assert.deepEqual(rows.map(r=>r.dataset.factId),variants(catalog()).find(v=>v.id==='table-catalogue-a4-12-200').rows.map(f=>f.id));
   assert.match(view.element.textContent,/8% GTGT/);assert.match(view.element.textContent,/chưa xác định rõ đã gồm bìa/);
-  const foot=byClass(view.element,'ta-price-footer')[0];const notice=byClass(foot,'ta-price-consult-notice')[0];assert.equal(notice.tagName,'STRONG');assert.equal(notice.textContent,'Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.');
+  const foot=byClass(view.element,'ta-price-footer')[0];assert.equal(byClass(foot,'ta-price-consult-title')[0].textContent,'Tư vấn qua Zalo');assert.equal(byClass(foot,'ta-price-zalo').length,3);
   assert.deepEqual(byClass(view.element,'ta-price-zalo').map(a=>a.href),data.contacts.map(c=>c.zalo));
   assert.ok(byClass(view.element,'ta-price-zalo').every(a=>a.target==='_blank'&&a.rel==='noopener noreferrer'));
   byClass(view.element,'ta-price-back')[0].click();assert.equal(view.getState().screen,'variants');
@@ -300,7 +300,7 @@ test('owner price metadata identifies owner approval and original URL only as a 
   assert.ok(byClass(view.element,'ta-price-source').every(a=>a.textContent==='Xem chi tiết'));
   assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),visibleSources(table.sourceUrls));
   assert.doesNotMatch(view.element.textContent,/Vĩnh\s*Phát|vinh[\s-]*phat|invinhphat\.com/i);
-  const foot=byClass(view.element,'ta-price-footer')[0];assert.equal(byClass(foot,'ta-price-consult-notice')[0].tagName,'STRONG');view.destroy();
+  const foot=byClass(view.element,'ta-price-footer')[0];assert.equal(byClass(foot,'ta-price-consult-title')[0].textContent,'Tư vấn qua Zalo');assert.equal(byClass(foot,'ta-price-zalo').length,3);view.destroy();
 });
 
 test('owner-amended prices are hidden before the business owner approval date',()=>{
@@ -418,13 +418,14 @@ test('only displayed duplicate destinations merge while original source URLs rem
   assert.deepEqual(byClass(view.element,'ta-price-source').map(a=>a.href),[target]);assert.equal(JSON.stringify(d),before);view.destroy();
 });
 
-test('product, specification and table screens each provide one clear consultation section with three exact Zalo links',()=>{
+test('product, specification and table screens each provide only the exact consultation title and three unchanged Zalo links',()=>{
   const view=build();
   for(const navigate of [()=>view.showCategories(),()=>view.showCategory('catalogue'),()=>view.showVariant('table-catalogue-a4-12-200')]){
     navigate();const sections=byClass(view.element,'ta-price-footer');assert.equal(sections.length,1);
     const section=sections[0];assert.equal(byClass(section,'ta-price-consult-title')[0].textContent,'Tư vấn qua Zalo');
-    assert.match(byClass(section,'ta-price-consult-note')[0].textContent,/Website chưa có đủ giá và quy cách/);
-    const notice=byClass(section,'ta-price-consult-notice')[0];assert.equal(notice.tagName,'STRONG');assert.match(notice.textContent,/quy cách bạn cần.*Zalo/);
+    assert.equal(byClass(section,'ta-price-consult-note').length,0);assert.equal(byClass(section,'ta-price-consult-notice').length,0);
+    assert.deepEqual(section.children.map(child=>child.tagName),['H4','DIV']);
+    assert.doesNotMatch(section.textContent,/Website chưa có đủ|Nếu bảng chưa có|quy cách bạn cần|được tư vấn nhé/);
     const links=byClass(section,'ta-price-zalo');assert.deepEqual(links.map(a=>a.href),['https://zalo.me/0898739868','https://zalo.me/0898113688','https://zalo.me/0934559479']);
     assert.deepEqual(links.map(a=>a.textContent),data.contacts.map(c=>c.name+' · Zalo'));
     assert.ok(links.every(a=>a.target==='_blank'&&a.rel==='noopener noreferrer'&&a.referrerPolicy==='no-referrer'));

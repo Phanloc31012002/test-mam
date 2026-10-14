@@ -176,8 +176,6 @@
     function footer() {
       const foot=make('div','ta-price-footer',undefined,element);
       make('h4','ta-price-consult-title','Tư vấn qua Zalo',foot);
-      make('p','ta-price-consult-note','Website chưa có đủ giá và quy cách. Bạn nhắn Zalo để được tư vấn nhé.',foot);
-      make('strong','ta-price-consult-notice','Nếu bảng chưa có quy cách bạn cần, hãy nhắn Zalo để được tư vấn.',foot);
       const contacts=make('div','ta-price-contacts',undefined,foot);
       for(const contact of data.contacts) {
         if(!CONTACT_URLS.has(contact.zalo))continue;

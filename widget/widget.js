@@ -74,23 +74,23 @@
     if(dragButton){dragButton.type='button';dragButton.setAttribute('aria-label','Di chuyển hoặc đặt lại vị trí');dragButton.setAttribute('title','Kéo để di chuyển; bấm để về vị trí ban đầu');headerActions.insertBefore(dragButton,close);dragButton.addEventListener('click',()=>{dragController?.reset();dragController?.reclamp();});}
     const aiClient=config.aiEndpoint&&root.ThanhAnGemini?root.ThanhAnGemini.create({endpoint:assetUrl(config.aiEndpoint),fetchImpl:config.aiFetch}):null;
     const infoClient=config.infoEndpoint&&root.ThanhAnSourceInfo?root.ThanhAnSourceInfo.create({endpoint:assetUrl(config.infoEndpoint),productIds:data.products.map(product=>product.id),fetchImpl:config.infoFetch}):null;
-    let aiConsent=null,privacyButton=null,privacyDocument=null;
+    const privacyButton=el('button','ta-privacy-open','i',headerActions);privacyButton.type='button';privacyButton.setAttribute('aria-label','Thông tin & quyền riêng tư');privacyButton.setAttribute('title','Thông tin & quyền riêng tư');privacyButton.setAttribute('aria-expanded','false');privacyButton.setAttribute('aria-controls','ta-mam-aux-view');headerActions.insertBefore(privacyButton,close);
+    const privacyDocument=el('section','ta-privacy-document',undefined,panel);privacyDocument.hidden=true;
+    el('p','ta-ai-notice','Mầm hỗ trợ thông tin in ấn và giá trong bảng. Mầm chỉ giữ cuộc trò chuyện trong phiên mở trang, không lưu lâu dài, không thu thập chat riêng hoặc gửi lịch sử cho doanh nghiệp.',privacyDocument);
     if(aiClient){
-      const tools=el('div','ta-ai-options',undefined,panel);
-      const consentLabel=el('label','ta-ai-label',undefined,tools);
-      aiConsent=el('input','ta-ai-consent',undefined,consentLabel);aiConsent.type='checkbox';aiConsent.disabled=true;
-      const copy=el('span','ta-ai-copy',undefined,consentLabel);
-      const toggleTitle=el('span','ta-ai-title','Bật hiểu sâu',copy);toggleTitle.id='ta-ai-toggle-title';
-      const helper=el('span','ta-ai-helper','Giúp Mầm hiểu câu hỏi rõ hơn',copy);helper.id='ta-ai-helper';
-      aiConsent.setAttribute('aria-labelledby',toggleTitle.id);aiConsent.setAttribute('aria-describedby','ta-ai-helper ta-ai-consent-terms');
-      privacyButton=el('button','ta-privacy-open','i',tools);privacyButton.type='button';privacyButton.setAttribute('aria-label','Thông tin & quyền riêng tư');privacyButton.setAttribute('title','Thông tin & quyền riêng tư');privacyButton.setAttribute('aria-expanded','false');privacyButton.setAttribute('aria-controls','ta-mam-aux-view');
-      privacyDocument=el('section','ta-privacy-document',undefined,panel);privacyDocument.hidden=true;
-      el('p','ta-ai-notice','Mầm hỗ trợ thông tin in ấn và giá trong bảng. Lịch sử do Mầm giữ chỉ nằm trong phiên mở trang và không được lưu lâu dài.',privacyDocument);
-      const terms=el('p','ta-ai-notice','Khi bật hiểu sâu, tôi xác nhận từ 18 tuổi, đang tại Việt Nam và đồng ý gửi câu chưa hiểu cho Google để hỗ trợ nhận diện câu hỏi.',privacyDocument);terms.id='ta-ai-consent-terms';
-      el('p','ta-ai-notice','Dịch vụ miễn phí có thể dùng nội dung để cải thiện sản phẩm và có người xét duyệt. Đừng nhập thông tin cá nhân hoặc bí mật. Chỉ câu hiện tại chưa hiểu được gửi; Mầm không gửi toàn bộ lịch sử.',privacyDocument);
-      privacyButton.addEventListener('click',showPrivacy);
-      aiConsent.addEventListener('change',()=>{aiConsent.checked=aiClient.setConsent(aiConsent.checked);});
-      aiClient.check().then(enabled=>{if(destroyed)return;aiConsent.disabled=!enabled;});
+      el('p','ta-ai-notice','Mầm tự hỗ trợ nhận diện câu hỏi khi phần xử lý tại trang chưa hiểu. Khi bạn gửi câu hỏi, chỉ câu hiện tại đã qua bộ lọc có thể được gửi cho Google; toàn bộ lịch sử, bảng giá và tệp của bạn không được gửi.',privacyDocument);
+      el('p','ta-ai-notice','Phần xử lý qua Google dành cho người từ 18 tuổi đang tại Việt Nam. Dịch vụ miễn phí có thể dùng nội dung để cải thiện sản phẩm và có người xét duyệt. Đừng nhập thông tin cá nhân, chat riêng hoặc bí mật; bộ lọc không nhận diện được mọi dữ liệu nhạy cảm.',privacyDocument);
+    }else el('p','ta-ai-notice','Bản này xử lý câu hỏi ngay tại trang và không gửi nội dung cuộc trò chuyện cho Google.',privacyDocument);
+    privacyButton.addEventListener('click',showPrivacy);
+    // Metadata contains no chat. Let it finish across reset/close so the
+    // default remains available; cancel waiting questions and active POSTs.
+    let aiStatusReady=false;
+    const aiReadyWaits=new Set();
+    const aiReady=aiClient?aiClient.check().then(enabled=>{if(destroyed)return false;aiStatusReady=true;return aiClient.setConsent(enabled);}):Promise.resolve(false);
+    function abortAi(){for(const finish of [...aiReadyWaits])finish(false);if(aiStatusReady)aiClient?.abort();}
+    function waitForAi(){
+      if(aiStatusReady||!aiClient)return Promise.resolve(!!aiClient?.getState().consent);
+      return new Promise(resolve=>{const finish=ready=>{aiReadyWaits.delete(finish);resolve(ready);};aiReadyWaits.add(finish);aiReady.then(finish);});
     }
     const content=el('div','ta-content',undefined,panel);
     const log=el('div','ta-log',undefined,content);log.setAttribute('role','log');log.setAttribute('aria-live','polite');log.setAttribute('aria-relevant','additions');log.setAttribute('aria-label','Cuộc trò chuyện với Mầm');
@@ -102,13 +102,13 @@
     let auxReturnFocus=null;
     auxBack.addEventListener('click',()=>showChat());
     const quick=el('div','ta-quick',undefined,panel);
-    [['Báo giá','Xem giá'],['Bảng giá','Xem bảng giá'],['Tư vấn','Liên hệ Zalo']].forEach(([label,query])=>{const b=el('button','ta-chip',label,quick);b.type='button';if(query==='Liên hệ Zalo'){b.setAttribute('aria-label','Tư vấn qua Zalo');b.setAttribute('title','Chọn tư vấn viên qua Zalo');}b.addEventListener('click',()=>send(query));});
+    [['Báo giá','Xem giá'],['Bảng giá','Xem bảng giá'],['Tư vấn qua Zalo','Liên hệ Zalo']].forEach(([label,query])=>{const b=el('button','ta-chip',label,quick);b.type='button';if(query==='Liên hệ Zalo'){b.setAttribute('aria-label','Tư vấn qua Zalo');b.setAttribute('title','Chọn tư vấn viên qua Zalo');}b.addEventListener('click',()=>send(query));});
     const form=el('form','ta-form',undefined,panel);
     const label=el('label','ta-sr-only','Câu hỏi cho Mầm',form);label.htmlFor='ta-mam-input';
     const input=el('input','ta-input',undefined,form);input.id='ta-mam-input';input.type='text';input.placeholder='Bạn đang cần in gì?';input.maxLength=1000;input.autocomplete='off';input.setAttribute('enterkeyhint','send');
     const submit=el('button','ta-send',undefined,form);submit.type='submit';submit.setAttribute('aria-label','Gửi câu hỏi');icon(submit);
     const alert=el('p','ta-alert','',panel);alert.setAttribute('role','status');alert.hidden=true;
-    const clear=el('button','ta-clear','↻',headerActions);clear.type='button';clear.setAttribute('aria-label','Làm mới');clear.setAttribute('title','Làm mới trò chuyện');headerActions.insertBefore(clear,close);clear.addEventListener('click',()=>{if(destroyed)return;generation++;pendingText=null;presentation.cancel();cancelPaint();infoClient?.abort();removeTyping();aiClient?.setConsent(false);if(aiConsent)aiConsent.checked=false;showChat(false);destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();greetingShown=false;if(!panel.hidden)welcome();input.value='';input.focus();});
+    const clear=el('button','ta-clear','↻',headerActions);clear.type='button';clear.setAttribute('aria-label','Làm mới');clear.setAttribute('title','Làm mới trò chuyện');headerActions.insertBefore(clear,close);clear.addEventListener('click',()=>{if(destroyed)return;generation++;pendingText=null;presentation.cancel();cancelPaint();infoClient?.abort();removeTyping();abortAi();showChat(false);destroyMenus();setActivity('greeting');conversation.reset();log.replaceChildren();greetingShown=false;if(!panel.hidden)welcome();input.value='';input.focus();});
     const launcher=el('button','ta-launcher',undefined,shell);launcher.type='button';launcher.setAttribute('aria-expanded','false');launcher.setAttribute('aria-controls',panel.id);launcher.setAttribute('aria-label','Mở trò chuyện với Mầm');
     const launcherLabel=el('span','ta-launcher-label','Mầm giúp bạn nhé?',launcher);el('small','','Tìm giá & thông tin in ấn',launcherLabel);
     const launcherPlant=el('span','ta-launcher-plant',undefined,launcher);const launcherMascot=root.ThanhAnMascot.create({reducedMotion:config.reducedMotion,attentionDurationMs:config.attentionDurationMs});launcherPlant.appendChild(launcherMascot.element);el('span','ta-collapse-icon','⌄',launcherPlant);
@@ -175,7 +175,7 @@
       if(state==='greeting')activityTimer=setTimeout(()=>{if(!destroyed)setActivity('idle');},900);
     }
     input.addEventListener('input',()=>{if(input.value.length||host.dataset.mascotState==='working')keepWorking();});
-    function setOpen(value){if(destroyed)return;panel.hidden=!value;panelWrap.hidden=!value;avatarMascot.setPaused(!value);launcherMascot.setPaused(value);launcher.setAttribute('aria-expanded',String(value));launcher.setAttribute('aria-label',value?'Thu gọn trò chuyện với Mầm':'Mở trò chuyện với Mầm');if(value){setActivity('greeting');input.focus({preventScroll:true});if(!greetingShown&&!log.childElementCount)welcome();}else{generation++;pendingText=null;presentation.cancel();cancelPaint();removeTyping();if(!log.childElementCount)greetingShown=false;showChat(false);aiClient?.abort();infoClient?.abort();setActivity('idle');launcher.focus({preventScroll:true});}dragController?.reclamp();}
+    function setOpen(value){if(destroyed)return;panel.hidden=!value;panelWrap.hidden=!value;avatarMascot.setPaused(!value);launcherMascot.setPaused(value);launcher.setAttribute('aria-expanded',String(value));launcher.setAttribute('aria-label',value?'Thu gọn trò chuyện với Mầm':'Mở trò chuyện với Mầm');if(value){setActivity('greeting');input.focus({preventScroll:true});if(!greetingShown&&!log.childElementCount)welcome();}else{generation++;pendingText=null;presentation.cancel();cancelPaint();removeTyping();if(!log.childElementCount)greetingShown=false;showChat(false);abortAi();infoClient?.abort();setActivity('idle');launcher.focus({preventScroll:true});}dragController?.reclamp();}
     launcher.addEventListener('click',()=>setOpen(panel.hidden));close.addEventListener('click',()=>setOpen(false));
     shadow.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){event.preventDefault();if(!auxiliary.hidden)showChat();else setOpen(false);}});
     function addMessage(text,user=false){
@@ -196,7 +196,6 @@
       }
       if(result.contacts){
         showAuxiliary('Tư vấn qua Zalo','contacts',returnFocus||input);
-        el('p','ta-contact-intro','Dạ, website chưa có đủ mọi mức giá và quy cách. Bạn chọn tư vấn viên qua Zalo để được hỗ trợ đúng nhu cầu ạ.',auxBody);
         addContacts(auxBody);return;
       }
       const block=addMessage(result.compactText||result.text);
@@ -222,7 +221,6 @@
     const categoryQueries=Object.freeze({namecard:'Danh thiếp',catalogue:'Catalogue',decal:'Decal',flyer:'Tờ rơi',bag:'Túi giấy',box:'Hộp giấy',envelope:'Bao thư', 'red-envelope':'Lì xì',receipt:'Phiếu thu',folder:'Folder',tag:'Tag treo',menu:'Menu',wedding:'Thiệp cưới'});
     function addConsultChoice(parent){
       const area=el('div','ta-consult-choice',undefined,parent);
-      el('p','','Website chưa có đủ mọi mức giá và quy cách. Nếu chưa tìm thấy nhu cầu của bạn, hãy chọn tư vấn qua Zalo.',area);
       const button=el('button','ta-chip ta-consult-cta','Tư vấn qua Zalo',area);button.type='button';button.addEventListener('click',()=>send('Liên hệ Zalo'));
     }
     function renderQuoteChoices(){
@@ -244,7 +242,7 @@
       menu.element.addEventListener('click',event=>{
         const button=event.target.closest?.('.ta-price-category,.ta-price-variant');
         if(!button||bypass.has(button)||destroyed)return;
-        event.preventDefault();event.stopImmediatePropagation();generation++;pendingText=null;presentation.cancel();removeTyping();aiClient?.abort();infoClient?.abort();
+        event.preventDefault();event.stopImmediatePropagation();generation++;pendingText=null;presentation.cancel();removeTyping();abortAi();infoClient?.abort();
         const current=generation,finish=showTyping(auxBody),wait=presentation.begin();auxBody.prepend([...typingBubbles].at(-1));auxiliary.scrollTop=0;setActivity('working');
         queue=(async()=>{try{await wait;if(destroyed||current!==generation||!menu.element.isConnected)return;finish();bypass.add(button);button.click();}finally{finish();bypass.delete(button);if(!destroyed&&current===generation)setActivity('idle',!panel.hidden);}})();
       },true);
@@ -276,7 +274,7 @@
       if(!text){input.focus();return Promise.resolve();}
       if(pendingText===text)return queue;
       const requestGeneration=++generation;pendingText=text;greetingShown=true;
-      presentation.cancel();cancelPaint();removeTyping();aiClient?.abort();infoClient?.abort();
+      presentation.cancel();cancelPaint();removeTyping();abortAi();infoClient?.abort();
       const returnFocus=shadow.activeElement||input;showChat(false);
       input.value='';alert.hidden=true;
       if(!panel.hidden)input.focus({preventScroll:true});
@@ -309,8 +307,10 @@
               if(destroyed||generation!==requestGeneration)return;
               if(info?.kind==='information')local={kind:'information',text:info.text,sources:info.sources.map(source=>({url:source.url,label:source.provider==='thanh-an'?'Quy cách trên website Thanh Ấn':'Thông tin tham khảo bổ sung'}))};
           }else if(local?.informationQuery)local=snapshotInformation(local.informationQuery)||local;
-          if(local?.kind==='unknown'&&aiClient?.getState().consent){
-              suggestion=await aiClient.suggest(text);
+          if(local?.kind==='unknown'&&aiClient){
+              const ready=await waitForAi();
+              if(destroyed||generation!==requestGeneration)return;
+              if(ready)suggestion=await aiClient.suggest(text);
               if(destroyed||generation!==requestGeneration)return;
           }
           await minimumWait;
@@ -327,7 +327,7 @@
     }
     form.addEventListener('submit',event=>{event.preventDefault();send(input.value);});setActivity('idle');
     document.body.appendChild(host);
-    try{await Promise.all([cssReady,launcherMascot.ready,avatarMascot.ready]);}catch(e){destroyed=true;presentation.destroy();aiClient?.destroy();infoClient?.destroy();host.remove();launcherMascot.destroy();avatarMascot.destroy();throw e;}
+    try{await Promise.all([cssReady,launcherMascot.ready,avatarMascot.ready]);}catch(e){destroyed=true;presentation.destroy();abortAi();aiClient?.destroy();infoClient?.destroy();host.remove();launcherMascot.destroy();avatarMascot.destroy();throw e;}
     host.style.visibility='visible';
     function updateAvailableHeight(){
       const viewport=root.visualViewport,height=Math.max(160,Math.round(Math.min(root.innerHeight,viewport?.height||root.innerHeight)));
@@ -345,7 +345,7 @@
         return{left,right,top,bottom,width:right-left,height:bottom-top};
       }});dragController.reclamp();
     }
-    mounted={host,shadow,data,open:()=>setOpen(true),close:()=>setOpen(false),send,launcherMascot,avatarMascot,dragController,destroy(){if(destroyed)return;destroyed=true;pendingText=null;presentation.destroy();dragController?.destroy();root.removeEventListener('resize',updateAvailableHeight);root.visualViewport?.removeEventListener('resize',updateAvailableHeight);aiClient?.destroy();infoClient?.destroy();removeTyping();cancelPaint();clearTimeout(activityTimer);clearTimeout(deskTimer);destroyMenus();host.remove();launcherMascot.destroy();avatarMascot.destroy();if(typeof config.onStateChange==='function'){try{config.onStateChange('idle');}catch(_){}}if(mounted&&mounted.host===host)mounted=null;}};
+    mounted={host,shadow,data,open:()=>setOpen(true),close:()=>setOpen(false),send,launcherMascot,avatarMascot,dragController,destroy(){if(destroyed)return;destroyed=true;pendingText=null;presentation.destroy();dragController?.destroy();root.removeEventListener('resize',updateAvailableHeight);root.visualViewport?.removeEventListener('resize',updateAvailableHeight);abortAi();aiClient?.destroy();infoClient?.destroy();removeTyping();cancelPaint();clearTimeout(activityTimer);clearTimeout(deskTimer);destroyMenus();host.remove();launcherMascot.destroy();avatarMascot.destroy();if(typeof config.onStateChange==='function'){try{config.onStateChange('idle');}catch(_){}}if(mounted&&mounted.host===host)mounted=null;}};
     return mounted;
   }
   function mount(config={}) {

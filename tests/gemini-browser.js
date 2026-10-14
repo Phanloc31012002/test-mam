@@ -40,11 +40,15 @@ async function tests(){
   const allFacts=data.products.flatMap(p=>p.priceFacts||[]);
   check('The reviewed dataset contains 196 facts and preserves its 62 owner-confirmed records',allFacts.length===196&&data.products.length===23&&allFacts.filter(f=>f.ownerPriceRevision?.kind==='business-owner-price-update').length===62&&allFacts.filter(f=>f.originalSourceRecord).length===46);
   async function mount(options={}){
-   if(widget)widget.destroy();const calls=[],infoCalls=[];let resolvePost=null,resolveInfo=null,metadataRead=false;
+   if(widget)widget.destroy();const calls=[],infoCalls=[];let resolvePost=null,resolveInfo=null,resolveMetadata=null,metadataRead=false;
    const aiFetch=async(url,init)=>{
     if(new URL(url,location.href).origin!==location.origin||new URL(url,location.href).pathname!=='/api/mam-assist')throw new Error('Unexpected mock endpoint');
     calls.push({method:init.method,body:init.body,signal:init.signal});
-    if(init.method==='GET')return {ok:true,text:async()=>{metadataRead=true;return JSON.stringify(options.metadata||metadata);}};
+    if(init.method==='GET'){
+     const response={ok:true,text:async()=>{metadataRead=true;return JSON.stringify(options.metadata||metadata);}};
+     if(options.pendingMetadata)return new Promise(resolve=>{resolveMetadata=()=>resolve(response);});
+     return response;
+    }
     if(options.pending)return new Promise(resolve=>{resolvePost=()=>resolve(fakeResponse(options.reply||suggestion,options.status||200));});
     if(options.offline)throw new Error('Mock offline');
     return fakeResponse(options.reply||suggestion,options.status||200);
@@ -64,14 +68,12 @@ async function tests(){
    if(options.presentationTimers)window.ThanhAnPresentation=Object.freeze({create:settings=>originalPresentation.create({...settings,timers:options.presentationTimers})});
    try{widget=await ThanhAnChat.mount({data,styles,reducedMotion:true,aiEndpoint:'/api/mam-assist',aiFetch,...languageConfig,...infoConfig});}finally{window.ThanhAnPresentation=originalPresentation;}
    widget.open();
-   const shadow=widget.shadow,consent=shadow.querySelector('.ta-ai-consent');
-   await until(()=>metadataRead);for(let n=0;n<8;n++)await Promise.resolve();
+   const shadow=widget.shadow;
+   await until(()=>options.pendingMetadata?calls.some(call=>call.method==='GET'):metadataRead);for(let n=0;n<8;n++)await Promise.resolve();
    if(options.presentationTimers&&!options.keepWelcomePending){options.presentationTimers.advance(320);await microtasks();}
    if(!options.keepWelcomePending)await until(()=>shadow.querySelector('.ta-log .ta-message:not(.ta-message-user):not(.ta-message-typing)')&&typingAbsent(shadow));
-   const optIn=()=>{consent.checked=true;consent.dispatchEvent(new Event('change',{bubbles:true}));};
-   const revoke=()=>{consent.checked=false;consent.dispatchEvent(new Event('change',{bubbles:true}));};
    const posts=()=>calls.filter(c=>c.method==='POST');
-   return {shadow,consent,optIn,revoke,posts,calls,infoCalls,resolve:()=>resolvePost?.(),resolveInfo:()=>resolveInfo?.()};
+   return {shadow,posts,calls,infoCalls,resolve:()=>resolvePost?.(),resolveInfo:()=>resolveInfo?.(),resolveMetadata:()=>resolveMetadata?.()};
   }
   const typingAbsent=shadow=>shadow.querySelectorAll('.ta-message-typing').length===0;
   function pendingDots(shadow,staticHeader=true){
@@ -83,14 +85,14 @@ async function tests(){
   const botMessages=shadow=>[...shadow.querySelectorAll('.ta-log .ta-message:not(.ta-message-user):not(.ta-message-typing)')];
   async function clickPresented(button,shadow){button.click();await sleep(360);await until(()=>typingAbsent(shadow));}
   async function resetFinished(shadow){await sleep(360);await until(()=>typingAbsent(shadow)&&botMessages(shadow).length===1);}
-  function choiceConsult(menu){const links=[...menu.querySelectorAll('.ta-price-footer .ta-price-zalo')];return links.length===3&&data.contacts.every(person=>links.some(link=>link.getAttribute('href')===person.zalo&&link.target==='_blank'&&link.rel.includes('noopener')&&link.referrerPolicy==='no-referrer'))&&/Tư vấn qua Zalo/u.test(menu.querySelector('.ta-price-footer')?.textContent||'');}
+  function choiceConsult(menu){const foot=menu.querySelector('.ta-price-footer'),links=[...menu.querySelectorAll('.ta-price-footer .ta-price-zalo')];return foot?.querySelector('.ta-price-consult-title')?.textContent==='Tư vấn qua Zalo'&&foot.querySelector('p,strong')===null&&links.length===3&&data.contacts.every(person=>links.some(link=>link.getAttribute('href')===person.zalo&&link.target==='_blank'&&link.rel.includes('noopener')&&link.referrerPolicy==='no-referrer'));}
   // Only presentation timers are controlled here. The actual exported
   // presentation module, widget, DOM and mocked endpoint clients still run.
   let clock=manualTimers(),f=await mount({sourceInfo:true,presentationTimers:clock,keepWelcomePending:true});
   clock.advance(319);await microtasks();const heldWelcome=pendingDots(f.shadow,false)&&botMessages(f.shadow).length===0;
   clock.advance(1);await microtasks();await until(()=>typingAbsent(f.shadow)&&botMessages(f.shadow).length===1);
   check('Opening shows only gray dots before the controlled 320ms deadline and then exactly one welcome',heldWelcome&&/^Dạ[,\s]/u.test(lastBubble())&&typingAbsent(f.shadow)&&botMessages(f.shadow).length===1&&clock.pending===0);
-  f.optIn();let timedPending=widget.send('kt a4 là bao nhiêu');await until(()=>pendingDots(f.shadow));clock.advance(319);await microtasks();
+  let timedPending=widget.send('kt a4 là bao nhiêu');await until(()=>pendingDots(f.shadow));clock.advance(319);await microtasks();
   const heldFaq=pendingDots(f.shadow)&&botMessages(f.shadow).length===1&&!botMessages(f.shadow).some(block=>block.textContent.includes('21 × 29,7'));
   clock.advance(1);await controlledFinish(timedPending);
   check('A local FAQ waits behind only three dots until 320ms and then answers without either endpoint',heldFaq&&lastBubble().includes('21 × 29,7 cm')&&typingAbsent(f.shadow)&&botMessages(f.shadow).length===2&&f.posts().length===0&&f.infoCalls.length===0);
@@ -101,13 +103,13 @@ async function tests(){
    ['consultation','Liên hệ Zalo',shadow=>shadow.querySelector('.ta-aux-view').dataset.view==='contacts'&&!shadow.querySelector('.ta-aux-view').hidden&&shadow.querySelectorAll('.ta-contact').length===3],
    ['price menu','Xem bảng giá',shadow=>shadow.querySelector('.ta-aux-view').dataset.view==='prices'&&!shadow.querySelector('.ta-aux-view').hidden&&shadow.querySelectorAll('.ta-price-category').length===13]
   ]){
-   clock=manualTimers();f=await mount({presentationTimers:clock});f.optIn();timedPending=widget.send(query);await until(()=>pendingDots(f.shadow));clock.advance(319);await microtasks();const held=pendingDots(f.shadow)&&!visible(f.shadow);
+   clock=manualTimers();f=await mount({presentationTimers:clock});timedPending=widget.send(query);await until(()=>pendingDots(f.shadow));clock.advance(319);await microtasks();const held=pendingDots(f.shadow)&&!visible(f.shadow);
    clock.advance(1);await controlledFinish(timedPending);
    check('The local '+name+' appears after the same controlled presentation delay without premature content',held&&visible(f.shadow)&&typingAbsent(f.shadow)&&f.posts().length===0&&f.infoCalls.length===0);
   }
-  clock=manualTimers();f=await mount({presentationTimers:clock,pending:true});f.optIn();timedPending=widget.send(unknown);await until(()=>f.posts().length===1);f.resolve();await microtasks();clock.advance(319);await microtasks();const heldFast=pendingDots(f.shadow)&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue');clock.advance(1);await controlledFinish(timedPending);
-  check('A fast optional response cannot render before the shared presentation deadline',heldFast&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&f.posts().length===1&&clock.pending===0);
-  clock=manualTimers();f=await mount({presentationTimers:clock,pending:true});f.optIn();timedPending=widget.send(unknown);await until(()=>f.posts().length===1);clock.advance(320);await microtasks();const heldSlow=pendingDots(f.shadow)&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue'),slowDeadline=clock.now;f.resolve();await controlledFinish(timedPending);
+  clock=manualTimers();f=await mount({presentationTimers:clock,pending:true});timedPending=widget.send(unknown);await until(()=>f.posts().length===1);f.resolve();await microtasks();clock.advance(319);await microtasks();const heldFast=pendingDots(f.shadow)&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue');clock.advance(1);await controlledFinish(timedPending);
+  check('A fast automatic response cannot render before the shared presentation deadline',heldFast&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&f.posts().length===1&&clock.pending===0);
+  clock=manualTimers();f=await mount({presentationTimers:clock,pending:true});timedPending=widget.send(unknown);await until(()=>f.posts().length===1);clock.advance(320);await microtasks();const heldSlow=pendingDots(f.shadow)&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue'),slowDeadline=clock.now;f.resolve();await controlledFinish(timedPending);
   check('A slow lookup keeps its dots after 320ms and renders on completion without another presentation delay',heldSlow&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&clock.now===slowDeadline&&clock.pending===0);
   const sourcePresentationCases=[];
   for(const slow of [false,true]){
@@ -127,44 +129,43 @@ async function tests(){
   check('Reset cancels the old presentation and delays one new welcome with three dots',heldReset&&typingAbsent(f.shadow)&&/^Dạ[,\s]/u.test(lastBubble())&&f.shadow.querySelectorAll('.ta-message').length===1&&f.shadow.querySelectorAll('.ta-message-user').length===0&&clock.pending===0);
 
   f=await mount();
-  check('Optional AI starts unchecked and checks metadata once',!f.consent.checked&&f.calls.length===1&&f.calls[0].method==='GET');
-  const privacyTrigger=f.shadow.querySelector('.ta-privacy-open'),label=f.consent.closest('.ta-ai-label'),helper=f.shadow.querySelector('.ta-ai-helper'),aiOptions=f.shadow.querySelector('.ta-ai-options');
-  const commonText=[f.shadow.querySelector('.ta-header'),aiOptions,f.shadow.querySelector('.ta-log'),f.shadow.querySelector('.ta-quick')].filter(Boolean).map(element=>element.textContent).join(' ');
-  privacyTrigger.click();
+  check('Understanding checks metadata once and no mode checkbox exists',f.calls.length===1&&f.calls[0].method==='GET'&&f.shadow.querySelector('.ta-ai-consent')===null&&f.shadow.querySelector('input[type="checkbox"]')===null);
+  const privacyTrigger=f.shadow.querySelector('.ta-privacy-open');
+  const commonText=[f.shadow.querySelector('.ta-header'),f.shadow.querySelector('.ta-log'),f.shadow.querySelector('.ta-quick')].map(element=>element.textContent).join(' ');
+  privacyTrigger.focus();const privacyFocusable=f.shadow.activeElement===privacyTrigger&&privacyTrigger.tabIndex===0&&!privacyTrigger.disabled;privacyTrigger.click();
   const privacyView=f.shadow.querySelector('.ta-aux-view[data-view="privacy"]'),content=f.shadow.querySelector('.ta-content'),chatLog=f.shadow.querySelector('.ta-log'),notice=privacyView.textContent;
   check('Google processing, human review and free-tier product improvement are disclosed',notice.includes('Google')&&notice.includes('miễn phí')&&notice.includes('cải thiện')&&notice.includes('người xét duyệt')&&notice.includes('thông tin cá nhân'));
-  check('Opt-in explicitly covers adults and Vietnam in accessible privacy information',notice.includes('18 tuổi')&&notice.includes('Việt Nam')&&notice.includes('đồng ý')&&!f.consent.checked);
-  check('The compact deep-understanding label and helper avoid provider or backend text in the main chat',label.querySelector('.ta-ai-title')?.textContent==='Bật hiểu sâu'&&helper.textContent==='Giúp Mầm hiểu câu hỏi rõ hơn'&&privacyTrigger.getAttribute('aria-label')==='Thông tin & quyền riêng tư'&&!/Google|Gemini|Flash|API\s*key|backend|provider|generativelanguage/i.test(commonText));
-  check('Privacy opens as the sole content view with keyboard focus and one vertical scroll owner',chatLog.hidden&&!privacyView.hidden&&visibleContentViews(content).length===1&&visibleContentViews(content)[0]===privacyView&&privacyView.contains(f.shadow.activeElement)&&verticalScrollOwners(content).every(element=>element===privacyView)&&aiOptions.tagName==='DIV'&&!['auto','scroll'].includes(getComputedStyle(aiOptions).overflowY));
+  check('Automatic processing discloses adults, Vietnam and current-message-only limits in accessible privacy information',notice.includes('18 tuổi')&&notice.includes('Việt Nam')&&notice.includes('tự hỗ trợ')&&notice.includes('chỉ câu hiện tại')&&notice.includes('không lưu lâu dài')&&notice.includes('không thu thập chat riêng')&&notice.includes('toàn bộ lịch sử'));
+  check('The privacy control stays in the header without a mode selector or provider text in the main chat',f.shadow.querySelector('.ta-header').contains(privacyTrigger)&&privacyTrigger.tagName==='BUTTON'&&privacyTrigger.getAttribute('aria-label')==='Thông tin & quyền riêng tư'&&!f.shadow.querySelector('.ta-ai-options,.ta-ai-label,.ta-ai-helper')&&!/Bật hiểu sâu|Giúp Mầm hiểu|Google|Gemini|Flash|API\s*key|backend|provider|generativelanguage/i.test(commonText));
+  check('Privacy opens as the sole content view with keyboard focus and one vertical scroll owner',privacyFocusable&&chatLog.hidden&&!privacyView.hidden&&visibleContentViews(content).length===1&&visibleContentViews(content)[0]===privacyView&&privacyView.contains(f.shadow.activeElement)&&verticalScrollOwners(content).every(element=>element===privacyView)&&privacyTrigger.getAttribute('aria-expanded')==='true');
   privacyView.querySelector('.ta-view-back').click();
-  check('Returning from privacy restores chat and keyboard focus without changing consent',!chatLog.hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&visibleContentViews(content).length===1&&visibleContentViews(content)[0]===chatLog&&f.shadow.activeElement===privacyTrigger&&!f.consent.checked);
+  check('Returning from privacy restores chat and keyboard focus to the header control',!chatLog.hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&visibleContentViews(content).length===1&&visibleContentViews(content)[0]===chatLog&&f.shadow.activeElement===privacyTrigger&&privacyTrigger.getAttribute('aria-expanded')==='false');
   privacyTrigger.click();f.shadow.querySelector('.ta-view-back').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,composed:true,cancelable:true}));
   const escapeReturned=!chatLog.hidden&&!f.shadow.querySelector('.ta-panel').hidden&&f.shadow.activeElement===privacyTrigger;
   privacyTrigger.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,composed:true,cancelable:true}));
   check('Escape first returns from the auxiliary view and only then closes the panel',escapeReturned&&f.shadow.querySelector('.ta-panel').hidden&&f.shadow.activeElement===f.shadow.querySelector('.ta-launcher'));
   widget.open();
   const initialBubble=f.shadow.querySelector('.ta-message-bubble'),inputElement=f.shadow.querySelector('.ta-input'),clearButton=f.shadow.querySelector('.ta-clear');
-  const readable={bubble:parseFloat(getComputedStyle(initialBubble).fontSize),input:parseFloat(getComputedStyle(inputElement).fontSize),clear:parseFloat(getComputedStyle(clearButton).fontSize),privacy:parseFloat(getComputedStyle(privacyTrigger).fontSize),label:parseFloat(getComputedStyle(label).fontSize)};
+  const readable={bubble:parseFloat(getComputedStyle(initialBubble).fontSize),input:parseFloat(getComputedStyle(inputElement).fontSize),clear:parseFloat(getComputedStyle(clearButton).fontSize),privacy:parseFloat(getComputedStyle(privacyTrigger).fontSize)};
   check('Customer messages, input and controls keep readable 16px text',Object.values(readable).every(value=>value>=16)&&clearButton.style.fontSize!=='10px',JSON.stringify(readable));
   check('Quick, clear and privacy controls have at least 44px touch targets',clearButton.getBoundingClientRect().height>=44&&privacyTrigger.getBoundingClientRect().height>=44&&[...f.shadow.querySelectorAll('.ta-quick .ta-chip')].every(button=>button.getBoundingClientRect().height>=44));
   const contrasts={bubble:contrast(initialBubble),input:contrast(inputElement),clear:contrast(clearButton),privacy:contrast(privacyTrigger)};
   check('Actual customer text colors meet a 4.5 to 1 contrast target',Object.values(contrasts).every(value=>value>=4.5),JSON.stringify(contrasts));
-  await widget.send(unknown);check('Unknown text remains local before opt-in',f.posts().length===0);
-  f.optIn();check('An explicit checkbox action enables consent',f.consent.checked);
   const exactPrice=data.products.flatMap(p=>p.priceFacts||[]).find(f=>f.id==='catalogue-a4-16-500');
   await widget.send(exactPrice.lookupQuery);
   const exactLocal=ThanhAnFAQ.answer(exactPrice.lookupQuery,data);
-  check('An exact local price bypasses Gemini and shows a compact total after opt-in',f.posts().length===0&&compactPrice(lastBubble(),500,'cuốn',exactPrice.priceVnd*500,['A4','16 trang','C250','C150'])&&exactLocal.quote.unitPriceVnd===exactPrice.priceVnd&&exactLocal.quote.provider==='thanh-an'&&exactLocal.quote.sourceUrl===exactPrice.sourceUrl);
+  check('An exact local price bypasses automatic understanding and shows a compact total',f.posts().length===0&&compactPrice(lastBubble(),500,'cuốn',exactPrice.priceVnd*500,['A4','16 trang','C250','C150'])&&exactLocal.quote.unitPriceVnd===exactPrice.priceVnd&&exactLocal.quote.provider==='thanh-an'&&exactLocal.quote.sourceUrl===exactPrice.sourceUrl);
   await widget.send('Xem giá');
-  check('Xem giá offers thirteen local products without automatically opening tables',f.posts().length===0&&f.shadow.querySelectorAll('.ta-quote-products .ta-chip').length===13&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
+  const quoteConsult=f.shadow.querySelector('.ta-consult-cta');
+  check('Xem giá offers thirteen local products and only the exact consultation button without automatically opening tables',f.posts().length===0&&f.shadow.querySelectorAll('.ta-quote-products .ta-chip').length===13&&quoteConsult?.textContent==='Tư vấn qua Zalo'&&quoteConsult.parentElement.children.length===1&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
   await widget.send('Xem bảng giá');const clearedMenu=f.shadow.querySelector('.ta-price-menu');
   f.shadow.querySelector('.ta-clear').click();
-  check('Clear chat revokes consent and removes a mounted price view',!!clearedMenu&&!clearedMenu.isConnected&&!f.consent.checked&&f.shadow.querySelectorAll('.ta-price-menu').length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden);
-  f.optIn();await widget.send(unknown);
+  check('Clear chat removes a mounted price view and keeps privacy available without a mode selector',!!clearedMenu&&!clearedMenu.isConnected&&f.shadow.querySelectorAll('.ta-price-menu').length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&f.shadow.querySelector('.ta-privacy-open')===privacyTrigger&&f.shadow.querySelector('.ta-ai-consent')===null);
+  await widget.send(unknown);
   const productButton=[...f.shadow.querySelectorAll('.ta-chip')].find(b=>b.textContent==='Xem lựa chọn Catalogue');
-  check('A model product suggestion requires a user confirmation button',f.posts().length===1&&!!productButton&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
+  check('An unknown question automatically receives a product confirmation after metadata and clear, without an opt-in action',f.posts().length===1&&!!productButton&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
   const body=JSON.parse(f.posts()[0].body);
-  check('The mock POST sends only the current message, version and explicit consent',Object.keys(body).sort().join(',')==='adult,consent,message,version'&&body.message===unknown&&body.adult===true&&body.consent==='google-free-v1'&&!f.posts()[0].body.includes('15.000'));
+  check('The mock POST preserves the reviewed schema and sends only the current message without local price or history',Object.keys(body).sort().join(',')==='adult,consent,message,version'&&body.message===unknown&&body.adult===true&&body.consent==='google-free-v1'&&!f.posts()[0].body.includes('15.000')&&!f.posts()[0].body.includes(exactPrice.lookupQuery)&&!f.posts()[0].body.includes('history'));
   productButton.click();
   await until(()=>plainReply()==='Bạn cần in bao nhiêu cuốn?'&&widget.host.dataset.activity==='idle');
   check('Confirming the Gemini product asks only quantity first, without opening a table',f.posts().length===1&&plainReply()==='Bạn cần in bao nhiêu cuốn?'&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
@@ -191,7 +192,7 @@ async function tests(){
   const rows=[...f.shadow.querySelectorAll('.ta-price-table tr[data-fact-id]')];
   const expected=ThanhAnPriceMenu.buildCatalog(data).categories.find(c=>c.id==='catalogue').variants.find(v=>v.id===variant.dataset.variantId).rows;
   check('The confirmed source table contains all 21 original rows',rows.length===21&&rows.map(r=>r.dataset.factId).join(',')===expected.map(r=>r.id).join(','));
-  check('The original bold Zalo footer remains below the table',f.shadow.querySelector('.ta-price-footer strong')?.textContent.includes('hãy nhắn Zalo'));
+  check('The table footer keeps the concise Zalo heading and three verified contact links without long notices',choiceConsult(f.shadow.querySelector('.ta-price-menu')));
   let fullMenu=f.shadow.querySelector('.ta-price-menu');fullMenu.querySelector('.ta-price-back').click();
   const ownerCatalogueId='table-catalogue-a4-cover-c250-offset-12-200';await clickPresented(fullMenu.querySelector('[data-variant-id="'+ownerCatalogueId+'"]'),f.shadow);
   const ownerCatalogue=ThanhAnPriceMenu.buildCatalog(data).categories.find(c=>c.id==='catalogue').variants.find(v=>v.id===ownerCatalogueId),ownerCatalogueRows=[...fullMenu.querySelectorAll('tr[data-fact-id]')];
@@ -226,15 +227,15 @@ async function tests(){
   f.shadow.querySelector('.ta-privacy-open').click();await frames();const optionsView=f.shadow.querySelector('.ta-aux-view'),optionsRect=optionsView.getBoundingClientRect();
   check('The auxiliary privacy view fits the dialog without horizontal or nested vertical overflow',optionsRect.left>=panelRect.left&&optionsRect.right<=panelRect.right+1&&optionsView.scrollWidth<=optionsRect.width+1&&verticalScrollOwners(f.shadow.querySelector('.ta-content')).every(element=>element===optionsView));
   optionsView.querySelector('.ta-view-back').click();
-  f=await mount();f.optIn();const consultButton=f.shadow.querySelectorAll('.ta-quick .ta-chip')[2],nativeOpen=window.open;let automaticOpens=0;
+  f=await mount();const consultButton=f.shadow.querySelectorAll('.ta-quick .ta-chip')[2],nativeOpen=window.open;let automaticOpens=0;
   window.open=()=>{automaticOpens++;return null;};
   try{consultButton.focus();consultButton.click();await until(()=>f.shadow.querySelector('.ta-aux-view').dataset.view==='contacts'&&!f.shadow.querySelector('.ta-aux-view').hidden);}finally{window.open=nativeOpen;}
-  const contactView=f.shadow.querySelector('.ta-aux-view'),contactRows=[...contactView.querySelectorAll('.ta-contact')],contactLinks=[...contactView.querySelectorAll('.ta-contact a')],contactCopy=contactView.textContent.toLowerCase();
+  const contactView=f.shadow.querySelector('.ta-aux-view'),contactBody=contactView.querySelector('.ta-aux-body'),contactRows=[...contactView.querySelectorAll('.ta-contact')],contactLinks=[...contactView.querySelectorAll('.ta-contact a')];
   const exactContactLinks=contactRows.length===3&&contactLinks.length===6&&data.contacts.every(person=>contactLinks.some(link=>link.getAttribute('href')===person.zalo&&link.target==='_blank'&&link.rel.includes('noopener')&&link.referrerPolicy==='no-referrer')&&contactLinks.some(link=>link.getAttribute('href')==='tel:'+person.phone));
-  const consultOpened=consultButton.textContent==='Tư vấn'&&consultButton.getAttribute('aria-label')==='Tư vấn qua Zalo'&&contactView.querySelector('.ta-aux-title').textContent==='Tư vấn qua Zalo'&&((contactCopy.includes('website')||contactCopy.includes('trang web'))&&contactCopy.includes('giá')&&contactCopy.includes('quy cách'))&&f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-log').querySelectorAll('.ta-contact').length===0&&visibleContentViews(f.shadow.querySelector('.ta-content')).length===1&&contactView.scrollWidth<=contactView.clientWidth+1;
+  const consultOpened=consultButton.textContent==='Tư vấn qua Zalo'&&consultButton.getAttribute('aria-label')==='Tư vấn qua Zalo'&&contactView.querySelector('.ta-aux-title').textContent==='Tư vấn qua Zalo'&&contactBody.querySelector('.ta-contact-intro')===null&&contactBody.children.length===3&&f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-log').querySelectorAll('.ta-contact').length===0&&visibleContentViews(f.shadow.querySelector('.ta-content')).length===1&&contactView.scrollWidth<=contactView.clientWidth+1;
   contactView.querySelector('.ta-view-back').click();
   check('Consult opens the three verified advisers in one auxiliary view and returns to its trigger without opening a contact link',consultOpened&&exactContactLinks&&automaticOpens===0&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').hidden&&f.shadow.querySelector('.ta-aux-view').hidden&&f.shadow.activeElement===consultButton);
-  f=await mount();f.optIn();await widget.send('Xem giá');
+  f=await mount();await widget.send('Xem giá');
   const cardChoice=[...f.shadow.querySelectorAll('.ta-quote-products .ta-chip')].find(b=>b.textContent.includes('Danh thiếp'));cardChoice.click();
   await until(()=>plainReply()==='Bạn chọn in offset hay in nhanh?'&&widget.host.dataset.activity==='idle');
   const printingButtons=[...f.shadow.querySelector('.ta-log').lastElementChild.querySelectorAll('.ta-suggestions .ta-chip')].map(button=>button.textContent),printingFirst=printingButtons.join('|')==='In offset|In nhanh'&&f.posts().length===0;
@@ -257,7 +258,7 @@ async function tests(){
   const incompleteResult=ThanhAnFAQ.answer(incompleteEarring.lookupQuery,data);
   check('An earring price with unresolved lamination inclusion hands off locally without a computed quote',incompleteResult.handoff===true&&!incompleteResult.quote&&incompleteEarring.rawSourceFlags.ownerRecipeIncomplete&&incompleteEarring.rawSourceFlags.missingConditions.some(value=>value.includes('cán màng'))&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&!!f.shadow.querySelector('.ta-quick button[aria-label="Tư vấn qua Zalo"]')&&f.posts().length===0);
 
-  f=await mount();f.optIn();await widget.send('Danh thiếp');await widget.send('In offset');
+  f=await mount();await widget.send('Danh thiếp');await widget.send('In offset');
   check('Selecting the local offset method asks one quantity question without silently quoting',plainReply()==='Bạn cần in bao nhiêu hộp?'&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   await widget.send('12 hộp');
   const offsetSource=data.products.find(product=>product.id==='namecard-offset-ta').priceFacts;
@@ -274,41 +275,52 @@ async function tests(){
   const quickSwitchAsked=lastBubble().includes('C300')&&lastBubble().includes('?')&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote');
   await widget.send('C300');
   check('Switching offset to quick print retains twelve boxes and asks paper before quoting',quickSwitchAsked&&compactPrice(lastBubble(),12,'hộp',ten.priceVnd*12,['C300'])&&f.posts().length===0,lastBubble());
-  f=await mount({reply:{...suggestion,priceVnd:1}});f.optIn();await widget.send(unknown);
+  f=await mount({reply:{...suggestion,priceVnd:1}});await widget.send(unknown);
   check('A response containing a fabricated price is discarded for local fallback',f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
-  f=await mount({reply:{...suggestion,categoryId:'invented'}});f.optIn();await widget.send(unknown);
+  f=await mount({reply:{...suggestion,categoryId:'invented'}});await widget.send(unknown);
   check('A model category absent from the local catalog is discarded',f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn')&&f.shadow.querySelectorAll('.ta-price-menu').length===0);
-  f=await mount({status:429});f.optIn();await widget.send(unknown);
+  f=await mount({status:429});await widget.send(unknown);
   check('Quota HTTP failure falls back without a retry loop',f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
-  f=await mount({offline:true});f.optIn();await widget.send(unknown);
+  f=await mount({offline:true});await widget.send(unknown);
   check('Network failure returns to the local unknown answer',f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
   f=await mount({metadata:{...metadata,enabled:false}});await widget.send(unknown);
-  check('A deployment without a key stays local and disables the generic deep-understanding toggle',f.consent.disabled&&!f.consent.checked&&f.posts().length===0&&f.shadow.querySelector('.ta-ai-title').textContent==='Bật hiểu sâu'&&f.shadow.querySelector('.ta-privacy-open').getAttribute('aria-label')==='Thông tin & quyền riêng tư');
-  f=await mount();f.optIn();const privateInput='fictional@example.invalid';await widget.send(privateInput);
-  check('An email-containing unknown question is never sent to the provider',f.posts().length===0);
+  check('A disabled deployment stays local and keeps privacy available without a mode selector',f.posts().length===0&&f.shadow.querySelector('.ta-ai-consent,.ta-ai-title,.ta-ai-helper')===null&&f.shadow.querySelector('.ta-header').contains(f.shadow.querySelector('.ta-privacy-open'))&&f.shadow.querySelector('.ta-privacy-open').getAttribute('aria-label')==='Thông tin & quyền riêng tư');
+  f=await mount({pendingMetadata:true});let earlyPending=widget.send(unknown+'_before_metadata');await microtasks();const waitingForMetadata=f.posts().length===0&&pendingDots(f.shadow);f.resolveMetadata();await earlyPending;
+  check('An early unknown question waits for metadata before automatically requesting a suggestion',waitingForMetadata&&f.posts().length===1&&JSON.parse(f.posts()[0].body).message===unknown+'_before_metadata'&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
+  for(const action of ['clear','close']){
+   f=await mount({pendingMetadata:true});let settled=false;earlyPending=widget.send(unknown+'_old_'+action).then(()=>{settled=true;});await microtasks();const awaitingMetadata=pendingDots(f.shadow)&&f.posts().length===0;
+   if(action==='clear')f.shadow.querySelector('.ta-clear').click();else widget.close();
+   await microtasks();const oldSettled=settled;f.resolveMetadata();await earlyPending;await microtasks();const noOldPost=f.posts().length===0&&!f.calls[0].signal.aborted;
+   if(action==='close')widget.open();else await resetFinished(f.shadow);
+   await widget.send(unknown+'_new_'+action);
+   check('Before metadata '+action+' settles the old question and preserves readiness for only the new question',awaitingMetadata&&oldSettled&&noOldPost&&f.posts().length===1&&JSON.parse(f.posts()[0].body).message===unknown+'_new_'+action&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
+  }
+  f=await mount({pendingMetadata:true});let earlyDestroyedSettled=false;earlyPending=widget.send(unknown+'_destroy_metadata').then(()=>{earlyDestroyedSettled=true;});await microtasks();const metadataHost=widget.host;widget.destroy();widget=null;await microtasks();f.resolveMetadata();await earlyPending;await microtasks();
+  check('Destroy settles an early question and aborts metadata without a late POST or connected host',earlyDestroyedSettled&&f.calls[0].signal.aborted&&f.posts().length===0&&!metadataHost.isConnected&&typingAbsent(f.shadow));
+  f=await mount();
+  for(const privateInput of ['fictional@example.invalid','Số điện thoại thử nghiệm 0901234567','mật khẩu thử nghiệm chỉ dùng trong test'])await widget.send(privateInput);
+  check('Automatic understanding never POSTs the tested synthetic email, phone or secret-marker questions',f.posts().length===0);
   window.__geminiHarnessXss=0;await widget.send('<img src=x onerror="window.__geminiHarnessXss=1">');
   check('Visitor XSS is literal text, never HTML or a provider call',window.__geminiHarnessXss===0&&f.posts().length===0&&f.shadow.querySelectorAll('img').length===0&&f.shadow.querySelector('.ta-log').textContent.includes('<img'));
-  f=await mount({pending:true});f.optIn();let pending=widget.send(unknown);await until(()=>f.posts().length===1);
-  check('Pending optional understanding shows only three small gray dots with a static customer status',pendingDots(f.shadow)&&widget.host.dataset.activity==='working');
-  f.revoke();f.resolve();await pending;
-  check('Revoking consent aborts the pending request and suppresses its late suggestion',f.posts()[0].signal.aborted&&!f.consent.checked&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
-  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);f.shadow.querySelector('.ta-clear').click();await pending;await resetFinished(f.shadow);const cleared=f.shadow.querySelector('.ta-log').textContent;f.resolve();await frames();
-  check('Clear cancels in-flight work and a late reply cannot repopulate the chat',f.posts()[0].signal.aborted&&!f.consent.checked&&f.shadow.querySelector('.ta-log').textContent===cleared&&f.shadow.querySelectorAll('.ta-message').length===1&&typingAbsent(f.shadow));
-  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const oldHost=widget.host;widget.destroy();widget=null;f.resolve();await pending;
+  f=await mount({pending:true});let pending=widget.send(unknown);await until(()=>f.posts().length===1);
+  check('Pending automatic understanding shows only three small gray dots with a static customer status',pendingDots(f.shadow)&&widget.host.dataset.activity==='working');
+  f.shadow.querySelector('.ta-clear').click();await pending;await resetFinished(f.shadow);const cleared=f.shadow.querySelector('.ta-log').textContent;f.resolve();await frames();
+  check('Clear cancels automatic in-flight work and a late reply cannot repopulate the new chat',f.posts()[0].signal.aborted&&f.shadow.querySelector('.ta-log').textContent===cleared&&f.shadow.querySelectorAll('.ta-message').length===1&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-ai-consent')===null);
+  f=await mount({pending:true});pending=widget.send(unknown);await until(()=>f.posts().length===1);const oldHost=widget.host;widget.destroy();widget=null;f.resolve();await pending;
   check('Destroy aborts pending work and leaves no orphan host',f.posts()[0].signal.aborted&&!oldHost.isConnected&&!document.getElementById('ta-mam-chat-host')&&typingAbsent(f.shadow));
-  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const successDots=pendingDots(f.shadow);f.resolve();await pending;
-  check('Successful optional understanding removes the waiting dots before showing its confirmation',successDots&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
-  f=await mount({pending:true,status:429});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);const failureDots=pendingDots(f.shadow);f.resolve();await pending;
+  f=await mount({pending:true});pending=widget.send(unknown);await until(()=>f.posts().length===1);const successDots=pendingDots(f.shadow);f.resolve();await pending;
+  check('Successful automatic understanding removes the waiting dots before showing its confirmation',successDots&&typingAbsent(f.shadow)&&f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
+  f=await mount({pending:true,status:429});pending=widget.send(unknown);await until(()=>f.posts().length===1);const failureDots=pendingDots(f.shadow);f.resolve();await pending;
   check('An asynchronous quota error removes waiting dots and returns to the local fallback without retrying',failureDots&&typingAbsent(f.shadow)&&f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle');
-  f=await mount({pending:true});f.optIn();pending=widget.send(unknown);await until(()=>f.posts().length===1);widget.close();const closedLog=f.shadow.querySelector('.ta-log').textContent,closedDots=typingAbsent(f.shadow);f.resolve();await pending;
-  check('Closing cancels optional understanding immediately and suppresses the late response on reopening',closedDots&&f.posts()[0].signal.aborted&&f.shadow.querySelector('.ta-panel').hidden&&f.shadow.querySelector('.ta-log').textContent===closedLog&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
+  f=await mount({pending:true});pending=widget.send(unknown);await until(()=>f.posts().length===1);widget.close();const closedLog=f.shadow.querySelector('.ta-log').textContent,closedDots=typingAbsent(f.shadow);f.resolve();await pending;
+  check('Closing cancels automatic understanding immediately and suppresses the late response on reopening',closedDots&&f.posts()[0].signal.aborted&&f.shadow.querySelector('.ta-panel').hidden&&f.shadow.querySelector('.ta-log').textContent===closedLog&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&typingAbsent(f.shadow));
   widget.open();
-  f=await mount({pending:true});f.optIn();const aiTimeoutStart=performance.now();pending=widget.send(unknown);await until(()=>f.posts().length===1);const timeoutDots=pendingDots(f.shadow);await pending;f.resolve();await frames();
-  check('A stalled optional understanding request times out, removes its dots and rejects an ignored-abort late reply',timeoutDots&&f.posts()[0].signal.aborted&&typingAbsent(f.shadow)&&f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle'&&performance.now()-aiTimeoutStart<9000);
+  f=await mount({pending:true});const aiTimeoutStart=performance.now();pending=widget.send(unknown);await until(()=>f.posts().length===1);const timeoutDots=pendingDots(f.shadow);await pending;f.resolve();await frames();
+  check('A stalled automatic understanding request times out, removes its dots and rejects an ignored-abort late reply',timeoutDots&&f.posts()[0].signal.aborted&&typingAbsent(f.shadow)&&f.posts().length===1&&!f.shadow.textContent.includes('Xem lựa chọn Catalogue')&&widget.host.dataset.activity==='idle'&&performance.now()-aiTimeoutStart<9000);
 
   // Basic references must answer locally before optional source or provider
   // lookups, including when a different product has an active price recipe.
-  f=await mount({sourceInfo:true});f.optIn();const basicFaqSession=ThanhAnFAQ.createSession(data);
+  f=await mount({sourceInfo:true});const basicFaqSession=ThanhAnFAQ.createSession(data);
   for(const step of ['catalogue A4 500 cuốn','16 trang','Bìa C250 ruột C150']){await widget.send(step);basicFaqSession.answer(step);}
   for(const [query,terms,source] of [
    ['kt a4 là bao nhiêu',['A4','21 × 29,7 cm'],null],
@@ -324,9 +336,9 @@ async function tests(){
 
   // Source information is mocked independently. No raw visitor text is sent to
   // this read-only endpoint, and its responses never become price conditions.
-  f=await mount();f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp',INFO_QUERY])await widget.send(step);
+  f=await mount();for(const step of ['Danh thiếp','In offset','12 hộp',INFO_QUERY])await widget.send(step);
   check('Without an optional source endpoint a recognized information question remains local with no provider call or dots',f.infoCalls.length===0&&f.posts().length===0&&typingAbsent(f.shadow)&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
-  f=await mount({sourceInfo:true,infoPending:true});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+  f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
   const localQuoteHadNoDots=typingAbsent(f.shadow)&&f.infoCalls.length===0&&f.posts().length===0;pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);
   check('Information lookup keeps the three dots visible while completed local prices bypass both endpoints',localQuoteHadNoDots&&pendingDots(f.shadow)&&f.posts().length===0);
   const infoRequest=f.infoCalls[0],infoUrl=new URL(infoRequest.url);
@@ -341,15 +353,15 @@ async function tests(){
    ['HTML and an untrusted reference',{...invalidInfo,text:'<img src=x onerror="window.__geminiHarnessXss=1">',sources:[{provider:'thanh-an',url:'https://example.invalid/fake-source'}]}],
    ['an unavailable source field',{version:1,kind:'fallback',productId:'namecard-offset-ta',field:'lamination'}]
   ]){
-   f=await mount({sourceInfo:true,infoPending:true,infoReply:reply});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
+   f=await mount({sourceInfo:true,infoPending:true,infoReply:reply});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
    pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);const beforeFallback=pendingDots(f.shadow);f.resolveInfo();await pending;
    check('Source information rejects '+name+' without replacing the local fallback or quoting',beforeFallback&&f.posts().length===0&&f.infoCalls.length===1&&typingAbsent(f.shadow)&&!hasMockInfo()&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&f.shadow.querySelectorAll('img').length===0&&window.__geminiHarnessXss===0&&![...f.shadow.querySelectorAll('.ta-source')].some(link=>link.href.startsWith('https://example.invalid/')));
   }
-  f=await mount({sourceInfo:true,infoOffline:true});f.optIn();for(const step of ['Danh thiếp','In offset','12 hộp',INFO_QUERY])await widget.send(step);
+  f=await mount({sourceInfo:true,infoOffline:true});for(const step of ['Danh thiếp','In offset','12 hộp',INFO_QUERY])await widget.send(step);
   check('A source-information network error removes dots and uses local information without falling through to Gemini',f.infoCalls.length===1&&f.posts().length===0&&typingAbsent(f.shadow)&&lastBubble().length>0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&widget.host.dataset.activity==='idle');
   f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
   const infoTimeoutStart=performance.now();pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);const infoTimeoutDots=pendingDots(f.shadow);await pending;const timeoutFallback=f.shadow.querySelector('.ta-log').textContent;f.resolveInfo();await frames();
-  check('A stalled source lookup times out without consent, removes dots and suppresses a late source reply',infoTimeoutDots&&f.infoCalls[0].signal.aborted&&f.infoCalls.length===1&&f.posts().length===0&&!f.consent.checked&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===timeoutFallback&&!hasMockInfo()&&widget.host.dataset.activity==='idle'&&performance.now()-infoTimeoutStart<7000);
+  check('A stalled source lookup bypasses classification, removes dots and suppresses a late source reply',infoTimeoutDots&&f.infoCalls[0].signal.aborted&&f.infoCalls.length===1&&f.posts().length===0&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===timeoutFallback&&!hasMockInfo()&&widget.host.dataset.activity==='idle'&&performance.now()-infoTimeoutStart<7000);
   f=await mount({sourceInfo:true,infoPending:true});for(const step of ['Danh thiếp','In offset','12 hộp'])await widget.send(step);
   pending=widget.send(INFO_QUERY);await until(()=>f.infoCalls.length===1);f.shadow.querySelector('.ta-clear').click();await pending;await resetFinished(f.shadow);const infoClearedLog=f.shadow.querySelector('.ta-log').textContent,infoClearedDots=typingAbsent(f.shadow);f.resolveInfo();await frames();
   check('Clear aborts source information immediately and an ignored-abort response cannot restore its dots or content',infoClearedDots&&f.infoCalls[0].signal.aborted&&typingAbsent(f.shadow)&&f.shadow.querySelector('.ta-log').textContent===infoClearedLog&&f.shadow.querySelectorAll('.ta-message').length===1&&f.posts().length===0);
@@ -362,7 +374,7 @@ async function tests(){
 
   // Regressions for the real local quote session; provider responses remain fake.
   const owner300=allFacts.find(fact=>fact.id==='catalogue-a4-cover-c300-offset-16-300'),owner500=allFacts.find(fact=>fact.id==='catalogue-a4-cover-c250-offset-16-500');
-  f=await mount();f.optIn();await widget.send('catalogue A4 300 cuốn');
+  f=await mount();await widget.send('catalogue A4 300 cuốn');
   check('A local catalogue A4 300 request keeps quantity and size and asks only pages',plainReply()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   await widget.send('16 trang');
   check('A sixteen-page reply continues the existing catalogue and asks only paper',lastBubble().endsWith('?')&&['C250','C150','C300'].every(paper=>lastBubble().includes(paper))&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
@@ -386,7 +398,7 @@ async function tests(){
   check('Conflicting sizes ask one size question and never substitute another sheet size',!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&lastBubble().includes('một khổ')&&f.posts().length===0,lastBubble());
   await widget.send('A4');
   check('Resolving the size conflict restores the quote without losing quantity, paper or pages',compactPrice(lastBubble(),400,'cuốn',owner300.priceVnd*400,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
-  f=await mount({status:429});f.optIn();await widget.send(unknown);
+  f=await mount({status:429});await widget.send(unknown);
   for(const step of ['catalogue A4 300 cuốn','16 trang','Bìa C300 ruột C150'])await widget.send(step);
   check('After quota fallback a recognized catalogue conversation remains local and retains context',f.posts().length===1&&compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang']),lastBubble());
 
@@ -398,24 +410,24 @@ async function tests(){
   const approvedFixture=syntheticFixture(seed),approvedMemory=ThanhAnApprovedLanguage.create(approvedFixture);
   const approvedHint=approvedMemory.lookup(seed.phrase);
   check('The isolated synthetic approved fixture returns only a category hint without changing the actual pending data',ThanhAnFAQ.answer(seed.phrase,data).kind==='unknown'&&approvedHint?.intent==='product'&&approvedHint.categoryId==='catalogue'&&Object.keys(approvedHint).sort().join(',')==='categoryId,intent'&&JSON.stringify(languageData)===languageSnapshot);
-  f=await mount({approvedLanguageData:approvedFixture});f.optIn();await widget.send(seed.phrase);
+  f=await mount({approvedLanguageData:approvedFixture});await widget.send(seed.phrase);
   check('An exact synthetically approved catalogue phrase skips the provider and starts local quantity-first lookup',plainReply()==='Bạn cần in bao nhiêu cuốn?'&&f.posts().length===0);
   await widget.send('A4 300 cuốn');
   check('The approved category route keeps a combined quantity and size reply for the next question',plainReply()==='Catalogue của bạn có bao nhiêu trang?'&&f.posts().length===0);
   await widget.send('16 trang');await widget.send('Bìa C300 ruột C150');
   check('The approved phrase route preserves the original message context through the final source-based quote',compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang'])&&f.posts().length===0,lastBubble());
   const hoursFixture=syntheticFixture({id:'synthetic-hours',phrase:'lịch tiếp khách ở tiệm',intent:'hours',categoryId:null,status:'pending',author:'assistant',review:null});
-  f=await mount({approvedLanguageData:hoursFixture});f.optIn();await widget.send(hoursFixture.entries[0].phrase);
+  f=await mount({approvedLanguageData:hoursFixture});await widget.send(hoursFixture.entries[0].phrase);
   check('A synthetic approved non-product phrase routes to the actual local FAQ without a provider call',plainReply().includes(data.faq.hours)&&f.posts().length===0&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote'));
   const outOfScopeFixture=syntheticFixture({id:'synthetic-out-of-scope',phrase:'kể chuyện về bầu trời',intent:'out_of_scope',categoryId:null,status:'pending',author:'assistant',review:null});
-  f=await mount({approvedLanguageData:outOfScopeFixture});f.optIn();await widget.send(outOfScopeFixture.entries[0].phrase);
+  f=await mount({approvedLanguageData:outOfScopeFixture});await widget.send(outOfScopeFixture.entries[0].phrase);
   check('A synthetic approved out-of-scope phrase stays on a bounded local answer instead of spending provider quota',f.posts().length===0&&lastBubble().length>0&&lastBubble().length<=500&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   const invalidFixture=JSON.parse(JSON.stringify(approvedFixture));invalidFixture.entries[0].priceVnd=1;
-  f=await mount({approvedLanguageData:invalidFixture,status:429});f.optIn();await widget.send(seed.phrase);
+  f=await mount({approvedLanguageData:invalidFixture,status:429});await widget.send(seed.phrase);
   check('An invalid language fixture cannot inject a price or activate an unreviewed local product route',f.posts().length===1&&!f.shadow.querySelector('.ta-log').lastElementChild.classList.contains('ta-message-quote')&&!plainReply().includes('Bạn cần in bao nhiêu cuốn?')&&f.shadow.querySelectorAll('.ta-price-table').length===0);
   let stalledSignal=null,stalledCalls=0;const stallStarted=performance.now();
   f=await mount({approvedLanguageUrl:'/widget/approved-language.json',approvedLanguageFetch:(_url,init)=>{stalledCalls++;stalledSignal=init.signal;return new Promise(()=>{});}});
-  const stallMountMs=performance.now()-stallStarted;f.optIn();
+  const stallMountMs=performance.now()-stallStarted;
   for(const step of ['catalogue A4 300 cuốn','16 trang','Bìa C300 ruột C150'])await widget.send(step);
   check('A stalled optional rules fetch cannot block mount or the local catalogue even when it ignores abort',stalledCalls===1&&stalledSignal?.aborted===true&&stallMountMs<3000&&f.posts().length===0&&compactPrice(lastBubble(),300,'cuốn',owner300.priceVnd*300,['A4','C300','C150','16 trang']),JSON.stringify({mountMs:stallMountMs,fetchCalls:stalledCalls,aborted:stalledSignal?.aborted}));
 
